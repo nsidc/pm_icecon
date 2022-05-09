@@ -1,0 +1,86 @@
+
+These files comprise a package which will produce SB2 NRT ice concentration files. When 
+compiled there will be 2 executable programs, boot_driver_sb2_np_nrt (for Northern 
+Hemisphere files) and boot_driver_sb2_sp_nrt (for Southern Hemisphere files).
+
+Notes:
+
+ - The "driver" routines are primarily used to read in and pass the Tbs to the main processing
+   routines (they also write out the final product). They can be changed without affecting the 
+   resultant ice concentration values.
+ - There is an "ANCILLARY" directory which contains necessary landmasks, a holemask and SST maps.
+ - There is an include file (dir_nrt_sb2.inc) which contains the paths to the Ancillary 
+   directory and the Brightness Temperature data.
+ - The two driver routines are designed to read NSIDC NRT Brightness Temperatures with
+   filenames such as 'tb_f18_20180201_nrt_n37h.bin'. The individual Tb filenames
+   are composed within the driver routines (lines 63, 76, 87 and 98) and use initialized 
+   variables for the satellite (sat='18') and Tb version (tbver='nrt'). The prefix ('tb_f') 
+   and postfix (eg: '_n37h.bin') are hardwired into the program for each channel.
+ - As written, the products are saved to the working directory. Adjustments to this can
+   be made in the output open statement (boot_driver_sb2_np_nrt.f or boot_driver_sb2_sp_nrt.f
+   line 115).
+ - This package has been compiled on a Mac Pro running Sierra (Version 10.12.6) with
+   gfortran (gcc version 7.2.0) installed. Two sample files (NH_20180217_SB2_NRT_f18.ic and
+   SH_20180217_SB2_NRT_f18.ic) have been included for comparisons.
+
+Procedure:
+
+ - Unzip package into a working directory.
+ - Edit the dir_nrt_sb2.inc file to include the paths to the Brightness Temperatures and the 
+   Ancillary directory.
+ - Compile the package. Two sample makefiles are included that use gfortran-mp-7.
+ - Run the programs by invoking the executables with a single date argument
+   (eg: boot_driver_sb2_np_nrt YYYYMMDD). Multiple dates have been processed through use 
+   of a script that creates sequential dates and calls the driver routines for each 
+   one (see <run_it.script>).
+   
+Contents of SB2_NRT_programs.zip:
+        0  11-06-2017 15:44   ANCILLARY/
+   272384  11-03-2017 17:30   ANCILLARY/north_land_25
+   272384  11-06-2017 15:44   ANCILLARY/np_holemask.ssmi_f17
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_01.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_02.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_03.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_04.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_05.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_06.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_07.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_08.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_09.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_10.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_11.int
+   272384  11-03-2017 17:25   ANCILLARY/np_sect_sst1_sst2_mask_12.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_01_SST_avhrr_threshold_01_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_02_SST_avhrr_threshold_02_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_03_SST_avhrr_threshold_03_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_04_SST_avhrr_threshold_04_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_05_SST_avhrr_threshold_05_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_06_SST_avhrr_threshold_06_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_07_SST_avhrr_threshold_07_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_08_SST_avhrr_threshold_08_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_09_SST_avhrr_threshold_09_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_10_SST_avhrr_threshold_10_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_11_SST_avhrr_threshold_11_fixd.int
+   209824  11-03-2017 17:25   ANCILLARY/SH_12_SST_avhrr_threshold_12_fixd.int
+   209824  11-03-2017 17:29   ANCILLARY/south_land_25r
+     3714  11-02-2017 14:40   boot_driver_sb2_np_nrt.f
+     3712  11-02-2017 14:40   boot_driver_sb2_sp_nrt.f
+     5727  11-02-2017 15:02   boot_ice_sb2_ssmi_np_nrt.f
+     5472  11-02-2017 15:01   boot_ice_sb2_ssmi_sp_nrt.f
+    11923  11-06-2017 19:29   clean_routines_sb2.f
+      178  02-21-2018 20:06   dir_nrt_sb2.inc
+      795  11-01-2017 16:03   fix_output_gdprod.f
+      682  11-02-2017 14:24   linfit.f
+      476  02-21-2018 19:58   Makefile_sb2_np_nrt
+      464  02-21-2018 19:58   Makefile_sb2_sp_nrt
+   272384  02-23-2018 13:42   NH_20180217_SB2_NRT_f18.ic
+      464  11-02-2017 14:24   ret_adj_adoff.f
+     1250  11-01-2017 16:03   ret_ic.f
+     2851  11-02-2017 14:38   ret_linfit_v2.f
+     2780  11-01-2017 16:03   ret_parameters_sb2.f
+      925  11-01-2017 16:03   ret_water_ssmi.f
+      935  11-02-2017 14:34   ret_wtp.f
+      332  02-23-2018 13:43   run_it.script
+   209824  02-23-2018 13:42   SH_20180217_SB2_NRT_f18.ic
+     1151  11-01-2017 16:03   xfer_tbs_nrt.f
+
