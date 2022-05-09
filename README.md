@@ -33,20 +33,25 @@ Directory contents:
 
 
 # Setting up for initial run:
-  # Create symbolic links for original ancillary, input, and output directories
-    # in ./SB2_NRT_programs/, create:
+  Create symbolic links for original ancillary, input, and output directories
+    in ./SB2_NRT_programs/, create:
         ln -s ../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
         ln -s ../cdr_testdata/bt_goddard_orig_input_tbs/ org_input_tbs/
         ln -s ../cdr_testdata/bt_goddard_orig_output/ orig_output
-  # Generate the fortran output
-    # in ./SB2_NRT_programs/, execute:
+  Generate the fortran output
+    in ./SB2_NRT_programs/, execute:
         ./gen_sample_nh_ic_for.sh 
-    # Note that this will create .json files that the python code will read
-    # Output that will be compared to an original file in cdr_testdata/
+    Note that this will create .json files that the python code will read
+    Output that will be compared to an original file in cdr_testdata/
         ./SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic 
 
-  # Generate the initial Python output
-    # in ./bt_py/, execute:
+  Generate the initial Python output
+    in ./bt_py/, execute:
         ./gen_sample_nh_ic_py.sh
-    # Output that will be compared to the output in the fortran directory:
+    Output that will be compared to the output in the fortran directory:
         ./bt_py/NH_20180217_SB2_NRT_f18.ic 
+
+# Other routines
+
+Two short comparison scripts in bt_py/ used to compare 4-byte float and
+2-byte int raw binary files respectively are:  fpcomp.py and i2comp.py
