@@ -49,7 +49,7 @@ In ./SB2_NRT_programs/, create:
 
       ln -s ../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
 
-      ln -s ../cdr_testdata/bt_goddard_orig_input_tbs/ org_input_tbs
+      ln -s ../cdr_testdata/bt_goddard_orig_input_tbs/ orig_input_tbs
 
       ln -s ../cdr_testdata/bt_goddard_orig_output/ orig_output
 
