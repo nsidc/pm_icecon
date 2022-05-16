@@ -88,3 +88,14 @@ Output that will be compared to the output in the fortran directory:
 
 Two short comparison scripts in bt_py/ used to compare 4-byte float and
 2-byte int raw binary files respectively are:  fpcomp.py and i2comp.py
+
+
+# Misc. Development notes
+
+**TODO**: add invoke tasks for these common tasks.
+
+## Run code formatter (black)
+
+```
+$ black ./
+```

@@ -3,6 +3,10 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
+  # Testing/utilities
+  - black
+  - flake8
+
   # Runtime dependencies
   - python ~=3.10.4
   - numpy
