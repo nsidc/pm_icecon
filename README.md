@@ -65,7 +65,16 @@ Output that will be compared to an original file in cdr_testdata/
 
     ./SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic
 
-Generate the initial Python output
+
+Additionally, json files are created. Symlink the json files to the bt_py
+directory:
+
+```
+cd ../bt_py
+ln -s ../SB2_NRT_programs/*.json .
+```
+
+Now generate the initial Python output
 
 in ./bt_py/, execute:
 
