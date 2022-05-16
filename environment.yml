@@ -1,0 +1,8 @@
+name: cdr_amsr2
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  # Runtime dependencies
+  - python ~=3.10.4
+  - numpy
