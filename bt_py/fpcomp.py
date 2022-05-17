@@ -1,7 +1,7 @@
-import numpy as np
 import os
 import sys
 
+import numpy as np
 
 fn1 = sys.argv[1]
 fn2 = sys.argv[2]
