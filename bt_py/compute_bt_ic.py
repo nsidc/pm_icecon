@@ -1,7 +1,5 @@
-"""
-compute_bt_ic.py
+"""Compute the Bootstrap ice concentration.
 
-Compute the Bootstrap ice concentration
 Takes values from part of boot_ice_sb2_ssmi_np_nrt.f
 and computes:
     iceout

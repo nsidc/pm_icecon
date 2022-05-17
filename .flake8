@@ -4,3 +4,10 @@
 #     https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html#id2
 max-line-length = 88
 extend-ignore = E203
+
+# D1: Ignore errors requiring docstrings on everything.
+# W503: Line breaks should occur after the binary operator to keep all variable names aligned.
+# C408: Unnecessary dict call - rewrite as a literal.
+# C409: Unnecessary list passed to tuple() - rewrite as a tuple literal
+# E731: Lambda assignments are OK, use your best judgement.
+ignore = D1, W503, C408, C409, E731
