@@ -11,7 +11,7 @@ import json
 import numpy as np
 
 
-def xwm(m="here"):
+def xwm(m='here'):
     raise SystemExit(m)
 
 
@@ -56,24 +56,24 @@ def compute_gdata(v37, h37, v19, v22, mintb, maxtb):
 
 def xfer_tbs_nrt(v37, h37, v19, v22, sat):
     # NRT regressions
-    if sat == "17":
+    if sat == '17':
         v37 = fadd(fmul(1.0170066, v37), -4.9383355)
         h37 = fadd(fmul(1.0009720, h37), -1.3709822)
         v19 = fadd(fmul(1.0140723, v19), -3.4705583)
         v22 = fadd(fmul(0.99652931, v22), -0.82305684)
-    elif sat == "18":
+    elif sat == '18':
         v37 = fadd(fmul(1.0104497, v37), -3.3174017)
         h37 = fadd(fmul(0.98914390, h37), 1.2031835)
         v19 = fadd(fmul(1.0057373, v19), -0.92638520)
         v22 = fadd(fmul(0.98793409, v22), 1.2108198)
     else:
-        xwm(f"No such sat tb xform: {sat}")
+        xwm(f'No such sat tb xform: {sat}')
 
     return {
-        "v37": v37,
-        "h37": h37,
-        "v19": v19,
-        "v22": v22,
+        'v37': v37,
+        'h37': h37,
+        'v19': v19,
+        'v22': v22,
     }
 
 
@@ -104,13 +104,13 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
 
 def ret_para_nsb2(tbset, sat, season):
     # reproduce effect of ret_para_nsb2()
-    # Note: instead of "1" or "2", use description of axes tb1 and tb2
+    # Note: instead of '1' or '2', use description of axes tb1 and tb2
     #       to identify the TB set whose parameters are being set
-    #       So, tbset is "v1937" or "vh37"
+    #       So, tbset is 'v1937' or 'vh37'
     # Note: 'sat' is a *string*, not an integer
 
     # Set wintrc, wslope, wxlimt
-    if sat == "00":
+    if sat == '00':
         if season == 1:
             wintrc = 53.4153
             wslope = 0.661017
@@ -121,7 +121,7 @@ def ret_para_nsb2(tbset, sat, season):
             wxlimt = 24.00
     else:
         if season == 1:
-            if sat != "17" and sat != "18":
+            if sat != '17' and sat != '18':
                 wintrc = 90.3355
                 wslope = 0.501537
             else:
@@ -129,7 +129,7 @@ def ret_para_nsb2(tbset, sat, season):
                 wslope = 0.517333
             wxlimt = 14.00
         else:
-            if sat != "17" and sat != "18":
+            if sat != '17' and sat != '18':
                 wintrc = 89.3316
                 wslope = 0.501537
             else:
@@ -137,7 +137,7 @@ def ret_para_nsb2(tbset, sat, season):
                 wslope = 0.503750
             wxlimt = 21.00
 
-    if tbset == "vh37":
+    if tbset == 'vh37':
         # wtp(1)=201.916
         # wtp(2)=132.815
         wtp = [201.916, 132.815]
@@ -151,7 +151,7 @@ def ret_para_nsb2(tbset, sat, season):
         # iceline(2)=1.04382
         iceline = [-25.9729, 1.04382]
         lnchk = 1.5
-    elif tbset == "v1937":
+    elif tbset == 'v1937':
         # wtp(1)=201.916
         # wtp(2)=178.771
         wtp = [201.916, 178.771]
@@ -167,14 +167,14 @@ def ret_para_nsb2(tbset, sat, season):
         lnchk = 1.5
 
     return {
-        "wintrc": wintrc,
-        "wslope": wslope,
-        "wxlimt": wxlimt,
-        "wtp": wtp,
-        "itp": itp,
-        "lnline": lnline,
-        "iceline": iceline,
-        "lnchk": lnchk,
+        'wintrc': wintrc,
+        'wslope': wslope,
+        'wxlimt': wxlimt,
+        'wtp': wtp,
+        'itp': itp,
+        'lnline': lnline,
+        'iceline': iceline,
+        'lnchk': lnchk,
     }
 
 
@@ -260,7 +260,7 @@ def ret_linfit_32(
         fit_off = fadd(intrca, add)
         fit_slp = f(slopeb)
     else:
-        xwm(f"Insufficient valid linfit points: {icnt}")
+        xwm(f'Insufficient valid linfit points: {icnt}')
         fit_off = None
         fit_slp = None
 
@@ -357,28 +357,28 @@ def calc_rad_coeffs_32(p, v):
     # Compute radlsp, radoff, radlen vars
     # from (p)arameters and (v)ariables
 
-    v["radslp1"] = fdiv(
-        fsub(f(v["itp"][1]), f(v["wtp"][1])), fsub(f(v["itp"][0]), f(v["wtp"][0]))
+    v['radslp1'] = fdiv(
+        fsub(f(v['itp'][1]), f(v['wtp'][1])), fsub(f(v['itp'][0]), f(v['wtp'][0]))
     )
-    v["radoff1"] = fsub(f(v["wtp"][1]), fmul(f(v["wtp"][0]), f(v["radslp1"])))
+    v['radoff1'] = fsub(f(v['wtp'][1]), fmul(f(v['wtp'][0]), f(v['radslp1'])))
     xint = fdiv(
-        fsub(f(v["radoff1"]), f(v["vh37"][0])), fsub(f(v["vh37"][1]), f(v["radslp1"]))
+        fsub(f(v['radoff1']), f(v['vh37'][0])), fsub(f(v['vh37'][1]), f(v['radslp1']))
     )
-    yint = fadd(fmul(v["vh37"][1], f(xint)), f(v["vh37"][0]))
-    v["radlen1"] = fsqt(
-        fadd(fsqr(fsub(f(xint), f(v["wtp"][0]))), fsqr(fsub(f(yint), f(v["wtp"][1]))))
+    yint = fadd(fmul(v['vh37'][1], f(xint)), f(v['vh37'][0]))
+    v['radlen1'] = fsqt(
+        fadd(fsqr(fsub(f(xint), f(v['wtp'][0]))), fsqr(fsub(f(yint), f(v['wtp'][1]))))
     )
 
-    v["radslp2"] = fdiv(
-        fsub(f(v["itp2"][1]), f(v["wtp2"][1])), fsub(f(v["itp2"][0]), f(v["wtp2"][0]))
+    v['radslp2'] = fdiv(
+        fsub(f(v['itp2'][1]), f(v['wtp2'][1])), fsub(f(v['itp2'][0]), f(v['wtp2'][0]))
     )
-    v["radoff2"] = fsub(f(v["wtp2"][1]), fmul(f(v["wtp2"][0]), f(v["radslp2"])))
+    v['radoff2'] = fsub(f(v['wtp2'][1]), fmul(f(v['wtp2'][0]), f(v['radslp2'])))
     xint = fdiv(
-        fsub(f(v["radoff2"]), f(v["v1937"][0])), fsub(f(v["v1937"][1]), f(v["radslp2"]))
+        fsub(f(v['radoff2']), f(v['v1937'][0])), fsub(f(v['v1937'][1]), f(v['radslp2']))
     )
-    yint = fadd(fmul(f(v["v1937"][1]), f(xint)), f(v["v1937"][0]))
-    v["radlen2"] = fsqt(
-        fadd(fsqr(fsub(f(xint), f(v["wtp2"][0]))), fsqr(fsub(f(yint), f(v["wtp2"][1]))))
+    yint = fadd(fmul(f(v['v1937'][1]), f(xint)), f(v['v1937'][0]))
+    v['radlen2'] = fsqt(
+        fadd(fsqr(fsub(f(xint), f(v['wtp2'][0]))), fsqr(fsub(f(yint), f(v['wtp2'][1]))))
     )
 
     return v
@@ -388,29 +388,29 @@ def calc_rad_coeffs(p, v):
     # Compute radlsp, radoff, radlen vars
     # from (p)arameters and (v)ariables
 
-    v["radslp1"] = (v["itp"][1] - v["wtp"][1]) / (v["itp"][0] - v["wtp"][0])
-    v["radoff1"] = v["wtp"][1] - v["wtp"][0] * v["radslp1"]
-    xint = (v["radoff1"] - v["vh37"][0]) / (v["vh37"][1] - v["radslp1"])
-    yint = v["vh37"][1] * xint + v["vh37"][0]
-    v["radlen1"] = np.sqrt(
-        np.square(xint - v["wtp"][0]) + np.square(yint - v["wtp"][1])
+    v['radslp1'] = (v['itp'][1] - v['wtp'][1]) / (v['itp'][0] - v['wtp'][0])
+    v['radoff1'] = v['wtp'][1] - v['wtp'][0] * v['radslp1']
+    xint = (v['radoff1'] - v['vh37'][0]) / (v['vh37'][1] - v['radslp1'])
+    yint = v['vh37'][1] * xint + v['vh37'][0]
+    v['radlen1'] = np.sqrt(
+        np.square(xint - v['wtp'][0]) + np.square(yint - v['wtp'][1])
     )
 
     # next...do the radslp2 etc calcs
-    v["radslp2"] = (v["itp2"][1] - v["wtp2"][1]) / (v["itp2"][0] - v["wtp2"][0])
-    v["radoff2"] = v["wtp2"][1] - v["wtp2"][0] * v["radslp2"]
-    xint = (v["radoff2"] - v["v1937"][0]) / (v["v1937"][1] - v["radslp2"])
-    yint = v["v1937"][1] * xint + v["v1937"][0]
-    v["radlen2"] = np.sqrt(
-        np.square(xint - v["wtp2"][0]) + np.square(yint - v["wtp2"][1])
+    v['radslp2'] = (v['itp2'][1] - v['wtp2'][1]) / (v['itp2'][0] - v['wtp2'][0])
+    v['radoff2'] = v['wtp2'][1] - v['wtp2'][0] * v['radslp2']
+    xint = (v['radoff2'] - v['v1937'][0]) / (v['v1937'][1] - v['radslp2'])
+    yint = v['v1937'][1] * xint + v['v1937'][0]
+    v['radlen2'] = np.sqrt(
+        np.square(xint - v['wtp2'][0]) + np.square(yint - v['wtp2'][1])
     )
 
-    v["radslp1"] = np.float64(v["radslp1"])
-    v["radoff1"] = np.float64(v["radoff1"])
-    v["radlen1"] = np.float64(v["radlen1"])
-    v["radslp2"] = np.float64(v["radslp2"])
-    v["radoff2"] = np.float64(v["radoff2"])
-    v["radlen2"] = np.float64(v["radlen2"])
+    v['radslp1'] = np.float64(v['radslp1'])
+    v['radoff1'] = np.float64(v['radoff1'])
+    v['radlen1'] = np.float64(v['radlen1'])
+    v['radslp2'] = np.float64(v['radslp2'])
+    v['radoff2'] = np.float64(v['radoff2'])
+    v['radlen2'] = np.float64(v['radlen2'])
 
     return v
 
@@ -418,7 +418,7 @@ def calc_rad_coeffs(p, v):
 def sst_clean_sb2(iceout, missval, landval, month, pole):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
-    sst_fn = f"../SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int"
+    sst_fn = f'../SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
 
     is_not_land = iceout != landval
@@ -462,7 +462,7 @@ def spatial_interp(iceout, missval, landval, nphole_fn):
 def coastal_fix(arr, missval, landval, minic):
     # Apply coastal_fix() routine per Bootstrap
 
-    # Calculate "temp" array
+    # Calculate 'temp' array
     #   -1 is no ice
     #    1 is safe from removal
     #    0 is might-be-removed
@@ -531,9 +531,9 @@ def coastal_fix(arr, missval, landval, minic):
 
     # HERE: temp array has been set
 
-    # Calculate "arr2" array
+    # Calculate 'arr2' array
     # This is initially a copy of the arr array, but then has values
-    #   set to zero where "appropriate" based on the temp array
+    #   set to zero where 'appropriate' based on the temp array
     arr2 = arr.copy()
 
     # This is very complicated to figure out as modification
@@ -736,7 +736,7 @@ def get_satymd_from_tbfn(fn):
     import os
 
     bfn = os.path.basename(fn)
-    print(f"bfn: {bfn}")
+    print(f'bfn: {bfn}')
     sat = bfn[4:6]
     year = bfn[7:11]
     month = bfn[11:13]
@@ -748,95 +748,95 @@ def get_satymd_from_tbfn(fn):
 def calc_bt_ice(p, v, tbs, land, water_arr, gdata):
 
     # main calc_bt_ice() block
-    vh37chk = v["vh37"][0] - v["adoff"] + v["vh37"][1] * tbs["v37"]
+    vh37chk = v['vh37'][0] - v['adoff'] + v['vh37'][1] * tbs['v37']
 
     # Compute radchk1
-    is_check1 = tbs["h37"] > vh37chk
-    is_h37_lt_rc1 = tbs["h37"] < (v["radslp1"] * tbs["v37"] + v["radoff1"])
+    is_check1 = tbs['h37'] > vh37chk
+    is_h37_lt_rc1 = tbs['h37'] < (v['radslp1'] * tbs['v37'] + v['radoff1'])
 
     iclen1 = np.sqrt(
-        np.square(tbs["v37"] - v["wtp"][0]) + np.square(tbs["h37"] - v["wtp"][1])
+        np.square(tbs['v37'] - v['wtp'][0]) + np.square(tbs['h37'] - v['wtp'][1])
     )
-    is_iclen1_gt_radlen1 = iclen1 > v["radlen1"]
+    is_iclen1_gt_radlen1 = iclen1 > v['radlen1']
     icpix1 = ret_ic_32(
-        tbs["v37"],
-        tbs["h37"],
-        v["wtp"][0],
-        v["wtp"][1],
-        v["vh37"][0],
-        v["vh37"][1],
-        p["missval"],
-        p["maxic"],
+        tbs['v37'],
+        tbs['h37'],
+        v['wtp'][0],
+        v['wtp'][1],
+        v['vh37'][0],
+        v['vh37'][1],
+        p['missval'],
+        p['maxic'],
     )
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
     # icpix1[is_h37_lt_rc1 & (iclen1 <= v['radlen1'])]
-    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > v["radlen1"])
-    icpix1[is_condition1] = iclen1[is_condition1] / v["radlen1"]
+    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > v['radlen1'])
+    icpix1[is_condition1] = iclen1[is_condition1] / v['radlen1']
 
     # Compute radchk2
-    is_v19_lt_rc2 = tbs["v19"] < (v["radslp2"] * tbs["v37"] + v["radoff2"])
+    is_v19_lt_rc2 = tbs['v19'] < (v['radslp2'] * tbs['v37'] + v['radoff2'])
 
     iclen2 = np.sqrt(
-        np.square(tbs["v37"] - v["wtp2"][0]) + np.square(tbs["v19"] - v["wtp2"][1])
+        np.square(tbs['v37'] - v['wtp2'][0]) + np.square(tbs['v19'] - v['wtp2'][1])
     )
-    is_iclen2_gt_radlen2 = iclen2 > v["radlen2"]
+    is_iclen2_gt_radlen2 = iclen2 > v['radlen2']
     icpix2 = ret_ic_32(
-        tbs["v37"],
-        tbs["v19"],
-        v["wtp2"][0],
-        v["wtp2"][1],
-        v["v1937"][0],
-        v["v1937"][1],
-        p["missval"],
-        p["maxic"],
+        tbs['v37'],
+        tbs['v19'],
+        v['wtp2'][0],
+        v['wtp2'][1],
+        v['v1937'][0],
+        v['v1937'][1],
+        p['missval'],
+        p['maxic'],
     )
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
-    icpix2[is_condition2] = iclen2[is_condition2] / v["radlen2"]
+    icpix2[is_condition2] = iclen2[is_condition2] / v['radlen2']
 
     ic = icpix1
     ic[~is_check1] = icpix2[~is_check1]
 
-    is_ic_is_missval = ic == p["missval"]
-    ic[is_ic_is_missval] = p["missval"]
+    is_ic_is_missval = ic == p['missval']
+    ic[is_ic_is_missval] = p['missval']
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_arr == 1] = 0.0
-    ic[gdata != 0] = p["missval"]
-    ic[land != 0] = p["landval"]
+    ic[gdata != 0] = p['missval']
+    ic[land != 0] = p['landval']
 
     return ic
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Set a flag for getting *exactly* the same output file
     # as the Goddard fortran code produces
     do_exact = True
     # do_exact = False
 
-    orig_params = import_cfg_file("./ret_ic_params.json")
-    params = import_cfg_file("./ret_ic_params.json")
+    orig_params = import_cfg_file('./ret_ic_params.json')
+    params = import_cfg_file('./ret_ic_params.json')
 
-    orig_vars = import_cfg_file("./ret_ic_variables.json")
-    variables = import_cfg_file("./ret_ic_variables.json")
+    orig_vars = import_cfg_file('./ret_ic_variables.json')
+    variables = import_cfg_file('./ret_ic_variables.json')
 
     # Convert params to variables
 
     tbs = {}
     otbs = {}
 
-    for tb in ("v19", "h37", "v37", "v22"):
-        otbs[tb] = read_tb_field(params["raw_fns"][tb])
+    for tb in ('v19', 'h37', 'v37', 'v22'):
+        otbs[tb] = read_tb_field(params['raw_fns'][tb])
 
-    land_arr = np.fromfile(params["raw_fns"]["land"], dtype=np.int16).reshape(448, 304)
+    land_arr = np.fromfile(params['raw_fns']['land'], dtype=np.int16).reshape(448, 304)
 
     new_gdata = compute_gdata(
-        otbs["v37"],
-        otbs["h37"],
-        otbs["v19"],
-        otbs["v22"],
-        params["mintb"],
-        params["maxtb"],
+        otbs['v37'],
+        otbs['h37'],
+        otbs['v19'],
+        otbs['v22'],
+        params['mintb'],
+        params['maxtb'],
     )
     gdata = new_gdata.astype(np.int16)
 
@@ -844,43 +844,43 @@ if __name__ == "__main__":
     # Note: even though the xfer doesn not result in identical fields,
     #       the sample output is still identical (!)
     new_tbs = xfer_tbs_nrt(
-        otbs["v37"], otbs["h37"], otbs["v19"], otbs["v22"], params["sat"]
+        otbs['v37'], otbs['h37'], otbs['v19'], otbs['v22'], params['sat']
     )
-    for tb in ("v19", "h37", "v37", "v22"):
+    for tb in ('v19', 'h37', 'v37', 'v22'):
         tbs[tb] = new_tbs[tb]
 
     # *** CALL ret_para_nsb2 for vh37 ***
-    para_vals = ret_para_nsb2("vh37", params["sat"], params["seas"])
-    params["wintrc"] = para_vals["wintrc"]
-    params["wslope"] = para_vals["wslope"]
-    params["wxlimt"] = para_vals["wxlimt"]
-    params["ln1"] = para_vals["lnline"]
-    params["lnchk"] = para_vals["lnchk"]
-    variables["wtp"] = para_vals["wtp"]
-    variables["itp"] = para_vals["itp"]
+    para_vals = ret_para_nsb2('vh37', params['sat'], params['seas'])
+    params['wintrc'] = para_vals['wintrc']
+    params['wslope'] = para_vals['wslope']
+    params['wxlimt'] = para_vals['wxlimt']
+    params['ln1'] = para_vals['lnline']
+    params['lnchk'] = para_vals['lnchk']
+    variables['wtp'] = para_vals['wtp']
+    variables['itp'] = para_vals['itp']
 
     # *** CALL ret_water_ssmi() ***
     new_water_arr = ret_water_ssmi(
-        tbs["v37"],
-        tbs["h37"],
-        tbs["v22"],
-        tbs["v19"],
+        tbs['v37'],
+        tbs['h37'],
+        tbs['v22'],
+        tbs['v19'],
         land_arr,
         gdata,
-        params["wslope"],
-        params["wintrc"],
-        params["wxlimt"],
-        params["ln1"],
+        params['wslope'],
+        params['wintrc'],
+        params['wxlimt'],
+        params['ln1'],
     )
     water_arr = new_water_arr
 
     # Set wtp, which is tp37v and tp37h
-    variables["wtp37v"] = ret_wtp_32(water_arr, tbs["v37"])
-    variables["wtp37h"] = ret_wtp_32(water_arr, tbs["h37"])
-    if (variables["wtp"][0] - 10) < variables["wtp37v"] < (variables["wtp"][0] + 10):
-        variables["wtp"][0] = variables["wtp37v"]
-    if (variables["wtp"][1] - 10) < variables["wtp37h"] < (variables["wtp"][1] + 10):
-        variables["wtp"][1] = variables["wtp37h"]
+    variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
+    variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
+    if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
+        variables['wtp'][0] = variables['wtp37v']
+    if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
+        variables['wtp'][1] = variables['wtp37h']
 
     # ## CALL ret_linifit2() for vh37 ###
     # Note: I cannot get this to give exact answers because of roundoff
@@ -888,41 +888,41 @@ if __name__ == "__main__":
     calc_vh37 = ret_linfit_32(
         land_arr,
         gdata,
-        tbs["v37"],
-        tbs["h37"],
-        params["ln1"],
-        params["lnchk"],
-        params["add1"],
+        tbs['v37'],
+        tbs['h37'],
+        params['ln1'],
+        params['lnchk'],
+        params['add1'],
         water_arr,
     )
     if do_exact:
-        print("\nNot using calculated vh37:")
-        print(f"  calculated: {calc_vh37}")
-        print(f'        used: {variables["vh37"]}')
+        print('\nNot using calculated vh37:')
+        print(f'  calculated: {calc_vh37}')
+        print(f"        used: {variables['vh37']}")
     else:
-        variables["vh37"] = calc_vh37
+        variables['vh37'] = calc_vh37
 
     # *** CALL ret_adj_adoff ***
-    variables["adoff"] = ret_adj_adoff(variables["wtp"], variables["vh37"])
+    variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
     # *** CALL ret_para_nsb2 for v1937 ***
-    para_vals = ret_para_nsb2("v1937", params["sat"], params["seas"])
-    params["ln2"] = para_vals["lnline"]
-    variables["wtp2"] = para_vals["wtp"]
-    variables["itp2"] = para_vals["itp"]
+    para_vals = ret_para_nsb2('v1937', params['sat'], params['seas'])
+    params['ln2'] = para_vals['lnline']
+    variables['wtp2'] = para_vals['wtp']
+    variables['itp2'] = para_vals['itp']
 
     # variables['wtp2'] = para_vals['wtp']
-    variables["itp2"] = para_vals["itp"]
-    variables["v1937"] = para_vals["iceline"]
+    variables['itp2'] = para_vals['itp']
+    variables['v1937'] = para_vals['iceline']
 
     # variables['wtp2'] = para_vals['wtp']
 
     # *** CALL ret_wtp() for wtp19v ***
-    variables["wtp19v"] = ret_wtp_32(water_arr, tbs["v19"])
-    if (variables["wtp2"][0] - 10) < variables["wtp37v"] < (variables["wtp2"][0] + 10):
-        variables["wtp2"][0] = variables["wtp37v"]
-    if (variables["wtp2"][1] - 10) < variables["wtp19v"] < (variables["wtp2"][1] + 10):
-        variables["wtp2"][1] = variables["wtp19v"]
+    variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+    if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
+        variables['wtp2'][0] = variables['wtp37v']
+    if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
+        variables['wtp2'][1] = variables['wtp19v']
 
     # ## CALL ret_linifit2() for v1937 ###
     # Note: I cannot get this to give exact answers because of roundoff
@@ -932,23 +932,23 @@ if __name__ == "__main__":
     calc_v1937 = ret_linfit_32(
         land_arr,
         gdata,
-        tbs["v37"],
-        tbs["v19"],
-        params["ln2"],
-        params["lnchk"],
-        params["add2"],
+        tbs['v37'],
+        tbs['v19'],
+        params['ln2'],
+        params['lnchk'],
+        params['add2'],
         water_arr,
-        tba=tbs["h37"],
-        iceline=variables["vh37"],
-        adoff=variables["adoff"],
+        tba=tbs['h37'],
+        iceline=variables['vh37'],
+        adoff=variables['adoff'],
     )
     if do_exact:
-        variables["v1937"] = orig_vars["v1937"]
-        print("\nNot using calculated v1937 values:")
-        print(f"   calc v1937: {calc_v1937}")
-        print(f'   used v1937: {variables["v1937"]}')
+        variables['v1937'] = orig_vars['v1937']
+        print('\nNot using calculated v1937 values:')
+        print(f'   calc v1937: {calc_v1937}')
+        print(f"   used v1937: {variables['v1937']}")
     else:
-        variables["v1937"] = calc_v1937
+        variables['v1937'] = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
     variables = calc_rad_coeffs_32(params, variables)
@@ -958,35 +958,35 @@ if __name__ == "__main__":
 
     # *** Do sst cleaning ***
     iceout_sst = sst_clean_sb2(
-        iceout, params["missval"], params["landval"], params["month"], params["pole"]
+        iceout, params['missval'], params['landval'], params['month'], params['pole']
     )
 
     # *** Do spatial interp ***
     iceout_spi = spatial_interp(
-        iceout_sst, params["missval"], params["landval"], params["raw_fns"]["nphole"]
+        iceout_sst, params['missval'], params['landval'], params['raw_fns']['nphole']
     )
 
     # *** Do spatial interp ***
     iceout_fix = coastal_fix(
-        iceout_sst, params["missval"], params["landval"], params["minic"]
+        iceout_sst, params['missval'], params['landval'], params['minic']
     )
-    iceout_fix[iceout_fix < params["minic"]] = 0
+    iceout_fix[iceout_fix < params['minic']] = 0
 
     # *** Do fix_output ***
     fixout = fix_output_gdprod(
         iceout_fix,
-        params["minval"],
-        params["maxval"],
-        params["landval"],
-        params["missval"],
+        params['minval'],
+        params['maxval'],
+        params['landval'],
+        params['missval'],
     )
 
     # *** Write the output to a similar file name as fortran code ***
     # Derive year from a tb filename
-    sat, year, month, day = get_satymd_from_tbfn(params["raw_fns"]["v37"])
-    ofn = f"NH_{year}{month}{day}_py_NRT_f{sat}.ic"
+    sat, year, month, day = get_satymd_from_tbfn(params['raw_fns']['v37'])
+    ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
     fixout.tofile(ofn)
-    print(f"Wrote output file: {ofn}")
+    print(f'Wrote output file: {ofn}')
 
-    print("Finished compute_bt_ic.py")
-    print(" ")  # To add a blank line after run
+    print('Finished compute_bt_ic.py')
+    print(' ')  # To add a blank line after run
