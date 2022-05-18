@@ -1,12 +1,7 @@
-"""
-fpcompt.py
-
-"""
-
-import numpy as np
 import os
 import sys
 
+import numpy as np
 
 fn1 = sys.argv[1]
 fn2 = sys.argv[2]
@@ -24,4 +19,4 @@ print(f'diff max: {np.max(diff)}')
 if np.max(np.abs(diff)) < 0.0001:
     print('  GOOD!')
 else:
-    print("  oooh, is that okay...?")
+    print('  oooh, is that okay...?')

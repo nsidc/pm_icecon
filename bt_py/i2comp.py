@@ -1,12 +1,7 @@
-"""
-fpcompt.py
-
-"""
-
-import numpy as np
 import os
 import sys
 
+import numpy as np
 
 fn1 = sys.argv[1]
 fn2 = sys.argv[2]
@@ -25,7 +20,7 @@ print(f'num diffs: {np.sum(np.where(diff != 0, 1, 0))}')
 if np.max(np.abs(diff)) < 2:
     print('  GOOD!')
 else:
-    print("  oooh, is that okay...?")
+    print('  oooh, is that okay...?')
 
 diff = diff.reshape(448, 304)
 print(f'{np.where(diff != 0)}')

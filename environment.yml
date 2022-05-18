@@ -1,0 +1,21 @@
+name: cdr_amsr2
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  # Testing/utilities
+  - black ~=22.3
+  - flake8 ~=4.0
+  - flake8-quotes ~=3.3
+    # Can detect certain poor practices; black can't:
+  - flake8-bugbear ~=22.4
+  # Can detect "unnecessary" comprehensions; black can't:
+  - flake8-comprehensions ~=3.9
+  # Can check the "voice" of a docstring subject; black can't:
+  - flake8-docstrings ~=1.6
+  - invoke ~=1.7
+  - isort ~=5.10
+
+  # Runtime dependencies
+  - python ~=3.10.4
+  - numpy ~=1.22.3
