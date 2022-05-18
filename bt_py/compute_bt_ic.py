@@ -186,7 +186,11 @@ def ret_wtp_32(water_arr, tb):
     pct = 0.02
 
     # Compute quarter-Kelvin histograms
-    histo, histo_edges = np.histogram(tb[water_arr == 1], 1200, range=[0, 300])
+    histo, histo_edges = np.histogram(
+        tb[water_arr == 1],
+        bins=1200,
+        range=(0, 300),
+    )
     nvals = histo.sum()
 
     # Remove low-count bins (but don't adjust total ??!!)
