@@ -13,6 +13,7 @@ dependencies:
   - flake8-comprehensions ~=3.9
   # Can check the "voice" of a docstring subject; black can't:
   - flake8-docstrings ~=1.6
+  - invoke ~=1.7
   - isort ~=5.10
 
   # Runtime dependencies
