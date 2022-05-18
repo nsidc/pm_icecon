@@ -63,4 +63,3 @@ dependencies:
     - numpy==1.22.3
     - setuptools==62.3.1
     - typed-ast==1.5.3
-prefix: /home/trst2284/miniconda3/envs/cdr_amsr2
