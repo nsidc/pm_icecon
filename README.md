@@ -43,15 +43,20 @@ $ ln -s /share/apps/amsr2-cdr/cdr_testdata /path/to/cdr_amsr2/repo/
 
 # Setting up for initial run:
 
+First, create and activate the `cdr_amsr2` conda environment:
+
+    conda env create
+    conda activate cdr_amsr2
+
 Create symbolic links for original ancillary, input, and output directories.
 
 In ./SB2_NRT_programs/, create:
 
-      ln -s ../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
+    ln -s ../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
 
-      ln -s ../cdr_testdata/bt_goddard_orig_input_tbs/ orig_input_tbs
+    ln -s ../cdr_testdata/bt_goddard_orig_input_tbs/ orig_input_tbs
 
-      ln -s ../cdr_testdata/bt_goddard_orig_output/ orig_output
+    ln -s ../cdr_testdata/bt_goddard_orig_output/ orig_output
 
 Generate the fortran output:
 
@@ -92,10 +97,12 @@ Two short comparison scripts in bt_py/ used to compare 4-byte float and
 
 # Misc. Development notes
 
-**TODO**: add invoke tasks for these common tasks.
-
-## Run code formatter (black)
+This project uses `invoke` as a task runner. To see all of the available tasks:
 
 ```
-$ black ./
+$ invoke -l
+Available tasks:
+
+  format.format (format)    Apply formatting standards to the codebase.
+  test.lint (test.flake8)   Run flake8 linting.
 ```
