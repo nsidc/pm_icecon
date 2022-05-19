@@ -836,7 +836,9 @@ if __name__ == '__main__':
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = read_tb_field(
-            (THIS_DIR / params['raw_fns'][tb]).resolve()  # type: ignore [literal-required]
+            (
+                THIS_DIR / params['raw_fns'][tb]  # type: ignore [literal-required]
+            ).resolve()
         )
 
     land_arr = np.fromfile(
