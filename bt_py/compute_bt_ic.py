@@ -6,8 +6,13 @@ and computes:
 """
 
 import json
+from pathlib import Path
 
 import numpy as np
+
+from bt_py._types import Params, ParaVals, Variables
+
+THIS_DIR = Path(__file__).parent
 
 
 def xwm(m='here'):
@@ -19,21 +24,18 @@ def f(num):
     return np.float32(num)
 
 
-def import_cfg_file(ifn):
-    with open(ifn) as f:
-        params = json.load(f)
-
-    return params
+def import_cfg_file(ifn: Path):
+    return json.loads(ifn.read_text())
 
 
-def read_tb_field(tbfn):
+def read_tb_field(tbfn: Path) -> np.ndarray:
     # Read int16 scaled by 10 and return float32 unscaled
     raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
     return fdiv(raw.astype(np.float32), 10)
 
 
-def is_outofrange_tb(tb, mintb, maxtb):
+def is_outofrange_tb(tb, mintb, maxtb) -> bool:
     # from the gdata calculation
     return (tb < mintb) | (tb > maxtb)
 
@@ -101,7 +103,7 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset, sat, season):
+def ret_para_nsb2(tbset, sat, season) -> ParaVals:
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
     #       to identify the TB set whose parameters are being set
@@ -177,7 +179,7 @@ def ret_para_nsb2(tbset, sat, season):
     }
 
 
-def ret_wtp_32(water_arr, tb):
+def ret_wtp_32(water_arr: np.ndarray, tb: np.ndarray) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
     # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
@@ -326,7 +328,7 @@ def fmul(a, b):
     return np.multiply(a, b, dtype=np.float32)
 
 
-def fdiv(a, b):
+def fdiv(a, b) -> np.ndarray:
     return np.divide(a, b, dtype=np.float32)
 
 
@@ -421,7 +423,11 @@ def calc_rad_coeffs(p, v):
 def sst_clean_sb2(iceout, missval, landval, month, pole):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
-    sst_fn = f'../SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+    sst_fn = (
+        THIS_DIR
+        / '..'
+        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+    ).resolve()
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
 
     is_not_land = iceout != landval
@@ -435,7 +441,7 @@ def sst_clean_sb2(iceout, missval, landval, month, pole):
     return ice_sst
 
 
-def spatial_interp(iceout, missval, landval, nphole_fn):
+def spatial_interp(iceout, missval: float, landval: float, nphole_fn: Path):
     # implement fortran's spatial_interp() routine
     if iceout.shape[1] == 304:
         holemask = np.fromfile(nphole_fn, dtype=np.int16).reshape(448, 304)
@@ -817,11 +823,11 @@ if __name__ == '__main__':
     do_exact = True
     # do_exact = False
 
-    orig_params = import_cfg_file('./ret_ic_params.json')
-    params = import_cfg_file('./ret_ic_params.json')
+    orig_params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
+    params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
 
-    orig_vars = import_cfg_file('./ret_ic_variables.json')
-    variables = import_cfg_file('./ret_ic_variables.json')
+    orig_vars: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
+    variables: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
 
     # Convert params to variables
 
@@ -829,9 +835,13 @@ if __name__ == '__main__':
     otbs = {}
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
-        otbs[tb] = read_tb_field(params['raw_fns'][tb])
+        otbs[tb] = read_tb_field(
+            (THIS_DIR / params['raw_fns'][tb]).resolve()  # type: ignore [literal-required]
+        )
 
-    land_arr = np.fromfile(params['raw_fns']['land'], dtype=np.int16).reshape(448, 304)
+    land_arr = np.fromfile(
+        (THIS_DIR / params['raw_fns']['land']).resolve(), dtype=np.int16
+    ).reshape(448, 304)
 
     new_gdata = compute_gdata(
         otbs['v37'],
@@ -880,6 +890,11 @@ if __name__ == '__main__':
     # Set wtp, which is tp37v and tp37h
     variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
     variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
+
+    # assert these keys are not None so the typechecker does not complain.
+    assert variables['wtp37v'] is not None
+    assert variables['wtp37h'] is not None
+
     if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
         variables['wtp'][0] = variables['wtp37v']
     if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
@@ -922,6 +937,9 @@ if __name__ == '__main__':
 
     # *** CALL ret_wtp() for wtp19v ***
     variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+
+    assert variables['wtp19v'] is not None
+
     if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
         variables['wtp2'][0] = variables['wtp37v']
     if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
@@ -966,7 +984,10 @@ if __name__ == '__main__':
 
     # *** Do spatial interp ***
     iceout_spi = spatial_interp(
-        iceout_sst, params['missval'], params['landval'], params['raw_fns']['nphole']
+        iceout_sst,
+        params['missval'],
+        params['landval'],
+        (THIS_DIR / params['raw_fns']['nphole']).resolve(),
     )
 
     # *** Do spatial interp ***
