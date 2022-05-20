@@ -1,0 +1,224 @@
+/*  team.c */
+# include "head.h"
+# include "globals.h"
+# include "mapfunctions.h"
+
+
+/*
+   subroutine will compute Team algorithm total ice concentration and
+   multiyear fraction. a structure of type map is returned containing
+   the appropriate type of ice concentration.
+   icetype=1 ==> total
+   icetype=2 ==> multiyear
+   icetype=3 ==> firstyear
+   filter is "Off" == 0
+             "both filters on" == 1
+*/
+
+Result team(int icetype, int filter, int missing, Map brtemps[], double scale )
+{
+	Map ice;
+	Map v37, v22, v19, h19;
+	Result output;
+
+	double pr, gr, prtimesgr, gr2219;
+	double dd, my, fy, dif, sum;
+  double arr_dd[448][304];
+  double arr_fy[448][304];
+  double arr_my[448][304];
+  double gr_3719[448][304];
+  double gr_2219[448][304];
+  unsigned char arr_eval[448][304];
+  unsigned char arr_bad[448][304];
+	short total, blank=-10;  /*the total ice concentration*/
+
+	/* GR weather filters for NIMBUS-7 SMMR, F-8 SSM/I, F11, F13, F17 */
+	static double grfilt[6] = {
+		0.07, 	0.07,	0.05,	0.05, 0.05, 0.050};
+        /* added for F17 differing pole GR values */
+	static double grfilt_sh[6] = {
+		0.07, 	0.07,	0.05,	0.05, 0.05, 0.053};
+	static double gr2219filt[6] = {
+		9999.9,	9999.9,	0.045,	0.045, 0.045, 0.045};
+
+	char ans[4];
+	long i, j, k, l;
+
+	output.status = FALSE;
+	ice = allocate ( maxcol, maxrow );
+
+	/* calibrate SSM/I data to match F-8 temperatures */
+	if (sensor == F11SSMI || sensor == SEASAT)
+	{
+    printf("Calibrating data...\n");
+		v37 = cal_ssmi_temps(V37, missing, brtemps, scale );
+		v22 = cal_ssmi_temps(V22, missing, brtemps, scale );
+		v19 = cal_ssmi_temps(V19, missing, brtemps, scale );
+		h19 = cal_ssmi_temps(H19, missing, brtemps, scale );
+	}
+	else
+	{
+    printf("NOT calibrating data...\n");
+		v37 = brtemps[V37];
+		v22 = brtemps[V22];
+		v19 = brtemps[V19];
+		h19 = brtemps[H19];
+	}
+
+  /* added for F17 differing pole GR values */
+  if (pole == 1) {
+    printf("Setting grfilt to grfilt_sh\n");
+    grfilt[sensor] = grfilt_sh[sensor];
+  }
+	
+	
+	coefficients ( MY, 0, pole );	/* coefficients using MY tie points */
+	print_coefficients( );
+        printf("sensor is %ld\n", sensor);
+	printf("Filters are %f, %f\n", gr2219filt[sensor], grfilt[sensor]);
+	printf("icetype is: %d\n", icetype);
+	printf("filter is: %d\n", filter);
+
+	for(i=0;i<maxrow;i++) {
+		for(j=0;j<maxcol;j++) {
+      arr_dd[i][j] = 0;
+      arr_fy[i][j] = 0;
+      arr_my[i][j] = 0;
+      arr_bad[i][j] = 0;
+      arr_eval[i][j] = 0;
+      gr_2219[i][j] = 0;
+      gr_3719[i][j] = 0;
+    }
+  }
+
+  printf("gr2219filt[sensor]: %lf\n", gr2219filt[sensor]);
+  printf("    grfilt[sensor]: %lf\n", grfilt[sensor]);
+
+	for(i=0;i<maxrow;i++) {
+		for(j=0;j<maxcol;j++) {
+ 			if ( v19.img[i][j]==missing ||
+			      h19.img[i][j]==missing ||
+			      v37.img[i][j]==missing ||
+			      ( (sensor==F8SSMI||sensor==F11SSMI) && v22.img[i][j]==missing ) ){
+				ice.img[i][j] = blank;
+        arr_eval[i][j] = 120;  /* bad tb data */
+      } else {
+				/* compute polarization and gradient ratios*/
+				dif = (v37.img[i][j] - v19.img[i][j]);
+				sum = (v37.img[i][j] + v19.img[i][j]);
+				gr = dif/sum;
+        gr_3719[i][j] = gr;
+
+				dif = (v22.img[i][j] - v19.img[i][j]);
+				sum = (v22.img[i][j] + v19.img[i][j]);
+				gr2219 = dif/sum;
+        gr_2219[i][j] = gr2219;
+
+				if ((filter == 0) ||
+				    ((filter == 1) && (gr2219 <= gr2219filt[sensor]) && (gr <= grfilt[sensor])))
+				{
+          arr_eval[i][j] = 50;  /* good! */
+
+					dif = (v19.img[i][j] - h19.img[i][j]);
+					sum = (v19.img[i][j] + h19.img[i][j]);
+					pr = dif/sum;
+
+					prtimesgr = pr * gr;
+
+					dd = E + F*pr + G*gr + H*prtimesgr;
+					fy = A + B*pr + C*gr + D*prtimesgr;
+					my = I + J*pr + K*gr + L*prtimesgr;
+
+          arr_dd[i][j] = dd;
+          arr_fy[i][j] = fy;
+          arr_my[i][j] = my;
+
+					if ( dd==0 ) printf ( "float error 2\n" );
+					switch ( icetype )
+					{
+					case 1:
+						ice.img[i][j] = (short)
+						    ((fy + my)/dd*1000.);
+						break;
+					case 2:
+						total = (short) ((fy + my)/dd*1000.);
+						ice.img[i][j] = (short) (my/dd*1000.);
+						if (ice.img[i][j] > total)
+							ice.img[i][j] = total;
+						break;
+					case 3:
+						total = (short)((fy + my)/dd*1000.);
+						ice.img[i][j] = (short) (fy/dd*1000.);
+						if (ice.img[i][j] > total)
+							ice.img[i][j] = total;
+						break;
+					default:
+						printf("invalid option team()\n");
+						exit(0);
+					}	/* end of switch */
+				}	/* end of if filter */
+				else {
+					ice.img[i][j] = 0;
+          arr_bad[i][j] = 1;
+          arr_eval[i][j] = 200;  /* weather filtered */
+        }
+				if(ice.img[i][j] < 0)
+					ice.img[i][j] = 0;
+			}	/* end of if missing */
+					if (i == 190 && j == 120) printf("++++++++++++++++c ice[190][120] = %d %d %d  %d %d\n",ice.img[190][120],h19.img[190][120],v19.img[190][120],v22.img[190][120],v37.img[190][120]);
+		}		/* end of j */
+	} 			/* end of i */
+
+  FILE *outfile;
+
+  outfile = fopen("gr_2219_c.dat", "wb");
+  fwrite(&gr_2219, sizeof(double), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: gr_2219_c.dat\n");
+
+  outfile = fopen("gr_3719_c.dat", "wb");
+  fwrite(&gr_3719, sizeof(double), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: gr_3719_c.dat\n");
+
+  outfile = fopen("arr_eval_c.dat", "wb");
+  fwrite(&arr_eval, sizeof(unsigned char), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: arr_eval_c.dat\n");
+
+  outfile = fopen("dd_c.dat", "wb");
+  fwrite(&arr_dd, sizeof(double), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: dd_c.dat\n");
+
+  outfile = fopen("fy_c.dat", "wb");
+  fwrite(&arr_fy, sizeof(double), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: fy_c.dat\n");
+
+  outfile = fopen("my_c.dat", "wb");
+  fwrite(&arr_my, sizeof(double), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: my_c.dat\n");
+
+  outfile = fopen("bad_c.dat", "wb");
+  fwrite(&arr_bad, sizeof(unsigned char), 304*448, outfile);
+  fclose(outfile);
+  printf("Wrote: bad_c.dat\n");
+
+
+	if (sensor==F11SSMI || sensor==SEASAT)
+	{
+		deallocate ( &v37, maxcol, maxrow );
+		deallocate ( &v22, maxcol, maxrow );
+		deallocate ( &h19, maxcol, maxrow );
+		deallocate ( &v19, maxcol, maxrow );
+	}
+
+	output.status	= TRUE;
+	output.scale	= 10.0;
+	output.missing	= blank;
+	output.data	= ice;
+
+	return ( output );
+}

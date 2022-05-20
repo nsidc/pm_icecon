@@ -1,0 +1,3 @@
+#! /bin/csh
+source /usr/local/exelis/idl82/bin/idl_setup
+/usr/local/exelis/idl82/bin/idl interpol.make

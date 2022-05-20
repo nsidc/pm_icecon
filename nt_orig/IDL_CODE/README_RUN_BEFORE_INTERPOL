@@ -1,0 +1,12 @@
+; Dec 2013
+; sometimes the first or last day processed has missing pixels that could not be filled via temporal filling (since there's no previous or next day).
+; after running quickcheck_temporal_filled_icecons.pro and quickcheck_temporal_filled_icecons_sh.pro
+; to check for this,
+; use the available closest day (either next or previous) to fill those pixels.
+;
+; the procedures below do this now: (added this info line 4/22/14)
+; use
+; run_before_interpol.pro 
+; and
+; run_before_interpol_sh.pro
+;

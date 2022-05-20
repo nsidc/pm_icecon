@@ -1,0 +1,76 @@
+FILES:
+******
+	calendar.pro
+	constants.pro
+	cw_bgroup.pro
+	cw_field.pro
+	interpol		=> startup script
+	interpol.make		=> pseudo makefile
+	interpol.pro
+	interpol.sav
+	left		
+	linear.pro
+	make_interpol		=> compilation script
+	parse.pro
+	read_file.pro
+	right
+	runinterpol
+	string.pro
+	swath_count.pro
+	warning.pro
+	write_file.pro
+
+USEAGE:
+*******
+	To compile use 'make_interpol' at the command line.
+	To run the program use 'interpol'.
+	
+DESCRIPTION:
+************
+	'interpol' linearly interpolates missing pixels in a sequence of
+images. THE FIRST and THE LAST image must be completely filled. User specifies
+the dates of the first and last image and increment for the date. Currently
+nearest neighbor interpolation is not operational and hence 'INTERPOLATION
+RANGE' has no meaning. Specify the file parameters ( dimension, type, missing
+value ). Buffer size is the number of images it keeps in memory at a time.
+Specify higher buffer size depending on the memory. Input and output
+directories actually specify the input / output filename formats. The program
+recognizes keywords such as year, month etc., which are described below. Each
+keyword must be enclosed in a pair of #.
+
+Keywords and their descriptions:
+	year	=> year of the century ( 95 for 1995 )
+	month	=> month of the year ( 01-12 )
+	monthname	=> name of the month ( jan-dec )
+	day	=> day of the month ( 01-31 )
+	jday	=> day of the year ( 01-366 )
+	century => century ( 19 for 1995 )
+
+For example, s#century##year##jday#.19v would be replaced by s1995001.19v for a
+files corresponding to day 1 for 1995. The set of keywords can be expanded by
+altering 'name_convention' procedure in 'string.pro'.
+
+Calendar interface:
+	Select the desired month, year and click on the day buttons to select.
+Click on 'Quit' to cancel. The cursor movement on the day buttons displays the
+'day of the year'.
+
+Counter interface ( obtained when 'step' button is clicked ):
+	'No' is the value returned in 'Ok' is selected. 'No' is incremented /
+decremented using the arrow buttons. The increment / decrement value is
+determined by the 'Step' value.
+
+Once the selections are made click 'Run' to interpolate, 'Quit' to exit.
+'Interrupt' button interrupts the process.
+
+Linear interpolation requires that the first and the last frame of the data
+must be completely filled. It uses a buffer to store the data, a fill matrix
+to store the values and a corresponding time matrix to store the index of source
+frame.
+
+NOTES:
+******
+	All the files must be in the same directory. This can be avoided if
+'name_convention' is made to accept conditional keywords. If 'interpol' is
+moved to a new directory change the 'location' environment variable in 
+'interpol' script to the full pathname of the new directory.
