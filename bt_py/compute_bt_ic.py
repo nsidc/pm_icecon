@@ -29,7 +29,7 @@ def import_cfg_file(ifn: Path):
     return json.loads(ifn.read_text())
 
 
-def read_tb_field(tbfn: Path) -> np.ndarray:
+def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
     # Read int16 scaled by 10 and return float32 unscaled
     raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
@@ -832,8 +832,8 @@ if __name__ == '__main__':
 
     # Convert params to variables
 
-    tbs = {}
-    otbs = {}
+    tbs: dict[str, npt.NDArray[np.float32]] = {}
+    otbs: dict[str, npt.NDArray[np.float32]] = {}
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = read_tb_field(
