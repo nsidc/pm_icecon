@@ -196,7 +196,7 @@ def ret_para_nsb2(tbset, sat, season) -> ParaVals:
     }
 
 
-def ret_wtp_32(water_arr: np.ndarray, tb: np.ndarray) -> float:
+def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
     # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
@@ -224,6 +224,9 @@ def ret_wtp_32(water_arr: np.ndarray, tb: np.ndarray) -> float:
         ival += 1
 
     ival -= 1  # undo last increment
+
+    # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
+    # returns...
     wtp = f(ival) * 0.25
 
     return wtp
@@ -357,7 +360,9 @@ def fsqt(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
     return np.array(np.sqrt(a, dtype=np.float32))
 
 
-def ret_water_ssmi(v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1):
+def ret_water_ssmi(
+    v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1
+) -> npt.NDArray[np.int16]:
     # Determine where there is definitely water
     is_land0_gdata0 = (land == 0) & (gdata == 0)
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
