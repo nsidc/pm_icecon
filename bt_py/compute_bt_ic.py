@@ -44,7 +44,7 @@ def compute_gdata(
     v22: npt.NDArray[np.float32],
     mintb: float,
     maxtb: float,
-) -> npt.NDArray[np.uint8]:
+) -> npt.NDArray[np.int16]:
     """Return an integer (1 or 0) ndarray inidcating areas of bad data.
 
     Bad data are locations where any of the given Tbs are outside the range
@@ -65,7 +65,7 @@ def compute_gdata(
         | _is_outofrange_tb(v22, mintb, maxtb)
     )
 
-    gdata = np.zeros_like(is_badtb, dtype=np.uint8)
+    gdata = np.zeros_like(is_badtb, dtype=np.int16)
     gdata[is_badtb] = 1
 
     return gdata
@@ -861,7 +861,7 @@ if __name__ == '__main__':
         (THIS_DIR / params['raw_fns']['land']).resolve(), dtype=np.int16
     ).reshape(448, 304)
 
-    new_gdata = compute_gdata(
+    gdata = compute_gdata(
         v37=otbs['v37'],
         h37=otbs['h37'],
         v19=otbs['v19'],
@@ -869,7 +869,6 @@ if __name__ == '__main__':
         mintb=params['mintb'],
         maxtb=params['maxtb'],
     )
-    gdata = new_gdata.astype(np.int16)
 
     # *** compute tbs ***
     # Note: even though the xfer doesn not result in identical fields,
