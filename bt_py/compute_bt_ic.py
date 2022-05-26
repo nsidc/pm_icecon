@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 
 from bt_py._types import Params, ParaVals, Variables
 
@@ -316,28 +317,28 @@ def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
     return ic
 
 
-def fadd(a, b):
-    return np.add(a, b, dtype=np.float32)
+def fadd(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.add(a, b, dtype=np.float32))
 
 
-def fsub(a, b):
-    return np.subtract(a, b, dtype=np.float32)
+def fsub(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.subtract(a, b, dtype=np.float32))
 
 
-def fmul(a, b):
-    return np.multiply(a, b, dtype=np.float32)
+def fmul(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.multiply(a, b, dtype=np.float32))
 
 
-def fdiv(a, b) -> np.ndarray:
-    return np.divide(a, b, dtype=np.float32)
+def fdiv(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.divide(a, b, dtype=np.float32))
 
 
-def fsqr(a):
-    return np.square(a, dtype=np.float32)
+def fsqr(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.square(a, dtype=np.float32))
 
 
-def fsqt(a):
-    return np.sqrt(a, dtype=np.float32)
+def fsqt(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.sqrt(a, dtype=np.float32))
 
 
 def ret_water_ssmi(v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1):
