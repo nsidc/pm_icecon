@@ -54,6 +54,7 @@ def compute_gdata(
 
     TODO: consider renaming this function. Can this just return a `bool` array?
     """
+
     def _is_outofrange_tb(tb, mintb, maxtb):
         return (tb < mintb) | (tb > maxtb)
 
