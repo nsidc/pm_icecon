@@ -36,18 +36,33 @@ def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
     return fdiv(raw.astype(np.float32), 10)
 
 
-def is_outofrange_tb(tb, mintb, maxtb) -> bool:
-    # from the gdata calculation
-    return (tb < mintb) | (tb > maxtb)
+def compute_gdata(
+    *,
+    v37: npt.NDArray[np.float32],
+    h37: npt.NDArray[np.float32],
+    v19: npt.NDArray[np.float32],
+    v22: npt.NDArray[np.float32],
+    mintb: float,
+    maxtb: float,
+) -> npt.NDArray[np.uint8]:
+    """Return an integer (1 or 0) ndarray inidcating areas of bad data.
 
+    Bad data are locations where any of the given Tbs are outside the range
+    defined by (mintb, maxtb)
 
-def compute_gdata(v37, h37, v19, v22, mintb, maxtb):
+    Values of 1 indicate bad data. Values of 0 indicate good data.
+
+    TODO: consider renaming this function. Can this just return a `bool` array?
+    """
+    def _is_outofrange_tb(tb, mintb, maxtb):
+        return (tb < mintb) | (tb > maxtb)
+
     # 1 if baddata, 0 if good
     is_badtb = (
-        is_outofrange_tb(v37, mintb, maxtb)
-        | is_outofrange_tb(h37, mintb, maxtb)
-        | is_outofrange_tb(v19, mintb, maxtb)
-        | is_outofrange_tb(v22, mintb, maxtb)
+        _is_outofrange_tb(v37, mintb, maxtb)
+        | _is_outofrange_tb(h37, mintb, maxtb)
+        | _is_outofrange_tb(v19, mintb, maxtb)
+        | _is_outofrange_tb(v22, mintb, maxtb)
     )
 
     gdata = np.zeros_like(is_badtb, dtype=np.uint8)
@@ -847,12 +862,12 @@ if __name__ == '__main__':
     ).reshape(448, 304)
 
     new_gdata = compute_gdata(
-        otbs['v37'],
-        otbs['h37'],
-        otbs['v19'],
-        otbs['v22'],
-        params['mintb'],
-        params['maxtb'],
+        v37=otbs['v37'],
+        h37=otbs['h37'],
+        v19=otbs['v19'],
+        v22=otbs['v22'],
+        mintb=params['mintb'],
+        maxtb=params['maxtb'],
     )
     gdata = new_gdata.astype(np.int16)
 
