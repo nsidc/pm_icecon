@@ -6,7 +6,9 @@ and computes:
 """
 
 import json
+from functools import reduce
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -38,10 +40,7 @@ def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
 
 def tb_data_mask(
     *,
-    v37: npt.NDArray[np.float32],
-    h37: npt.NDArray[np.float32],
-    v19: npt.NDArray[np.float32],
-    v22: npt.NDArray[np.float32],
+    tbs: Sequence[npt.NDArray[np.float32]],
     mintb: float,
     maxtb: float,
 ) -> npt.NDArray[np.bool_]:
@@ -57,11 +56,9 @@ def tb_data_mask(
     def _is_outofrange_tb(tb, mintb, maxtb):
         return (tb < mintb) | (tb > maxtb)
 
-    is_bad_tb = (
-        _is_outofrange_tb(v37, mintb, maxtb)
-        | _is_outofrange_tb(h37, mintb, maxtb)
-        | _is_outofrange_tb(v19, mintb, maxtb)
-        | _is_outofrange_tb(v22, mintb, maxtb)
+    is_bad_tb = reduce(
+        np.logical_or,
+        [_is_outofrange_tb(tb, mintb, maxtb) for tb in tbs],
     )
 
     return is_bad_tb
@@ -888,10 +885,12 @@ if __name__ == '__main__':
     ).reshape(448, 304)
 
     tb_mask = tb_data_mask(
-        v37=otbs['v37'],
-        h37=otbs['h37'],
-        v19=otbs['v19'],
-        v22=otbs['v22'],
+        tbs=(
+            otbs['v37'],
+            otbs['h37'],
+            otbs['v19'],
+            otbs['v22'],
+        ),
         mintb=params['mintb'],
         maxtb=params['maxtb'],
     )

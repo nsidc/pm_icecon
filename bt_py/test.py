@@ -8,10 +8,12 @@ def test_tb_data_mask():
     expected = np.array([1, 1, 0, 0], dtype=bool)
 
     actual = tb_data_mask(
-        v37=np.array([1, 1, 0, 0], dtype=np.float32),
-        h37=np.array([1, 0, 0, 0], dtype=np.float32),
-        v19=np.array([1, 0, 0, 0], dtype=np.float32),
-        v22=np.array([1, 1, 0, 0], dtype=np.float32),
+        tbs=(
+            np.array([1, 1, 0, 0], dtype=np.float32),
+            np.array([1, 0, 0, 0], dtype=np.float32),
+            np.array([1, 0, 0, 0], dtype=np.float32),
+            np.array([1, 1, 0, 0], dtype=np.float32),
+        ),
         mintb=0.0,
         maxtb=0.9,
     )
