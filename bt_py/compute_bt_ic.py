@@ -145,31 +145,15 @@ def ret_para_nsb2(tbset, sat, season) -> ParaVals:
             wxlimt = 21.00
 
     if tbset == 'vh37':
-        # wtp(1)=201.916
-        # wtp(2)=132.815
         wtp = [201.916, 132.815]
-        # itp(1)=255.670
-        # itp(2)=241.713
         itp = [255.670, 241.713]
-        # lnline(1)=-73.5471
-        # lnline(2)=1.21104
         lnline = [-73.5471, 1.21104]
-        # iceline(1)=-25.9729
-        # iceline(2)=1.04382
         iceline = [-25.9729, 1.04382]
         lnchk = 1.5
     elif tbset == 'v1937':
-        # wtp(1)=201.916
-        # wtp(2)=178.771
         wtp = [201.916, 178.771]
-        # itp(1)=255.670
-        # itp(2)=258.341
         itp = [255.670, 258.341]
-        # lnline(1)=47.0061
-        # lnline(2)=0.809335
         lnline = [47.0061, 0.809335]
-        # iceline(1)=112.803
-        # iceline(2)=0.550296
         iceline = [112.803, 0.550296]
         lnchk = 1.5
 
