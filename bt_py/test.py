@@ -14,8 +14,8 @@ def test_tb_data_mask():
             np.array([1, 0, 0, 0], dtype=np.float32),
             np.array([1, 1, 0, 0], dtype=np.float32),
         ),
-        mintb=0.0,
-        maxtb=0.9,
+        min_tb=0.0,
+        max_tb=0.9,
     )
 
     assert_equal(expected, actual)
