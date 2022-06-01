@@ -44,7 +44,7 @@ def tb_data_mask(
     v22: npt.NDArray[np.float32],
     mintb: float,
     maxtb: float,
-) -> npt.NDArray[bool]:
+) -> npt.NDArray[np.bool_]:
     """Return a boolean ndarray inidcating areas of bad data.
 
     Bad data are locations where any of the given Tbs are outside the range
@@ -252,7 +252,7 @@ def linfit_32(xvals, yvals):
 
 def ret_linfit_32(
     land,
-    tb_mask: npt.NDArray[bool],
+    tb_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
     lnline,
@@ -370,7 +370,7 @@ def ret_water_ssmi(
     v22,
     v19,
     land,
-    tb_mask: npt.NDArray[bool],
+    tb_mask: npt.NDArray[np.bool_],
     wslope,
     wintrc,
     wxlimt,
@@ -795,7 +795,7 @@ def calc_bt_ice(
     tbs,
     land,
     water_arr,
-    tb_mask: npt.NDArray[bool],
+    tb_mask: npt.NDArray[np.bool_],
 ):
 
     # main calc_bt_ice() block
