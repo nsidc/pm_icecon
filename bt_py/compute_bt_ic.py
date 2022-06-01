@@ -41,8 +41,8 @@ def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
 def tb_data_mask(
     *,
     tbs: Sequence[npt.NDArray[np.float32]],
-    mintb: float,
-    maxtb: float,
+    min_tb: float,
+    max_tb: float,
 ) -> npt.NDArray[np.bool_]:
     """Return a boolean ndarray inidcating areas of bad data.
 
@@ -53,12 +53,12 @@ def tb_data_mask(
     good data.
     """
 
-    def _is_outofrange_tb(tb, mintb, maxtb):
-        return (tb < mintb) | (tb > maxtb)
+    def _is_outofrange_tb(tb, min_tb, max_tb):
+        return (tb < min_tb) | (tb > max_tb)
 
     is_bad_tb = reduce(
         np.logical_or,
-        [_is_outofrange_tb(tb, mintb, maxtb) for tb in tbs],
+        [_is_outofrange_tb(tb, min_tb, max_tb) for tb in tbs],
     )
 
     return is_bad_tb
@@ -891,8 +891,8 @@ if __name__ == '__main__':
             otbs['v19'],
             otbs['v22'],
         ),
-        mintb=params['mintb'],
-        maxtb=params['maxtb'],
+        min_tb=params['mintb'],
+        max_tb=params['maxtb'],
     )
 
     # *** compute tbs ***
