@@ -288,13 +288,6 @@ def ret_linfit_32(
     return [fit_off, fit_slp]
 
 
-def ret_wtp(tbx):
-    # use np.percentile
-    # https://numpy.org/doc/stable/reference/generated/numpy.percentile.html
-
-    return None
-
-
 def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
 
     delta_x = tbx - wtpx
