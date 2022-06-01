@@ -61,7 +61,7 @@ def tb_data_mask(
     return is_bad_tb
 
 
-def xfer_tbs_nrt(v37, h37, v19, v22, sat):
+def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     # NRT regressions
     if sat == '17':
         v37 = fadd(fmul(1.0170066, v37), -4.9383355)
@@ -857,8 +857,6 @@ if __name__ == '__main__':
     variables: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
 
     # Convert params to variables
-
-    tbs: dict[str, npt.NDArray[np.float32]] = {}
     otbs: dict[str, npt.NDArray[np.float32]] = {}
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
@@ -886,11 +884,9 @@ if __name__ == '__main__':
     # *** compute tbs ***
     # Note: even though the xfer doesn not result in identical fields,
     #       the sample output is still identical (!)
-    new_tbs = xfer_tbs_nrt(
+    tbs = xfer_tbs_nrt(
         otbs['v37'], otbs['h37'], otbs['v19'], otbs['v22'], params['sat']
     )
-    for tb in ('v19', 'h37', 'v37', 'v22'):
-        tbs[tb] = new_tbs[tb]
 
     # *** CALL ret_para_nsb2 for vh37 ***
     para_vals = ret_para_nsb2('vh37', params['sat'], params['seas'])
