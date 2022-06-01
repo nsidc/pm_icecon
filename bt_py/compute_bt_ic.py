@@ -1032,7 +1032,8 @@ if __name__ == '__main__':
     # Derive year from a tb filename
     sat, year, month, day = get_satymd_from_tbfn(params['raw_fns']['v37'])
     ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
-    fixout.tofile(ofn)
+    # TODO: consider writing this file out to an explicit output dir. Where?
+    fixout.tofile(THIS_DIR / ofn)
     print(f'Wrote output file: {ofn}')
 
     print('Finished compute_bt_ic.py')
