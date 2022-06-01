@@ -883,7 +883,7 @@ if __name__ == '__main__':
     variables['itp'] = para_vals['itp']
 
     # *** CALL ret_water_ssmi() ***
-    new_water_arr = ret_water_ssmi(
+    water_arr = ret_water_ssmi(
         tbs['v37'],
         tbs['h37'],
         tbs['v22'],
@@ -895,7 +895,6 @@ if __name__ == '__main__':
         params['wxlimt'],
         params['ln1'],
     )
-    water_arr = new_water_arr
 
     # Set wtp, which is tp37v and tp37h
     variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
