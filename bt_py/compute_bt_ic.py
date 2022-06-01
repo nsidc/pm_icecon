@@ -14,12 +14,9 @@ import numpy as np
 import numpy.typing as npt
 
 from bt_py._types import Params, ParaVals, Variables
+from bt_py.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 THIS_DIR = Path(__file__).parent
-
-
-def xwm(m='here'):
-    raise SystemExit(m)
 
 
 def f(num):
@@ -77,7 +74,7 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat):
         v19 = fadd(fmul(1.0057373, v19), -0.92638520)
         v22 = fadd(fmul(0.98793409, v22), 1.2108198)
     else:
-        xwm(f'No such sat tb xform: {sat}')
+        raise UnexpectedSatelliteError(f'No such sat tb xform: {sat}')
 
     return {
         'v37': v37,
@@ -286,9 +283,7 @@ def ret_linfit_32(
         fit_off = fadd(intrca, add)
         fit_slp = f(slopeb)
     else:
-        xwm(f'Insufficient valid linfit points: {icnt}')
-        fit_off = None
-        fit_slp = None
+        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
 
     return [fit_off, fit_slp]
 
