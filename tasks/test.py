@@ -21,6 +21,7 @@ def typecheck(ctx):
     print('🎉🦆 Type checking passed.')
 
 
+@task()
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
