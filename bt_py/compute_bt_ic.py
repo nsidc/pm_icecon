@@ -947,11 +947,8 @@ if __name__ == '__main__':
     variables['wtp2'] = para_vals['wtp']
     variables['itp2'] = para_vals['itp']
 
-    # variables['wtp2'] = para_vals['wtp']
     variables['itp2'] = para_vals['itp']
     variables['v1937'] = para_vals['iceline']
-
-    # variables['wtp2'] = para_vals['wtp']
 
     # *** CALL ret_wtp() for wtp19v ***
     variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
