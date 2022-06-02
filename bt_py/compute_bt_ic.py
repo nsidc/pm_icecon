@@ -179,7 +179,7 @@ def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) ->
     pct = 0.02
 
     # Compute quarter-Kelvin histograms
-    histo, histo_edges = np.histogram(
+    histo, _ = np.histogram(
         tb[water_arr == 1],
         bins=1200,
         range=(0, 300),
