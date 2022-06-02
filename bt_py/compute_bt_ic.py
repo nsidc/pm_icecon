@@ -6,6 +6,7 @@ and computes:
 """
 
 import json
+import re
 from functools import reduce
 from pathlib import Path
 from typing import Sequence
@@ -14,7 +15,11 @@ import numpy as np
 import numpy.typing as npt
 
 from bt_py._types import Params, ParaVals, Variables
-from bt_py.errors import BootstrapAlgError, UnexpectedSatelliteError
+from bt_py.errors import (
+    BootstrapAlgError,
+    UnexpectedFilenameError,
+    UnexpectedSatelliteError,
+)
 
 THIS_DIR = Path(__file__).parent
 
@@ -752,18 +757,21 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval):
     return fixout
 
 
-def get_satymd_from_tbfn(fn):
+def get_satymd_from_tb_filepath(filepath: Path):
     # expect filename of format:
     #  ../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin
     # Note: this is *extremely* hard-coded
-    import os
-
-    bfn = os.path.basename(fn)
-    print(f'bfn: {bfn}')
-    sat = bfn[4:6]
-    year = bfn[7:11]
-    month = bfn[11:13]
-    day = bfn[13:15]
+    filepath = filepath.name
+    fn_regex = re.compile(
+        r'tb_(?P<sat>\w{3})_(?P<yyyy>\d{4})(?P<mm>\d{2})(?P<dd>\d{2})_.*bin'
+    )
+    match = fn_regex.match(filepath)
+    if not match:
+        raise UnexpectedFilenameError(filepath)
+    sat = match.group('sat')
+    year = match.group('yyyy')
+    month = match.group('mm')
+    day = match.group('dd')
 
     return sat, year, month, day
 
@@ -1022,7 +1030,7 @@ if __name__ == '__main__':
 
     # *** Write the output to a similar file name as fortran code ***
     # Derive year from a tb filename
-    sat, year, month, day = get_satymd_from_tbfn(params['raw_fns']['v37'])
+    sat, year, month, day = get_satymd_from_tb_filepath(Path(params['raw_fns']['v37']))
     ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
     # TODO: consider writing this file out to an explicit output dir. Where?
     fixout.tofile(THIS_DIR / ofn)
