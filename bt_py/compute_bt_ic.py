@@ -445,7 +445,16 @@ def sst_clean_sb2(iceout, missval, landval, month, pole):
     return ice_sst
 
 
-def spatial_interp(iceout, missval: float, landval: float, nphole_fn: Path):
+def spatial_interp(
+    ice: npt.NDArray[np.float32],  # TODO: conc?
+    missval: float,
+    landval: float,
+    nphole_fn: Path,
+) -> npt.NDArray[np.float32]:
+    iceout = ice.copy()
+    # TODO: the pole hole mask is only applied for the northern
+    # hemisphere. Because we want this function to take grids of arbitrary size,
+    # perhaps `nphole_fn` should be an optional kwarg with a `None`.
     # implement fortran's spatial_interp() routine
     if iceout.shape[1] == 304:
         holemask = np.fromfile(nphole_fn, dtype=np.int16).reshape(448, 304)
@@ -992,7 +1001,7 @@ if __name__ == '__main__':
     )
 
     # *** Do spatial interp ***
-    iceout_spi = spatial_interp(
+    iceout_sst = spatial_interp(
         iceout_sst,
         params['missval'],
         params['landval'],
