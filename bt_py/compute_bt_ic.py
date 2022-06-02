@@ -844,7 +844,6 @@ if __name__ == '__main__':
     do_exact = True
     # do_exact = False
 
-    orig_params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
     params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
 
     orig_vars: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
