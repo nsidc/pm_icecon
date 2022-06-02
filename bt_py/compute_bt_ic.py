@@ -109,7 +109,8 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset, sat, season) -> ParaVals:
+def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
+    # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
     #       to identify the TB set whose parameters are being set
