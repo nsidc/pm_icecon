@@ -425,7 +425,7 @@ def calc_rad_coeffs(p, v):
     return v
 
 
-def sst_clean_sb2(iceout, missval, landval, month, pole):
+def sst_clean_sb2(iceout, missval, landval, month):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
     sst_fn = (
@@ -998,7 +998,7 @@ if __name__ == '__main__':
 
     # *** Do sst cleaning ***
     iceout_sst = sst_clean_sb2(
-        iceout, params['missval'], params['landval'], params['month'], params['pole']
+        iceout, params['missval'], params['landval'], params['month']
     )
 
     # *** Do spatial interp ***
