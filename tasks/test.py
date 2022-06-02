@@ -30,10 +30,22 @@ def unit(ctx):
     )
 
 
+@task()
+def vulture(ctx):
+    """Use `vulture` to detect dead code."""
+    print_and_run(
+        f'vulture'
+        f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/bt_py/_types.py'
+        f' {PROJECT_DIR}',
+        pty=True,
+    )
+
+
 @task(
     pre=[
         lint,
         typecheck,
+        vulture,
         unit,
     ],
     default=True,
