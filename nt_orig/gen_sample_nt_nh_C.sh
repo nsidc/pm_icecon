@@ -5,21 +5,21 @@
 # *Very* rough translation of .ksh script for a single file to use
 # for comparison purposes
 
-HOME=/home/scotts/sic_py/nt_orig
+HOME=/home/vagrant/cdr_amsr2/nt_orig
 
 src_dir=${HOME}/C_CODE
 
 SPATIALINT_DIR=$HOME/system/new_1_tbs_spatially_filtered
-TB_HOME=/home/scotts/sic_py/nt_orig/system/0_tbs/
+TB_HOME=/home/vagrant/cdr_amsr2/nt_orig/system/0_tbs/
 
-spi_exe=/home/scotts/sic_py/nt_orig/bin/SpatialInt_np
+spi_exe=/home/vagrant/cdr_amsr2/nt_orig/bin/SpatialInt_np
 spi_tmpfile=tmp_filelist.txt
 
-conc_dir=/home/scotts/sic_py/nt_orig/system/new_2_iceconcentrations
-conc_exe=/home/scotts/sic_py/nt_orig/bin/seaice5con
+conc_dir=/home/vagrant/cdr_amsr2/nt_orig/system/new_2_iceconcentrations
+conc_exe=/home/vagrant/cdr_amsr2/nt_orig/bin/seaice5con
 
-sst_dir=/home/scotts/sic_py/nt_orig/system/new_3_icecons_spill_sst
-sst_exe=/home/scotts/sic_py/nt_orig/bin/apply_sst_n
+sst_dir=/home/vagrant/cdr_amsr2/nt_orig/system/new_3_icecons_spill_sst
+sst_exe=/home/vagrant/cdr_amsr2/nt_orig/bin/apply_sst_n
 oldfile=system/3_icecons_spill_sst/nssss1d17tcon2018001.spill_sst
 newfile=system/new_3_icecons_spill_sst/nssss1d17tcon2018001.spill_sst
 
@@ -41,9 +41,9 @@ cd $HOME
 
 # Spatially interpolate 19h
 echo "1
-/home/scotts/sic_py/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb19h2018001" > ${spi_tmpfile}
+/home/vagrant/cdr_amsr2/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb19h2018001" > ${spi_tmpfile}
 
-# /home/scotts/sic_py/nt_orig/bin/SpatialInt_np << args
+# /home/vagrant/cdr_amsr2/nt_orig/bin/SpatialInt_np << args
 ${spi_exe} << args
 19h
 ${spi_tmpfile}
@@ -52,9 +52,9 @@ args
 
 # Spatially interpolate 19v
 echo "1
-/home/scotts/sic_py/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb19v2018001" > ${spi_tmpfile}
+/home/vagrant/cdr_amsr2/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb19v2018001" > ${spi_tmpfile}
 
-/home/scotts/sic_py/nt_orig/bin/SpatialInt_np << args
+/home/vagrant/cdr_amsr2/nt_orig/bin/SpatialInt_np << args
 19v
 ${spi_tmpfile}
 $SPATIALINT_DIR
@@ -62,9 +62,9 @@ args
 
 # Spatially interpolate 22v
 echo "1
-/home/scotts/sic_py/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb22v2018001" > ${spi_tmpfile}
+/home/vagrant/cdr_amsr2/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb22v2018001" > ${spi_tmpfile}
 
-/home/scotts/sic_py/nt_orig/bin/SpatialInt_np << args
+/home/vagrant/cdr_amsr2/nt_orig/bin/SpatialInt_np << args
 22v
 ${spi_tmpfile}
 $SPATIALINT_DIR
@@ -72,9 +72,9 @@ args
 
 # Spatially interpolate 37h
 echo "1
-/home/scotts/sic_py/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb37h2018001" > ${spi_tmpfile}
+/home/vagrant/cdr_amsr2/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb37h2018001" > ${spi_tmpfile}
 
-/home/scotts/sic_py/nt_orig/bin/SpatialInt_np << args
+/home/vagrant/cdr_amsr2/nt_orig/bin/SpatialInt_np << args
 37h
 ${spi_tmpfile}
 $SPATIALINT_DIR
@@ -82,9 +82,9 @@ args
 
 # Spatially interpolate 37v
 echo "1
-/home/scotts/sic_py/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb37v2018001" > ${spi_tmpfile}
+/home/vagrant/cdr_amsr2/nt_orig/system/0_tbs/NSSSS1DTB01/nssss1d17tb37v2018001" > ${spi_tmpfile}
 
-/home/scotts/sic_py/nt_orig/bin/SpatialInt_np << args
+/home/vagrant/cdr_amsr2/nt_orig/bin/SpatialInt_np << args
 37v
 ${spi_tmpfile}
 $SPATIALINT_DIR
@@ -103,7 +103,8 @@ ${conc_exe} 001 2018 001 2018 TOT_CON ssmif17 n
 ${sst_exe} << args
 ${conc_dir}/nssss1d17tcon2018001 
 args
-mv ${conc_dir}/nssss1d17tcon2018001.spill_sst ${sst_dir}
+
+mv -v ${conc_dir}/nssss1d17tcon2018001.spill_sst ${sst_dir}
 
 # Compare with original output
 cd $HOME
