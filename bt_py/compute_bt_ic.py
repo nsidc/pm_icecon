@@ -6,12 +6,22 @@ and computes:
 """
 
 import json
+import re
+from functools import reduce
+from pathlib import Path
+from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 
+from bt_py._types import Params, ParaVals, Variables
+from bt_py.errors import (
+    BootstrapAlgError,
+    UnexpectedFilenameError,
+    UnexpectedSatelliteError,
+)
 
-def xwm(m='here'):
-    raise SystemExit(m)
+THIS_DIR = Path(__file__).parent
 
 
 def f(num):
@@ -19,41 +29,44 @@ def f(num):
     return np.float32(num)
 
 
-def import_cfg_file(ifn):
-    with open(ifn) as f:
-        params = json.load(f)
-
-    return params
+def import_cfg_file(ifn: Path):
+    return json.loads(ifn.read_text())
 
 
-def read_tb_field(tbfn):
+def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
     # Read int16 scaled by 10 and return float32 unscaled
     raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
     return fdiv(raw.astype(np.float32), 10)
 
 
-def is_outofrange_tb(tb, mintb, maxtb):
-    # from the gdata calculation
-    return (tb < mintb) | (tb > maxtb)
+def tb_data_mask(
+    *,
+    tbs: Sequence[npt.NDArray[np.float32]],
+    min_tb: float,
+    max_tb: float,
+) -> npt.NDArray[np.bool_]:
+    """Return a boolean ndarray inidcating areas of bad data.
 
+    Bad data are locations where any of the given Tbs are outside the range
+    defined by (mintb, maxtb)
 
-def compute_gdata(v37, h37, v19, v22, mintb, maxtb):
-    # 1 if baddata, 0 if good
-    is_badtb = (
-        is_outofrange_tb(v37, mintb, maxtb)
-        | is_outofrange_tb(h37, mintb, maxtb)
-        | is_outofrange_tb(v19, mintb, maxtb)
-        | is_outofrange_tb(v22, mintb, maxtb)
+    True values indicate bad data that should be masked. False values indicate
+    good data.
+    """
+
+    def _is_outofrange_tb(tb, min_tb, max_tb):
+        return (tb < min_tb) | (tb > max_tb)
+
+    is_bad_tb = reduce(
+        np.logical_or,
+        [_is_outofrange_tb(tb, min_tb, max_tb) for tb in tbs],
     )
 
-    gdata = np.zeros_like(is_badtb, dtype=np.uint8)
-    gdata[is_badtb] = 1
-
-    return gdata
+    return is_bad_tb
 
 
-def xfer_tbs_nrt(v37, h37, v19, v22, sat):
+def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     # NRT regressions
     if sat == '17':
         v37 = fadd(fmul(1.0170066, v37), -4.9383355)
@@ -66,7 +79,7 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat):
         v19 = fadd(fmul(1.0057373, v19), -0.92638520)
         v22 = fadd(fmul(0.98793409, v22), 1.2108198)
     else:
-        xwm(f'No such sat tb xform: {sat}')
+        raise UnexpectedSatelliteError(f'No such sat tb xform: {sat}')
 
     return {
         'v37': v37,
@@ -101,7 +114,8 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset, sat, season):
+def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
+    # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
     #       to identify the TB set whose parameters are being set
@@ -137,31 +151,15 @@ def ret_para_nsb2(tbset, sat, season):
             wxlimt = 21.00
 
     if tbset == 'vh37':
-        # wtp(1)=201.916
-        # wtp(2)=132.815
         wtp = [201.916, 132.815]
-        # itp(1)=255.670
-        # itp(2)=241.713
         itp = [255.670, 241.713]
-        # lnline(1)=-73.5471
-        # lnline(2)=1.21104
         lnline = [-73.5471, 1.21104]
-        # iceline(1)=-25.9729
-        # iceline(2)=1.04382
         iceline = [-25.9729, 1.04382]
         lnchk = 1.5
     elif tbset == 'v1937':
-        # wtp(1)=201.916
-        # wtp(2)=178.771
         wtp = [201.916, 178.771]
-        # itp(1)=255.670
-        # itp(2)=258.341
         itp = [255.670, 258.341]
-        # lnline(1)=47.0061
-        # lnline(2)=0.809335
         lnline = [47.0061, 0.809335]
-        # iceline(1)=112.803
-        # iceline(2)=0.550296
         iceline = [112.803, 0.550296]
         lnchk = 1.5
 
@@ -177,7 +175,7 @@ def ret_para_nsb2(tbset, sat, season):
     }
 
 
-def ret_wtp_32(water_arr, tb):
+def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
     # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
@@ -186,7 +184,11 @@ def ret_wtp_32(water_arr, tb):
     pct = 0.02
 
     # Compute quarter-Kelvin histograms
-    histo, histo_edges = np.histogram(tb[water_arr == 1], 1200, range=[0, 300])
+    histo, _ = np.histogram(
+        tb[water_arr == 1],
+        bins=1200,
+        range=(0, 300),
+    )
     nvals = histo.sum()
 
     # Remove low-count bins (but don't adjust total ??!!)
@@ -201,6 +203,9 @@ def ret_wtp_32(water_arr, tb):
         ival += 1
 
     ival -= 1  # undo last increment
+
+    # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
+    # returns...
     wtp = f(ival) * 0.25
 
     return wtp
@@ -230,24 +235,33 @@ def linfit_32(xvals, yvals):
 
 
 def ret_linfit_32(
-    land, gdata, tbx, tby, lnline, lnchk, add, water, tba=None, iceline=None, adoff=None
+    land,
+    tb_mask: npt.NDArray[np.bool_],
+    tbx,
+    tby,
+    lnline,
+    lnchk,
+    add,
+    water,
+    tba=None,
+    iceline=None,
+    adoff=None,
 ):
     # Reproduces both ret_linfit1() and ret_linfit2()
     # Note: lnline is two, 0 is offset, 1 is slope
     # Note: iceline is two, 0 is offset, 1 is slope
 
-    is_land0_gdata0 = (land == 0) & (gdata == 0)
+    not_land_or_masked = (land == 0) & ~tb_mask
     if tba is not None:
         is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
     else:
-        is_tba_le_modad = np.zeros_like(is_land0_gdata0, dtype=bool)
-        is_tba_le_modad[:] = True
+        is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
     is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
 
     is_water0 = water == 0
 
-    is_valid = is_land0_gdata0 & is_tba_le_modad & is_tby_gt_lnline & is_water0
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & is_water0
 
     icnt = np.sum(np.where(is_valid, 1, 0))
 
@@ -259,18 +273,9 @@ def ret_linfit_32(
         fit_off = fadd(intrca, add)
         fit_slp = f(slopeb)
     else:
-        xwm(f'Insufficient valid linfit points: {icnt}')
-        fit_off = None
-        fit_slp = None
+        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
 
     return [fit_off, fit_slp]
-
-
-def ret_wtp(tbx):
-    # use np.percentile
-    # https://numpy.org/doc/stable/reference/generated/numpy.percentile.html
-
-    return None
 
 
 def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
@@ -310,33 +315,44 @@ def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
     return ic
 
 
-def fadd(a, b):
+def fadd(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.add(a, b, dtype=np.float32)
 
 
-def fsub(a, b):
+def fsub(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.subtract(a, b, dtype=np.float32)
 
 
-def fmul(a, b):
+def fmul(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.multiply(a, b, dtype=np.float32)
 
 
-def fdiv(a, b):
+def fdiv(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.divide(a, b, dtype=np.float32)
 
 
-def fsqr(a):
+def fsqr(a: npt.ArrayLike):
     return np.square(a, dtype=np.float32)
 
 
-def fsqt(a):
+def fsqt(a: npt.ArrayLike):
     return np.sqrt(a, dtype=np.float32)
 
 
-def ret_water_ssmi(v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1):
+def ret_water_ssmi(
+    v37,
+    h37,
+    v22,
+    v19,
+    land,
+    tb_mask: npt.NDArray[np.bool_],
+    wslope,
+    wintrc,
+    wxlimt,
+    ln1,
+) -> npt.NDArray[np.int16]:
     # Determine where there is definitely water
-    is_land0_gdata0 = (land == 0) & (gdata == 0)
+    not_land_or_masked = (land == 0) & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
@@ -344,7 +360,7 @@ def ret_water_ssmi(v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1)
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
 
-    is_water = is_land0_gdata0 & is_cond1 & is_cond2
+    is_water = not_land_or_masked & is_cond1 & is_cond2
 
     water = np.zeros_like(land, dtype=np.int16)
     water[is_water] = 1
@@ -352,72 +368,59 @@ def ret_water_ssmi(v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1)
     return water
 
 
-def calc_rad_coeffs_32(p, v):
+def calc_rad_coeffs_32(v: Variables):
     # Compute radlsp, radoff, radlen vars
-    # from (p)arameters and (v)ariables
+    v_out = v.copy()
 
-    v['radslp1'] = fdiv(
-        fsub(f(v['itp'][1]), f(v['wtp'][1])), fsub(f(v['itp'][0]), f(v['wtp'][0]))
+    v_out['radslp1'] = fdiv(
+        fsub(f(v_out['itp'][1]), f(v_out['wtp'][1])),
+        fsub(f(v_out['itp'][0]), f(v_out['wtp'][0])),
     )
-    v['radoff1'] = fsub(f(v['wtp'][1]), fmul(f(v['wtp'][0]), f(v['radslp1'])))
+    v_out['radoff1'] = fsub(
+        f(v_out['wtp'][1]), fmul(f(v_out['wtp'][0]), f(v_out['radslp1']))
+    )
     xint = fdiv(
-        fsub(f(v['radoff1']), f(v['vh37'][0])), fsub(f(v['vh37'][1]), f(v['radslp1']))
+        fsub(f(v_out['radoff1']), f(v_out['vh37'][0])),
+        fsub(f(v_out['vh37'][1]), f(v_out['radslp1'])),
     )
-    yint = fadd(fmul(v['vh37'][1], f(xint)), f(v['vh37'][0]))
-    v['radlen1'] = fsqt(
-        fadd(fsqr(fsub(f(xint), f(v['wtp'][0]))), fsqr(fsub(f(yint), f(v['wtp'][1]))))
+    yint = fadd(fmul(v_out['vh37'][1], f(xint)), f(v_out['vh37'][0]))
+    v_out['radlen1'] = fsqt(
+        fadd(
+            fsqr(fsub(f(xint), f(v_out['wtp'][0]))),
+            fsqr(fsub(f(yint), f(v_out['wtp'][1]))),
+        )
     )
 
-    v['radslp2'] = fdiv(
-        fsub(f(v['itp2'][1]), f(v['wtp2'][1])), fsub(f(v['itp2'][0]), f(v['wtp2'][0]))
+    v_out['radslp2'] = fdiv(
+        fsub(f(v_out['itp2'][1]), f(v_out['wtp2'][1])),
+        fsub(f(v_out['itp2'][0]), f(v_out['wtp2'][0])),
     )
-    v['radoff2'] = fsub(f(v['wtp2'][1]), fmul(f(v['wtp2'][0]), f(v['radslp2'])))
+    v_out['radoff2'] = fsub(
+        f(v_out['wtp2'][1]), fmul(f(v_out['wtp2'][0]), f(v_out['radslp2']))
+    )
     xint = fdiv(
-        fsub(f(v['radoff2']), f(v['v1937'][0])), fsub(f(v['v1937'][1]), f(v['radslp2']))
+        fsub(f(v_out['radoff2']), f(v_out['v1937'][0])),
+        fsub(f(v_out['v1937'][1]), f(v_out['radslp2'])),
     )
-    yint = fadd(fmul(f(v['v1937'][1]), f(xint)), f(v['v1937'][0]))
-    v['radlen2'] = fsqt(
-        fadd(fsqr(fsub(f(xint), f(v['wtp2'][0]))), fsqr(fsub(f(yint), f(v['wtp2'][1]))))
-    )
-
-    return v
-
-
-def calc_rad_coeffs(p, v):
-    # Compute radlsp, radoff, radlen vars
-    # from (p)arameters and (v)ariables
-
-    v['radslp1'] = (v['itp'][1] - v['wtp'][1]) / (v['itp'][0] - v['wtp'][0])
-    v['radoff1'] = v['wtp'][1] - v['wtp'][0] * v['radslp1']
-    xint = (v['radoff1'] - v['vh37'][0]) / (v['vh37'][1] - v['radslp1'])
-    yint = v['vh37'][1] * xint + v['vh37'][0]
-    v['radlen1'] = np.sqrt(
-        np.square(xint - v['wtp'][0]) + np.square(yint - v['wtp'][1])
+    yint = fadd(fmul(f(v_out['v1937'][1]), f(xint)), f(v_out['v1937'][0]))
+    v_out['radlen2'] = fsqt(
+        fadd(
+            fsqr(fsub(f(xint), f(v_out['wtp2'][0]))),
+            fsqr(fsub(f(yint), f(v_out['wtp2'][1]))),
+        )
     )
 
-    # next...do the radslp2 etc calcs
-    v['radslp2'] = (v['itp2'][1] - v['wtp2'][1]) / (v['itp2'][0] - v['wtp2'][0])
-    v['radoff2'] = v['wtp2'][1] - v['wtp2'][0] * v['radslp2']
-    xint = (v['radoff2'] - v['v1937'][0]) / (v['v1937'][1] - v['radslp2'])
-    yint = v['v1937'][1] * xint + v['v1937'][0]
-    v['radlen2'] = np.sqrt(
-        np.square(xint - v['wtp2'][0]) + np.square(yint - v['wtp2'][1])
-    )
-
-    v['radslp1'] = np.float64(v['radslp1'])
-    v['radoff1'] = np.float64(v['radoff1'])
-    v['radlen1'] = np.float64(v['radlen1'])
-    v['radslp2'] = np.float64(v['radslp2'])
-    v['radoff2'] = np.float64(v['radoff2'])
-    v['radlen2'] = np.float64(v['radlen2'])
-
-    return v
+    return v_out
 
 
-def sst_clean_sb2(iceout, missval, landval, month, pole):
+def sst_clean_sb2(iceout, missval, landval, month):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
-    sst_fn = f'../SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+    sst_fn = (
+        THIS_DIR
+        / '..'
+        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+    ).resolve()
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
 
     is_not_land = iceout != landval
@@ -431,7 +434,16 @@ def sst_clean_sb2(iceout, missval, landval, month, pole):
     return ice_sst
 
 
-def spatial_interp(iceout, missval, landval, nphole_fn):
+def spatial_interp(
+    ice: npt.NDArray[np.float32],  # TODO: conc?
+    missval: float,
+    landval: float,
+    nphole_fn: Path,
+) -> npt.NDArray[np.float32]:
+    iceout = ice.copy()
+    # TODO: the pole hole mask is only applied for the northern
+    # hemisphere. Because we want this function to take grids of arbitrary size,
+    # perhaps `nphole_fn` should be an optional kwarg with a `None`.
     # implement fortran's spatial_interp() routine
     if iceout.shape[1] == 304:
         holemask = np.fromfile(nphole_fn, dtype=np.int16).reshape(448, 304)
@@ -471,7 +483,12 @@ def coastal_fix(arr, missval, landval, minic):
 
     is_seaice = (arr > 0) & (arr <= 100.0)
 
-    off_set = (np.array((0, 1)), np.array((0, -1)), np.array((1, 0)), np.array((-1, 0)))
+    off_set = (
+        np.array((0, 1)),
+        np.array((0, -1)),
+        np.array((1, 0)),
+        np.array((-1, 0)),
+    )
 
     for offp1 in off_set:
         offn1 = -1 * offp1  # offp1 * -1
@@ -728,23 +745,33 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval):
     return fixout
 
 
-def get_satymd_from_tbfn(fn):
+def get_satymd_from_tb_filepath(filepath: Path):
     # expect filename of format:
     #  ../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin
     # Note: this is *extremely* hard-coded
-    import os
-
-    bfn = os.path.basename(fn)
-    print(f'bfn: {bfn}')
-    sat = bfn[4:6]
-    year = bfn[7:11]
-    month = bfn[11:13]
-    day = bfn[13:15]
+    filename = filepath.name
+    fn_regex = re.compile(
+        r'tb_(?P<sat>\w{3})_(?P<yyyy>\d{4})(?P<mm>\d{2})(?P<dd>\d{2})_.*bin'
+    )
+    match = fn_regex.match(filename)
+    if not match:
+        raise UnexpectedFilenameError(filepath)
+    sat = match.group('sat')
+    year = match.group('yyyy')
+    month = match.group('mm')
+    day = match.group('dd')
 
     return sat, year, month, day
 
 
-def calc_bt_ice(p, v, tbs, land, water_arr, gdata):
+def calc_bt_ice(
+    p,
+    v,
+    tbs,
+    land,
+    water_arr,
+    tb_mask: npt.NDArray[np.bool_],
+):
 
     # main calc_bt_ice() block
     vh37chk = v['vh37'][0] - v['adoff'] + v['vh37'][1] * tbs['v37']
@@ -801,7 +828,7 @@ def calc_bt_ice(p, v, tbs, land, water_arr, gdata):
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_arr == 1] = 0.0
-    ic[gdata != 0] = p['missval']
+    ic[tb_mask] = p['missval']
     ic[land != 0] = p['landval']
 
     return ic
@@ -813,40 +840,42 @@ if __name__ == '__main__':
     do_exact = True
     # do_exact = False
 
-    orig_params = import_cfg_file('./ret_ic_params.json')
-    params = import_cfg_file('./ret_ic_params.json')
+    params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
 
-    orig_vars = import_cfg_file('./ret_ic_variables.json')
-    variables = import_cfg_file('./ret_ic_variables.json')
+    orig_vars: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
+    variables: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
 
     # Convert params to variables
-
-    tbs = {}
-    otbs = {}
+    otbs: dict[str, npt.NDArray[np.float32]] = {}
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
-        otbs[tb] = read_tb_field(params['raw_fns'][tb])
+        otbs[tb] = read_tb_field(
+            (
+                THIS_DIR / params['raw_fns'][tb]  # type: ignore [literal-required]
+            ).resolve()
+        )
 
-    land_arr = np.fromfile(params['raw_fns']['land'], dtype=np.int16).reshape(448, 304)
+    land_arr = np.fromfile(
+        (THIS_DIR / params['raw_fns']['land']).resolve(), dtype=np.int16
+    ).reshape(448, 304)
 
-    new_gdata = compute_gdata(
-        otbs['v37'],
-        otbs['h37'],
-        otbs['v19'],
-        otbs['v22'],
-        params['mintb'],
-        params['maxtb'],
+    tb_mask = tb_data_mask(
+        tbs=(
+            otbs['v37'],
+            otbs['h37'],
+            otbs['v19'],
+            otbs['v22'],
+        ),
+        min_tb=params['mintb'],
+        max_tb=params['maxtb'],
     )
-    gdata = new_gdata.astype(np.int16)
 
     # *** compute tbs ***
     # Note: even though the xfer doesn not result in identical fields,
     #       the sample output is still identical (!)
-    new_tbs = xfer_tbs_nrt(
+    tbs = xfer_tbs_nrt(
         otbs['v37'], otbs['h37'], otbs['v19'], otbs['v22'], params['sat']
     )
-    for tb in ('v19', 'h37', 'v37', 'v22'):
-        tbs[tb] = new_tbs[tb]
 
     # *** CALL ret_para_nsb2 for vh37 ***
     para_vals = ret_para_nsb2('vh37', params['sat'], params['seas'])
@@ -859,23 +888,27 @@ if __name__ == '__main__':
     variables['itp'] = para_vals['itp']
 
     # *** CALL ret_water_ssmi() ***
-    new_water_arr = ret_water_ssmi(
+    water_arr = ret_water_ssmi(
         tbs['v37'],
         tbs['h37'],
         tbs['v22'],
         tbs['v19'],
         land_arr,
-        gdata,
+        tb_mask,
         params['wslope'],
         params['wintrc'],
         params['wxlimt'],
         params['ln1'],
     )
-    water_arr = new_water_arr
 
     # Set wtp, which is tp37v and tp37h
     variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
     variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
+
+    # assert these keys are not None so the typechecker does not complain.
+    assert variables['wtp37v'] is not None
+    assert variables['wtp37h'] is not None
+
     if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
         variables['wtp'][0] = variables['wtp37v']
     if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
@@ -886,7 +919,7 @@ if __name__ == '__main__':
     # The differences are roughly +/- 0.0002 in float32 conc values
     calc_vh37 = ret_linfit_32(
         land_arr,
-        gdata,
+        tb_mask,
         tbs['v37'],
         tbs['h37'],
         params['ln1'],
@@ -910,14 +943,14 @@ if __name__ == '__main__':
     variables['wtp2'] = para_vals['wtp']
     variables['itp2'] = para_vals['itp']
 
-    # variables['wtp2'] = para_vals['wtp']
     variables['itp2'] = para_vals['itp']
     variables['v1937'] = para_vals['iceline']
 
-    # variables['wtp2'] = para_vals['wtp']
-
     # *** CALL ret_wtp() for wtp19v ***
     variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+
+    assert variables['wtp19v'] is not None
+
     if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
         variables['wtp2'][0] = variables['wtp37v']
     if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
@@ -930,7 +963,7 @@ if __name__ == '__main__':
     # Try the ret_para... values for v1937
     calc_v1937 = ret_linfit_32(
         land_arr,
-        gdata,
+        tb_mask,
         tbs['v37'],
         tbs['v19'],
         params['ln2'],
@@ -950,19 +983,22 @@ if __name__ == '__main__':
         variables['v1937'] = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
-    variables = calc_rad_coeffs_32(params, variables)
+    variables = calc_rad_coeffs_32(variables)
 
     # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, gdata)
+    iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, tb_mask)
 
     # *** Do sst cleaning ***
     iceout_sst = sst_clean_sb2(
-        iceout, params['missval'], params['landval'], params['month'], params['pole']
+        iceout, params['missval'], params['landval'], params['month']
     )
 
     # *** Do spatial interp ***
-    iceout_spi = spatial_interp(
-        iceout_sst, params['missval'], params['landval'], params['raw_fns']['nphole']
+    iceout_sst = spatial_interp(
+        iceout_sst,
+        params['missval'],
+        params['landval'],
+        (THIS_DIR / params['raw_fns']['nphole']).resolve(),
     )
 
     # *** Do spatial interp ***
@@ -982,9 +1018,10 @@ if __name__ == '__main__':
 
     # *** Write the output to a similar file name as fortran code ***
     # Derive year from a tb filename
-    sat, year, month, day = get_satymd_from_tbfn(params['raw_fns']['v37'])
+    sat, year, month, day = get_satymd_from_tb_filepath(Path(params['raw_fns']['v37']))
     ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
-    fixout.tofile(ofn)
+    # TODO: consider writing this file out to an explicit output dir. Where?
+    fixout.tofile(THIS_DIR / ofn)
     print(f'Wrote output file: {ofn}')
 
     print('Finished compute_bt_ic.py')
