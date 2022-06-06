@@ -856,9 +856,11 @@ if __name__ == '__main__':
             ).resolve()
         )
 
-
     land_arr = np.fromfile(
-        (PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']).resolve(), dtype=np.int16
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
+        ).resolve(),
+        dtype=np.int16,
     ).reshape(448, 304)
 
     tb_mask = tb_data_mask(
@@ -1000,7 +1002,9 @@ if __name__ == '__main__':
         iceout_sst,
         params['missval'],
         params['landval'],
-        (PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['nphole']).resolve(),
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['nphole']
+        ).resolve(),
     )
 
     # *** Do spatial interp ***

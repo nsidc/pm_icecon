@@ -309,13 +309,17 @@ def compute_nt_conc(tbs, coefs, ratios):
 def apply_nt_spillover(conc_int16):
     # Apply the NASA Team land spillover routine
 
-    shoremap_fn = PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
+    shoremap_fn = (
+        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
+    )
     shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read shoremap from:\n  .../{os.path.basename(shoremap_fn)}')
     print(f'  shoremap min: {shoremap.min()}')
     print(f'  shoremap max: {shoremap.max()}')
 
-    minic_fn = PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
+    minic_fn = (
+        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
+    )
     minic = np.fromfile(minic_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read minic from:\n  .../{os.path.basename(minic_fn)}')
     print(f'  minic min: {minic.min()}')
@@ -401,7 +405,9 @@ def apply_polehole(conc):
     new_conc = conc.copy()
 
     polehole_fn = (
-        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
+        PACKAGE_DIR
+        / '..'
+        / 'legacy/nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
     )
     polehole = np.fromfile(polehole_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read polehole from:\n  .../{os.path.basename(polehole_fn)}')
