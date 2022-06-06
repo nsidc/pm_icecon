@@ -213,7 +213,7 @@ def compute_nt_coefficients(tp):
     return coefs
 
 
-def compute_ratios(tbs, coefs, grs):
+def compute_ratios(tbs, coefs):
     # Compute NASA Team sea ice concentration estimate
 
     # TODO: does this need to be applied somehow? Variable not currently used.
@@ -469,7 +469,7 @@ if __name__ == '__main__':
     gr_thresholds = get_gr_thresholds(params['sat'], params['hem'])
     print(f'gr_thresholds:\n{gr_thresholds}')
 
-    ratios = compute_ratios(spi_tbs, nt_coefficients, gr_thresholds)
+    ratios = compute_ratios(spi_tbs, nt_coefficients)
 
     weather_filtered = compute_weather_filtered(spi_tbs, ratios, gr_thresholds)
 
