@@ -13,8 +13,9 @@ Note: the original Goddard code involves the following files:
     3: NT ice conc, including land spillover and valid ice masking
 """
 
-import os
 import json
+import os
+
 import numpy as np
 
 
@@ -146,57 +147,69 @@ def compute_nt_coefficients(tp):
 
     coefs = {}
 
-    coefs['A'] = \
-        diff['my']['19v19h'] * diff['ow']['37v19v'] \
+    coefs['A'] = (
+        diff['my']['19v19h'] * diff['ow']['37v19v']
         - diff['my']['37v19v'] * diff['ow']['19v19h']
+    )
 
-    coefs['B'] = \
-        diff['my']['37v19v'] * sums['ow']['19v19h'] \
+    coefs['B'] = (
+        diff['my']['37v19v'] * sums['ow']['19v19h']
         - diff['ow']['37v19v'] * sums['my']['19v19h']
+    )
 
-    coefs['C'] = \
-        diff['ow']['19v19h'] * sums['my']['37v19v'] \
+    coefs['C'] = (
+        diff['ow']['19v19h'] * sums['my']['37v19v']
         - diff['my']['19v19h'] * sums['ow']['37v19v']
+    )
 
-    coefs['D'] = \
-        sums['my']['19v19h'] * sums['ow']['37v19v'] \
+    coefs['D'] = (
+        sums['my']['19v19h'] * sums['ow']['37v19v']
         - sums['my']['37v19v'] * sums['ow']['19v19h']
+    )
 
-    coefs['E'] = \
-        diff['fy']['19v19h'] * (diff['my']['37v19v'] - diff['ow']['37v19v']) \
-        + diff['ow']['19v19h'] * (diff['fy']['37v19v'] - diff['my']['37v19v']) \
+    coefs['E'] = (
+        diff['fy']['19v19h'] * (diff['my']['37v19v'] - diff['ow']['37v19v'])
+        + diff['ow']['19v19h'] * (diff['fy']['37v19v'] - diff['my']['37v19v'])
         + diff['my']['19v19h'] * (diff['ow']['37v19v'] - diff['fy']['37v19v'])
+    )
 
-    coefs['F'] = \
-        diff['fy']['37v19v'] * (sums['my']['19v19h'] - sums['ow']['19v19h']) \
-        + diff['ow']['37v19v'] * (sums['fy']['19v19h'] - sums['my']['19v19h']) \
+    coefs['F'] = (
+        diff['fy']['37v19v'] * (sums['my']['19v19h'] - sums['ow']['19v19h'])
+        + diff['ow']['37v19v'] * (sums['fy']['19v19h'] - sums['my']['19v19h'])
         + diff['my']['37v19v'] * (sums['ow']['19v19h'] - sums['fy']['19v19h'])
+    )
 
-    coefs['G'] = \
-        diff['fy']['19v19h'] * (sums['ow']['37v19v'] - sums['my']['37v19v']) \
-        + diff['ow']['19v19h'] * (sums['my']['37v19v'] - sums['fy']['37v19v']) \
+    coefs['G'] = (
+        diff['fy']['19v19h'] * (sums['ow']['37v19v'] - sums['my']['37v19v'])
+        + diff['ow']['19v19h'] * (sums['my']['37v19v'] - sums['fy']['37v19v'])
         + diff['my']['19v19h'] * (sums['fy']['37v19v'] - sums['ow']['37v19v'])
+    )
 
-    coefs['H'] = \
-        sums['fy']['37v19v'] * (sums['ow']['19v19h'] - sums['my']['19v19h']) \
-        + sums['ow']['37v19v'] * (sums['my']['19v19h'] - sums['fy']['19v19h']) \
+    coefs['H'] = (
+        sums['fy']['37v19v'] * (sums['ow']['19v19h'] - sums['my']['19v19h'])
+        + sums['ow']['37v19v'] * (sums['my']['19v19h'] - sums['fy']['19v19h'])
         + sums['my']['37v19v'] * (sums['fy']['19v19h'] - sums['ow']['19v19h'])
+    )
 
-    coefs['I'] = \
-        diff['fy']['37v19v'] * diff['ow']['19v19h'] \
+    coefs['I'] = (
+        diff['fy']['37v19v'] * diff['ow']['19v19h']
         - diff['fy']['19v19h'] * diff['ow']['37v19v']
+    )
 
-    coefs['J'] = \
-        diff['ow']['37v19v'] * sums['fy']['19v19h'] \
+    coefs['J'] = (
+        diff['ow']['37v19v'] * sums['fy']['19v19h']
         - diff['fy']['37v19v'] * sums['ow']['19v19h']
+    )
 
-    coefs['K'] = \
-        sums['ow']['37v19v'] * diff['fy']['19v19h'] \
+    coefs['K'] = (
+        sums['ow']['37v19v'] * diff['fy']['19v19h']
         - diff['ow']['19v19h'] * sums['fy']['37v19v']
+    )
 
-    coefs['L'] = \
-        sums['fy']['37v19v'] * sums['ow']['19v19h'] \
+    coefs['L'] = (
+        sums['fy']['37v19v'] * sums['ow']['19v19h']
         - sums['fy']['19v19h'] * sums['ow']['37v19v']
+    )
 
     return coefs
 
@@ -245,41 +258,40 @@ def compute_weather_filtered(tbs, ratios, thres):
     print(f'thres 2219: {thres["2219"]}')
     print(f'thres 3719: {thres["3719"]}')
 
-    filtered = \
-        (ratios['gr_2219'] > thres['2219']) \
-        | (ratios['gr_3719'] > thres['3719'])
+    filtered = (ratios['gr_2219'] > thres['2219']) | (ratios['gr_3719'] > thres['3719'])
 
     return filtered
 
 
 def compute_valid_tbs(tbs):
     # Return boolean array where TBs are valid
-    return (tbs['v19'] > 0) \
-        & (tbs['h19'] > 0) \
-        & (tbs['v37'] > 0)
+    return (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
 
 
 def compute_nt_conc(tbs, coefs, ratios):
     # Compute NASA Team sea ice concentration estimate
     pr_gr_product = ratios['pr_1919'] * ratios['gr_3719']
 
-    dd = \
-        coefs['E'] \
-        + coefs['F'] * ratios['pr_1919'] \
-        + coefs['G'] * ratios['gr_3719'] \
+    dd = (
+        coefs['E']
+        + coefs['F'] * ratios['pr_1919']
+        + coefs['G'] * ratios['gr_3719']
         + coefs['H'] * pr_gr_product
+    )
 
-    fy = \
-        coefs['A'] \
-        + coefs['B'] * ratios['pr_1919'] \
-        + coefs['C'] * ratios['gr_3719'] \
+    fy = (
+        coefs['A']
+        + coefs['B'] * ratios['pr_1919']
+        + coefs['C'] * ratios['gr_3719']
         + coefs['D'] * pr_gr_product
+    )
 
-    my = \
-        coefs['I'] \
-        + coefs['J'] * ratios['pr_1919'] \
-        + coefs['K'] * ratios['gr_3719'] \
+    my = (
+        coefs['I']
+        + coefs['J'] * ratios['pr_1919']
+        + coefs['K'] * ratios['gr_3719']
         + coefs['L'] * pr_gr_product
+    )
 
     # Because we have not excluded missing-tb and weather-filtered points,
     # it is possible for denominator 'dd' to have value of zero.  Remove
@@ -296,13 +308,17 @@ def compute_nt_conc(tbs, coefs, ratios):
 def apply_nt_spillover(conc_int16):
     # Apply the NASA Team land spillover routine
 
-    shoremap_fn = '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
+    shoremap_fn = (
+        '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
+    )
     shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read shoremap from:\n  .../{os.path.basename(shoremap_fn)}')
     print(f'  shoremap min: {shoremap.min()}')
     print(f'  shoremap max: {shoremap.max()}')
 
-    minic_fn = '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
+    minic_fn = (
+        '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
+    )
     minic = np.fromfile(minic_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read minic from:\n  .../{os.path.basename(minic_fn)}')
     print(f'  minic min: {minic.min()}')
@@ -320,17 +336,17 @@ def apply_nt_spillover(conc_int16):
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc_int16, dtype=np.uint8)
 
-    for joff in range(-3, 3+1):
-        for ioff in range(-3, 3+1):
+    for joff in range(-3, 3 + 1):
+        for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
             # print(f'offset: ({ioff}, {joff}): {offmax}')
 
             rolled = np.roll(conc_int16, (joff, ioff), axis=(0, 1))
             is_rolled_low = (rolled < 150) & (rolled >= 0)
 
-            is_at_coast = (shoremap == 5)
-            is_near_coastal = (shoremap == 4)
-            is_far_coastal = (shoremap == 3)
+            is_at_coast = shoremap == 5
+            is_near_coastal = shoremap == 4
+            is_far_coastal = shoremap == 3
 
             if offmax <= 1:
                 n_low[is_rolled_low & is_at_coast] += 1
@@ -449,13 +465,12 @@ if __name__ == '__main__':
 
     ratios = compute_ratios(spi_tbs, nt_coefficients, gr_thresholds)
 
-    weather_filtered = compute_weather_filtered(
-        spi_tbs, ratios, gr_thresholds)
+    weather_filtered = compute_weather_filtered(spi_tbs, ratios, gr_thresholds)
 
     conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
 
     # Set invalid tbs and weather-filtered values
-    conc[~ is_valid_tbs] = -10
+    conc[~is_valid_tbs] = -10
     conc[weather_filtered] = 0
     conc_int16 = conc.astype(np.int16)
 
