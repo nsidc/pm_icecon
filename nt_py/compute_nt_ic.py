@@ -12,6 +12,7 @@ Note: the original Goddard code involves the following files:
 
 import json
 import os
+from typing import Any
 
 import numpy as np
 
@@ -96,7 +97,7 @@ def correct_spi_tbs(tbs):
 def get_tiepoints(sat, hem):
     # Return the tiepoints for this sat/hem combo
 
-    tiepoints = {}
+    tiepoints: dict[str, dict[str, float]] = {}
     if sat == 'f17':
         tiepoints['v19'] = {}
         tiepoints['h19'] = {}
@@ -131,8 +132,9 @@ def compute_nt_coefficients(tp):
     #                     for open water, multiyear, first-year respectively
 
     # Intermediate variables
-    diff = {}
-    sums = {}
+    # TODO: better type annotations.
+    diff: dict[str, dict[str, Any]] = {}
+    sums: dict[str, dict[str, Any]] = {}
     for tiepoint in ('ow', 'fy', 'my'):
         diff[tiepoint] = {}
         diff[tiepoint]['19v19h'] = tp['v19'][tiepoint] - tp['h19'][tiepoint]
