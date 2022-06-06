@@ -19,11 +19,15 @@ and is intended to reproduce those results as similarly as possible.
 
 As it develops, this code will become more and more general
 
-## `./SB2_NRT_programs/`
+## `./legacy/SB2_NRT_programs/`
 
-  This directory contains modifications of the original Bootstrap Fortran code
-  and should yield exactly the same results as Goddard produces, given identical
-  input and proper (hard-coded?) local file names.
+This directory contains modifications of the original Bootstrap Fortran code
+and should yield exactly the same results as Goddard produces, given identical
+input and proper (hard-coded?) local file names.
+  
+## `./legacy/nt_orig`
+
+Contains original nasateam code.
 
 ## `./cdr_testdata/`  <-- symbolic link
 
@@ -50,17 +54,17 @@ First, create and activate the `cdr_amsr2` conda environment:
 
 Create symbolic links for original ancillary, input, and output directories.
 
-In ./SB2_NRT_programs/, create:
+In ./legacy/SB2_NRT_programs/, create:
 
-    ln -s ../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
+    ln -sfn ../../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
 
-    ln -s ../cdr_testdata/bt_goddard_orig_input_tbs/ orig_input_tbs
+    ln -sfn ../../cdr_testdata/bt_goddard_orig_input_tbs/ orig_input_tbs
 
-    ln -s ../cdr_testdata/bt_goddard_orig_output/ orig_output
+    ln -sfn ../../cdr_testdata/bt_goddard_orig_output/ orig_output
 
 Generate the fortran output:
 
-in ./SB2_NRT_programs/, execute:
+in ./legacy/SB2_NRT_programs/, execute:
 
     ./gen_sample_nh_ic_for.sh
 
@@ -68,28 +72,28 @@ Note that this will create .json files that the python code will read
 
 Output that will be compared to an original file in cdr_testdata/
 
-    ./SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic
+    ./legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic
 
 
 Additionally, json files are created. Symlink the json files to the bt_py
 directory:
 
 ```
-cd ../bt_py
-ln -s ../SB2_NRT_programs/*.json .
+cd ../../cdr_amsr2/bt_py
+ln -sfn ../../legacy/SB2_NRT_programs/*.json .
 ```
 
 Now generate the initial Python output
 
 
 ```
-cd ../
+cd ../../
 ./scripts/gen_sample_nh_ic_py.sh
 ```
 
 Output that will be compared to the output in the fortran directory:
 
-    ./bt_py/NH_20180217_SB2_NRT_f18.ic
+    ./cdr_amsr2/bt_py/NH_20180217_SB2_NRT_f18.ic
 
 # Other routines
 
