@@ -370,32 +370,47 @@ def ret_water_ssmi(
 
 def calc_rad_coeffs_32(v: Variables):
     # Compute radlsp, radoff, radlen vars
+    v_out = v.copy()
 
-    v['radslp1'] = fdiv(
-        fsub(f(v['itp'][1]), f(v['wtp'][1])), fsub(f(v['itp'][0]), f(v['wtp'][0]))
+    v_out['radslp1'] = fdiv(
+        fsub(f(v_out['itp'][1]), f(v_out['wtp'][1])),
+        fsub(f(v_out['itp'][0]), f(v_out['wtp'][0])),
     )
-    v['radoff1'] = fsub(f(v['wtp'][1]), fmul(f(v['wtp'][0]), f(v['radslp1'])))
+    v_out['radoff1'] = fsub(
+        f(v_out['wtp'][1]), fmul(f(v_out['wtp'][0]), f(v_out['radslp1']))
+    )
     xint = fdiv(
-        fsub(f(v['radoff1']), f(v['vh37'][0])), fsub(f(v['vh37'][1]), f(v['radslp1']))
+        fsub(f(v_out['radoff1']), f(v_out['vh37'][0])),
+        fsub(f(v_out['vh37'][1]), f(v_out['radslp1'])),
     )
-    yint = fadd(fmul(v['vh37'][1], f(xint)), f(v['vh37'][0]))
-    v['radlen1'] = fsqt(
-        fadd(fsqr(fsub(f(xint), f(v['wtp'][0]))), fsqr(fsub(f(yint), f(v['wtp'][1]))))
+    yint = fadd(fmul(v_out['vh37'][1], f(xint)), f(v_out['vh37'][0]))
+    v_out['radlen1'] = fsqt(
+        fadd(
+            fsqr(fsub(f(xint), f(v_out['wtp'][0]))),
+            fsqr(fsub(f(yint), f(v_out['wtp'][1]))),
+        )
     )
 
-    v['radslp2'] = fdiv(
-        fsub(f(v['itp2'][1]), f(v['wtp2'][1])), fsub(f(v['itp2'][0]), f(v['wtp2'][0]))
+    v_out['radslp2'] = fdiv(
+        fsub(f(v_out['itp2'][1]), f(v_out['wtp2'][1])),
+        fsub(f(v_out['itp2'][0]), f(v_out['wtp2'][0])),
     )
-    v['radoff2'] = fsub(f(v['wtp2'][1]), fmul(f(v['wtp2'][0]), f(v['radslp2'])))
+    v_out['radoff2'] = fsub(
+        f(v_out['wtp2'][1]), fmul(f(v_out['wtp2'][0]), f(v_out['radslp2']))
+    )
     xint = fdiv(
-        fsub(f(v['radoff2']), f(v['v1937'][0])), fsub(f(v['v1937'][1]), f(v['radslp2']))
+        fsub(f(v_out['radoff2']), f(v_out['v1937'][0])),
+        fsub(f(v_out['v1937'][1]), f(v_out['radslp2'])),
     )
-    yint = fadd(fmul(f(v['v1937'][1]), f(xint)), f(v['v1937'][0]))
-    v['radlen2'] = fsqt(
-        fadd(fsqr(fsub(f(xint), f(v['wtp2'][0]))), fsqr(fsub(f(yint), f(v['wtp2'][1]))))
+    yint = fadd(fmul(f(v_out['v1937'][1]), f(xint)), f(v_out['v1937'][0]))
+    v_out['radlen2'] = fsqt(
+        fadd(
+            fsqr(fsub(f(xint), f(v_out['wtp2'][0]))),
+            fsqr(fsub(f(yint), f(v_out['wtp2'][1]))),
+        )
     )
 
-    return v
+    return v_out
 
 
 def sst_clean_sb2(iceout, missval, landval, month):
