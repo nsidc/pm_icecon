@@ -35,7 +35,8 @@ def vulture(ctx):
     """Use `vulture` to detect dead code."""
     print_and_run(
         f'vulture'
-        f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/bt/_types.py'
+        # ignore `_types.py` because vulture doesn't understand typed dicts.
+        f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/cdr_amsr2/bt/_types.py'
         f' {PROJECT_DIR}',
         pty=True,
     )
