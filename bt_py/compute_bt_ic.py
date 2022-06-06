@@ -399,37 +399,6 @@ def calc_rad_coeffs_32(p, v):
     return v
 
 
-def calc_rad_coeffs(p, v):
-    # Compute radlsp, radoff, radlen vars
-    # from (p)arameters and (v)ariables
-
-    v['radslp1'] = (v['itp'][1] - v['wtp'][1]) / (v['itp'][0] - v['wtp'][0])
-    v['radoff1'] = v['wtp'][1] - v['wtp'][0] * v['radslp1']
-    xint = (v['radoff1'] - v['vh37'][0]) / (v['vh37'][1] - v['radslp1'])
-    yint = v['vh37'][1] * xint + v['vh37'][0]
-    v['radlen1'] = np.sqrt(
-        np.square(xint - v['wtp'][0]) + np.square(yint - v['wtp'][1])
-    )
-
-    # next...do the radslp2 etc calcs
-    v['radslp2'] = (v['itp2'][1] - v['wtp2'][1]) / (v['itp2'][0] - v['wtp2'][0])
-    v['radoff2'] = v['wtp2'][1] - v['wtp2'][0] * v['radslp2']
-    xint = (v['radoff2'] - v['v1937'][0]) / (v['v1937'][1] - v['radslp2'])
-    yint = v['v1937'][1] * xint + v['v1937'][0]
-    v['radlen2'] = np.sqrt(
-        np.square(xint - v['wtp2'][0]) + np.square(yint - v['wtp2'][1])
-    )
-
-    v['radslp1'] = np.float64(v['radslp1'])
-    v['radoff1'] = np.float64(v['radoff1'])
-    v['radlen1'] = np.float64(v['radlen1'])
-    v['radslp2'] = np.float64(v['radslp2'])
-    v['radoff2'] = np.float64(v['radoff2'])
-    v['radlen2'] = np.float64(v['radlen2'])
-
-    return v
-
-
 def sst_clean_sb2(iceout, missval, landval, month):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
