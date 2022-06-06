@@ -10,7 +10,6 @@ Note: the original Goddard code involves the following files:
     3: NT ice conc, including land spillover and valid ice masking
 """
 
-import json
 import os
 from pathlib import Path
 from typing import Any

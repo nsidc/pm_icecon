@@ -5,7 +5,6 @@ and computes:
     iceout
 """
 
-import json
 import re
 from functools import reduce
 from pathlib import Path
@@ -849,7 +848,9 @@ if __name__ == '__main__':
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = read_tb_field(
             (
-                PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns'][tb]  # type: ignore [literal-required]
+                PACKAGE_DIR
+                / '../legacy/SB2_NRT_programs'
+                / params['raw_fns'][tb]  # type: ignore [literal-required]
             ).resolve()
         )
 
