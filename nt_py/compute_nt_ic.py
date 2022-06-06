@@ -215,10 +215,6 @@ def compute_nt_coefficients(tp):
 
 def compute_ratios(tbs, coefs):
     # Compute NASA Team sea ice concentration estimate
-
-    # TODO: does this need to be applied somehow? Variable not currently used.
-    is_okay = (tbs['v19'] != 0) & (tbs['h19'] != 0) & (tbs['v37'] != 0)
-
     ratios = {}
 
     dif_37v19v = tbs['v37'] - tbs['v19']
