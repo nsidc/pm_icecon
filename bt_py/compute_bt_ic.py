@@ -500,7 +500,12 @@ def coastal_fix(arr, missval, landval, minic):
 
     is_seaice = (arr > 0) & (arr <= 100.0)
 
-    off_set = (np.array((0, 1)), np.array((0, -1)), np.array((1, 0)), np.array((-1, 0)))
+    off_set = (
+        np.array((0, 1)),
+        np.array((0, -1)),
+        np.array((1, 0)),
+        np.array((-1, 0)),
+    )
 
     for offp1 in off_set:
         offn1 = -1 * offp1  # offp1 * -1
