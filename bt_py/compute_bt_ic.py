@@ -315,28 +315,28 @@ def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
     return ic
 
 
-def fadd(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
-    return np.array(np.add(a, b, dtype=np.float32))
+def fadd(a: npt.ArrayLike, b: npt.ArrayLike):
+    return np.add(a, b, dtype=np.float32)
 
 
-def fsub(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
-    return np.array(np.subtract(a, b, dtype=np.float32))
+def fsub(a: npt.ArrayLike, b: npt.ArrayLike):
+    return np.subtract(a, b, dtype=np.float32)
 
 
-def fmul(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
-    return np.array(np.multiply(a, b, dtype=np.float32))
+def fmul(a: npt.ArrayLike, b: npt.ArrayLike):
+    return np.multiply(a, b, dtype=np.float32)
 
 
-def fdiv(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
-    return np.array(np.divide(a, b, dtype=np.float32))
+def fdiv(a: npt.ArrayLike, b: npt.ArrayLike):
+    return np.divide(a, b, dtype=np.float32)
 
 
-def fsqr(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
-    return np.array(np.square(a, dtype=np.float32))
+def fsqr(a: npt.ArrayLike):
+    return np.square(a, dtype=np.float32)
 
 
-def fsqt(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
-    return np.array(np.sqrt(a, dtype=np.float32))
+def fsqt(a: npt.ArrayLike):
+    return np.sqrt(a, dtype=np.float32)
 
 
 def ret_water_ssmi(
