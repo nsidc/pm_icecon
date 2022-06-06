@@ -12,9 +12,13 @@ Note: the original Goddard code involves the following files:
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+# TODO: extract to a constants module.
+THIS_DIR = Path(__file__).parent
 
 
 def xwm(m='exiting in xwm()'):
@@ -304,17 +308,13 @@ def compute_nt_conc(tbs, coefs, ratios):
 def apply_nt_spillover(conc_int16):
     # Apply the NASA Team land spillover routine
 
-    shoremap_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
-    )
+    shoremap_fn = THIS_DIR / '..' / 'nt_orig/DATAFILES/data36/maps/shoremap_north_25'
     shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read shoremap from:\n  .../{os.path.basename(shoremap_fn)}')
     print(f'  shoremap min: {shoremap.min()}')
     print(f'  shoremap max: {shoremap.max()}')
 
-    minic_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
-    )
+    minic_fn = THIS_DIR / '..' / 'nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
     minic = np.fromfile(minic_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read minic from:\n  .../{os.path.basename(minic_fn)}')
     print(f'  minic min: {minic.min()}')
@@ -380,8 +380,9 @@ def apply_sst(conc):
     sst = conc.copy()
 
     sst_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig'
-        '/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
+        THIS_DIR
+        / '..'
+        / 'nt_orig/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
     )
     sst_field = np.fromfile(sst_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read sst from:\n  .../{os.path.basename(sst_fn)}')
@@ -399,8 +400,7 @@ def apply_polehole(conc):
     new_conc = conc.copy()
 
     polehole_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig'
-        '/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
+        THIS_DIR / '..' / 'nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
     )
     polehole = np.fromfile(polehole_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read polehole from:\n  .../{os.path.basename(polehole_fn)}')
