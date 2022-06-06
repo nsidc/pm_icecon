@@ -6,8 +6,14 @@ and computes:
 """
 
 import json
+from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
+
+from bt_py._types import Params, ParaVals, Variables
+
+THIS_DIR = Path(__file__).parent
 
 
 def xwm(m='here'):
@@ -19,35 +25,48 @@ def f(num):
     return np.float32(num)
 
 
-def import_cfg_file(ifn):
-    with open(ifn) as f:
-        params = json.load(f)
-
-    return params
+def import_cfg_file(ifn: Path):
+    return json.loads(ifn.read_text())
 
 
-def read_tb_field(tbfn):
+def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
     # Read int16 scaled by 10 and return float32 unscaled
     raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
     return fdiv(raw.astype(np.float32), 10)
 
 
-def is_outofrange_tb(tb, mintb, maxtb):
-    # from the gdata calculation
-    return (tb < mintb) | (tb > maxtb)
+def compute_gdata(
+    *,
+    v37: npt.NDArray[np.float32],
+    h37: npt.NDArray[np.float32],
+    v19: npt.NDArray[np.float32],
+    v22: npt.NDArray[np.float32],
+    mintb: float,
+    maxtb: float,
+) -> npt.NDArray[np.int16]:
+    """Return an integer (1 or 0) ndarray inidcating areas of bad data.
 
+    Bad data are locations where any of the given Tbs are outside the range
+    defined by (mintb, maxtb)
 
-def compute_gdata(v37, h37, v19, v22, mintb, maxtb):
+    Values of 1 indicate bad data. Values of 0 indicate good data.
+
+    TODO: consider renaming this function. Can this just return a `bool` array?
+    """
+
+    def _is_outofrange_tb(tb, mintb, maxtb):
+        return (tb < mintb) | (tb > maxtb)
+
     # 1 if baddata, 0 if good
     is_badtb = (
-        is_outofrange_tb(v37, mintb, maxtb)
-        | is_outofrange_tb(h37, mintb, maxtb)
-        | is_outofrange_tb(v19, mintb, maxtb)
-        | is_outofrange_tb(v22, mintb, maxtb)
+        _is_outofrange_tb(v37, mintb, maxtb)
+        | _is_outofrange_tb(h37, mintb, maxtb)
+        | _is_outofrange_tb(v19, mintb, maxtb)
+        | _is_outofrange_tb(v22, mintb, maxtb)
     )
 
-    gdata = np.zeros_like(is_badtb, dtype=np.uint8)
+    gdata = np.zeros_like(is_badtb, dtype=np.int16)
     gdata[is_badtb] = 1
 
     return gdata
@@ -101,7 +120,7 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset, sat, season):
+def ret_para_nsb2(tbset, sat, season) -> ParaVals:
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
     #       to identify the TB set whose parameters are being set
@@ -177,7 +196,7 @@ def ret_para_nsb2(tbset, sat, season):
     }
 
 
-def ret_wtp_32(water_arr, tb):
+def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
     # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
@@ -205,6 +224,9 @@ def ret_wtp_32(water_arr, tb):
         ival += 1
 
     ival -= 1  # undo last increment
+
+    # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
+    # returns...
     wtp = f(ival) * 0.25
 
     return wtp
@@ -314,31 +336,33 @@ def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
     return ic
 
 
-def fadd(a, b):
-    return np.add(a, b, dtype=np.float32)
+def fadd(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.add(a, b, dtype=np.float32))
 
 
-def fsub(a, b):
-    return np.subtract(a, b, dtype=np.float32)
+def fsub(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.subtract(a, b, dtype=np.float32))
 
 
-def fmul(a, b):
-    return np.multiply(a, b, dtype=np.float32)
+def fmul(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.multiply(a, b, dtype=np.float32))
 
 
-def fdiv(a, b):
-    return np.divide(a, b, dtype=np.float32)
+def fdiv(a: npt.ArrayLike, b: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.divide(a, b, dtype=np.float32))
 
 
-def fsqr(a):
-    return np.square(a, dtype=np.float32)
+def fsqr(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.square(a, dtype=np.float32))
 
 
-def fsqt(a):
-    return np.sqrt(a, dtype=np.float32)
+def fsqt(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
+    return np.array(np.sqrt(a, dtype=np.float32))
 
 
-def ret_water_ssmi(v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1):
+def ret_water_ssmi(
+    v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1
+) -> npt.NDArray[np.int16]:
     # Determine where there is definitely water
     is_land0_gdata0 = (land == 0) & (gdata == 0)
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
@@ -421,7 +445,11 @@ def calc_rad_coeffs(p, v):
 def sst_clean_sb2(iceout, missval, landval, month, pole):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
-    sst_fn = f'../SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+    sst_fn = (
+        THIS_DIR
+        / '..'
+        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+    ).resolve()
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
 
     is_not_land = iceout != landval
@@ -435,7 +463,7 @@ def sst_clean_sb2(iceout, missval, landval, month, pole):
     return ice_sst
 
 
-def spatial_interp(iceout, missval, landval, nphole_fn):
+def spatial_interp(iceout, missval: float, landval: float, nphole_fn: Path):
     # implement fortran's spatial_interp() routine
     if iceout.shape[1] == 304:
         holemask = np.fromfile(nphole_fn, dtype=np.int16).reshape(448, 304)
@@ -817,31 +845,36 @@ if __name__ == '__main__':
     do_exact = True
     # do_exact = False
 
-    orig_params = import_cfg_file('./ret_ic_params.json')
-    params = import_cfg_file('./ret_ic_params.json')
+    orig_params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
+    params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
 
-    orig_vars = import_cfg_file('./ret_ic_variables.json')
-    variables = import_cfg_file('./ret_ic_variables.json')
+    orig_vars: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
+    variables: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
 
     # Convert params to variables
 
-    tbs = {}
-    otbs = {}
+    tbs: dict[str, npt.NDArray[np.float32]] = {}
+    otbs: dict[str, npt.NDArray[np.float32]] = {}
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
-        otbs[tb] = read_tb_field(params['raw_fns'][tb])
+        otbs[tb] = read_tb_field(
+            (
+                THIS_DIR / params['raw_fns'][tb]  # type: ignore [literal-required]
+            ).resolve()
+        )
 
-    land_arr = np.fromfile(params['raw_fns']['land'], dtype=np.int16).reshape(448, 304)
+    land_arr = np.fromfile(
+        (THIS_DIR / params['raw_fns']['land']).resolve(), dtype=np.int16
+    ).reshape(448, 304)
 
-    new_gdata = compute_gdata(
-        otbs['v37'],
-        otbs['h37'],
-        otbs['v19'],
-        otbs['v22'],
-        params['mintb'],
-        params['maxtb'],
+    gdata = compute_gdata(
+        v37=otbs['v37'],
+        h37=otbs['h37'],
+        v19=otbs['v19'],
+        v22=otbs['v22'],
+        mintb=params['mintb'],
+        maxtb=params['maxtb'],
     )
-    gdata = new_gdata.astype(np.int16)
 
     # *** compute tbs ***
     # Note: even though the xfer doesn not result in identical fields,
@@ -880,6 +913,11 @@ if __name__ == '__main__':
     # Set wtp, which is tp37v and tp37h
     variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
     variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
+
+    # assert these keys are not None so the typechecker does not complain.
+    assert variables['wtp37v'] is not None
+    assert variables['wtp37h'] is not None
+
     if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
         variables['wtp'][0] = variables['wtp37v']
     if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
@@ -922,6 +960,9 @@ if __name__ == '__main__':
 
     # *** CALL ret_wtp() for wtp19v ***
     variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+
+    assert variables['wtp19v'] is not None
+
     if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
         variables['wtp2'][0] = variables['wtp37v']
     if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
@@ -966,7 +1007,10 @@ if __name__ == '__main__':
 
     # *** Do spatial interp ***
     iceout_spi = spatial_interp(
-        iceout_sst, params['missval'], params['landval'], params['raw_fns']['nphole']
+        iceout_sst,
+        params['missval'],
+        params['landval'],
+        (THIS_DIR / params['raw_fns']['nphole']).resolve(),
     )
 
     # *** Do spatial interp ***
@@ -988,7 +1032,8 @@ if __name__ == '__main__':
     # Derive year from a tb filename
     sat, year, month, day = get_satymd_from_tbfn(params['raw_fns']['v37'])
     ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
-    fixout.tofile(ofn)
+    # TODO: consider writing this file out to an explicit output dir. Where?
+    fixout.tofile(THIS_DIR / ofn)
     print(f'Wrote output file: {ofn}')
 
     print('Finished compute_bt_ic.py')

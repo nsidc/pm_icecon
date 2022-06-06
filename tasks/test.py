@@ -12,18 +12,22 @@ def lint(ctx):
 @task(aliases=['mypy'])
 def typecheck(ctx):
     """Run mypy typechecking."""
+    mypy_cfg_path = PROJECT_DIR / '.mypy.ini'
     print_and_run(
-        f'mypy --config-file=.mypy.ini {PROJECT_DIR}/',
+        f'mypy --config-file={mypy_cfg_path} {PROJECT_DIR}/',
         pty=True,
     )
 
     print('🎉🦆 Type checking passed.')
 
 
-@task(pre=[
-    lint,
-    typecheck,
-], default=True)
+@task(
+    pre=[
+        lint,
+        typecheck,
+    ],
+    default=True,
+)
 def all(ctx):
     """Run all of the tests."""
     ...

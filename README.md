@@ -81,9 +81,11 @@ ln -s ../SB2_NRT_programs/*.json .
 
 Now generate the initial Python output
 
-in ./bt_py/, execute:
 
-    ./gen_sample_nh_ic_py.sh
+```
+cd ../
+./scripts/gen_sample_nh_ic_py.sh
+```
 
 Output that will be compared to the output in the fortran directory:
 
