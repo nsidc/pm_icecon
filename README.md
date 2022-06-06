@@ -9,7 +9,7 @@ code adapted from Goddard's Bootstrap and NASA Team algorithms.
 
 # Directory contents:
 
-## `./bt_py/`
+## `./cdr_amsr2/bt/`
 
 Here are python routines which replace Goddard's original Fortran code
 for production sea ice concentration.
@@ -18,6 +18,11 @@ Initially, the code is simply a translation of the original Fortran code,
 and is intended to reproduce those results as similarly as possible.
 
 As it develops, this code will become more and more general
+
+## `./cdr_amsr2/nt/`
+
+Python code related to the nasateam algorithm.
+
 
 ## `./legacy/SB2_NRT_programs/`
 
@@ -75,11 +80,11 @@ Output that will be compared to an original file in cdr_testdata/
     ./legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic
 
 
-Additionally, json files are created. Symlink the json files to the bt_py
+Additionally, json files are created. Symlink the json files to the bt
 directory:
 
 ```
-cd ../../cdr_amsr2/bt_py
+cd ../../cdr_amsr2/bt
 ln -sfn ../../legacy/SB2_NRT_programs/*.json .
 ```
 
@@ -93,12 +98,12 @@ cd ../../
 
 Output that will be compared to the output in the fortran directory:
 
-    ./cdr_amsr2/bt_py/NH_20180217_SB2_NRT_f18.ic
+    ./cdr_amsr2/bt/NH_20180217_SB2_NRT_f18.ic
 
 # Other routines
 
-Two short comparison scripts in bt_py/ used to compare 4-byte float and
-2-byte int raw binary files respectively are:  fpcomp.py and i2comp.py
+Two short comparison scripts in cdr_amsr2/bt/ used to compare 4-byte float and
+2-byte int raw binary files respectively are: fpcomp.py and i2comp.py
 
 
 # Misc. Development notes

@@ -14,8 +14,8 @@ from typing import Sequence
 import numpy as np
 import numpy.typing as npt
 
-from cdr_amsr2.bt_py._types import Params, ParaVals, Variables
-from cdr_amsr2.bt_py.errors import (
+from cdr_amsr2.bt._types import Params, ParaVals, Variables
+from cdr_amsr2.bt.errors import (
     BootstrapAlgError,
     UnexpectedFilenameError,
     UnexpectedSatelliteError,
