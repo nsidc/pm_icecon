@@ -25,7 +25,7 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f'pytest {PROJECT_DIR}/bt/test.py',
+        f'PYTHONPATH={PROJECT_DIR} pytest {PROJECT_DIR}/cdr_amsr2/tests',
         pty=True,
     )
 
