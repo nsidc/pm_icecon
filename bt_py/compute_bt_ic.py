@@ -761,11 +761,11 @@ def get_satymd_from_tb_filepath(filepath: Path):
     # expect filename of format:
     #  ../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin
     # Note: this is *extremely* hard-coded
-    filepath = filepath.name
+    filename = filepath.name
     fn_regex = re.compile(
         r'tb_(?P<sat>\w{3})_(?P<yyyy>\d{4})(?P<mm>\d{2})(?P<dd>\d{2})_.*bin'
     )
-    match = fn_regex.match(filepath)
+    match = fn_regex.match(filename)
     if not match:
         raise UnexpectedFilenameError(filepath)
     sat = match.group('sat')
