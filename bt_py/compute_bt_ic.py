@@ -368,9 +368,8 @@ def ret_water_ssmi(
     return water
 
 
-def calc_rad_coeffs_32(p, v):
+def calc_rad_coeffs_32(v: Variables):
     # Compute radlsp, radoff, radlen vars
-    # from (p)arameters and (v)ariables
 
     v['radslp1'] = fdiv(
         fsub(f(v['itp'][1]), f(v['wtp'][1])), fsub(f(v['itp'][0]), f(v['wtp'][0]))
@@ -969,7 +968,7 @@ if __name__ == '__main__':
         variables['v1937'] = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
-    variables = calc_rad_coeffs_32(params, variables)
+    variables = calc_rad_coeffs_32(variables)
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, tb_mask)
