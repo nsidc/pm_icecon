@@ -6,7 +6,9 @@ and computes:
 """
 
 import json
+from functools import reduce
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -36,40 +38,30 @@ def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
     return fdiv(raw.astype(np.float32), 10)
 
 
-def compute_gdata(
+def tb_data_mask(
     *,
-    v37: npt.NDArray[np.float32],
-    h37: npt.NDArray[np.float32],
-    v19: npt.NDArray[np.float32],
-    v22: npt.NDArray[np.float32],
-    mintb: float,
-    maxtb: float,
-) -> npt.NDArray[np.int16]:
-    """Return an integer (1 or 0) ndarray inidcating areas of bad data.
+    tbs: Sequence[npt.NDArray[np.float32]],
+    min_tb: float,
+    max_tb: float,
+) -> npt.NDArray[np.bool_]:
+    """Return a boolean ndarray inidcating areas of bad data.
 
     Bad data are locations where any of the given Tbs are outside the range
     defined by (mintb, maxtb)
 
-    Values of 1 indicate bad data. Values of 0 indicate good data.
-
-    TODO: consider renaming this function. Can this just return a `bool` array?
+    True values indicate bad data that should be masked. False values indicate
+    good data.
     """
 
-    def _is_outofrange_tb(tb, mintb, maxtb):
-        return (tb < mintb) | (tb > maxtb)
+    def _is_outofrange_tb(tb, min_tb, max_tb):
+        return (tb < min_tb) | (tb > max_tb)
 
-    # 1 if baddata, 0 if good
-    is_badtb = (
-        _is_outofrange_tb(v37, mintb, maxtb)
-        | _is_outofrange_tb(h37, mintb, maxtb)
-        | _is_outofrange_tb(v19, mintb, maxtb)
-        | _is_outofrange_tb(v22, mintb, maxtb)
+    is_bad_tb = reduce(
+        np.logical_or,
+        [_is_outofrange_tb(tb, min_tb, max_tb) for tb in tbs],
     )
 
-    gdata = np.zeros_like(is_badtb, dtype=np.int16)
-    gdata[is_badtb] = 1
-
-    return gdata
+    return is_bad_tb
 
 
 def xfer_tbs_nrt(v37, h37, v19, v22, sat):
@@ -256,24 +248,33 @@ def linfit_32(xvals, yvals):
 
 
 def ret_linfit_32(
-    land, gdata, tbx, tby, lnline, lnchk, add, water, tba=None, iceline=None, adoff=None
+    land,
+    tb_mask: npt.NDArray[np.bool_],
+    tbx,
+    tby,
+    lnline,
+    lnchk,
+    add,
+    water,
+    tba=None,
+    iceline=None,
+    adoff=None,
 ):
     # Reproduces both ret_linfit1() and ret_linfit2()
     # Note: lnline is two, 0 is offset, 1 is slope
     # Note: iceline is two, 0 is offset, 1 is slope
 
-    is_land0_gdata0 = (land == 0) & (gdata == 0)
+    not_land_or_masked = (land == 0) & ~tb_mask
     if tba is not None:
         is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
     else:
-        is_tba_le_modad = np.zeros_like(is_land0_gdata0, dtype=bool)
-        is_tba_le_modad[:] = True
+        is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
     is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
 
     is_water0 = water == 0
 
-    is_valid = is_land0_gdata0 & is_tba_le_modad & is_tby_gt_lnline & is_water0
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & is_water0
 
     icnt = np.sum(np.where(is_valid, 1, 0))
 
@@ -361,10 +362,19 @@ def fsqt(a: npt.ArrayLike) -> npt.NDArray[np.float32]:
 
 
 def ret_water_ssmi(
-    v37, h37, v22, v19, land, gdata, wslope, wintrc, wxlimt, ln1
+    v37,
+    h37,
+    v22,
+    v19,
+    land,
+    tb_mask: npt.NDArray[np.bool_],
+    wslope,
+    wintrc,
+    wxlimt,
+    ln1,
 ) -> npt.NDArray[np.int16]:
     # Determine where there is definitely water
-    is_land0_gdata0 = (land == 0) & (gdata == 0)
+    not_land_or_masked = (land == 0) & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
@@ -372,7 +382,7 @@ def ret_water_ssmi(
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
 
-    is_water = is_land0_gdata0 & is_cond1 & is_cond2
+    is_water = not_land_or_masked & is_cond1 & is_cond2
 
     water = np.zeros_like(land, dtype=np.int16)
     water[is_water] = 1
@@ -776,7 +786,14 @@ def get_satymd_from_tbfn(fn):
     return sat, year, month, day
 
 
-def calc_bt_ice(p, v, tbs, land, water_arr, gdata):
+def calc_bt_ice(
+    p,
+    v,
+    tbs,
+    land,
+    water_arr,
+    tb_mask: npt.NDArray[np.bool_],
+):
 
     # main calc_bt_ice() block
     vh37chk = v['vh37'][0] - v['adoff'] + v['vh37'][1] * tbs['v37']
@@ -833,7 +850,7 @@ def calc_bt_ice(p, v, tbs, land, water_arr, gdata):
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_arr == 1] = 0.0
-    ic[gdata != 0] = p['missval']
+    ic[tb_mask] = p['missval']
     ic[land != 0] = p['landval']
 
     return ic
@@ -867,13 +884,15 @@ if __name__ == '__main__':
         (THIS_DIR / params['raw_fns']['land']).resolve(), dtype=np.int16
     ).reshape(448, 304)
 
-    gdata = compute_gdata(
-        v37=otbs['v37'],
-        h37=otbs['h37'],
-        v19=otbs['v19'],
-        v22=otbs['v22'],
-        mintb=params['mintb'],
-        maxtb=params['maxtb'],
+    tb_mask = tb_data_mask(
+        tbs=(
+            otbs['v37'],
+            otbs['h37'],
+            otbs['v19'],
+            otbs['v22'],
+        ),
+        min_tb=params['mintb'],
+        max_tb=params['maxtb'],
     )
 
     # *** compute tbs ***
@@ -902,7 +921,7 @@ if __name__ == '__main__':
         tbs['v22'],
         tbs['v19'],
         land_arr,
-        gdata,
+        tb_mask,
         params['wslope'],
         params['wintrc'],
         params['wxlimt'],
@@ -928,7 +947,7 @@ if __name__ == '__main__':
     # The differences are roughly +/- 0.0002 in float32 conc values
     calc_vh37 = ret_linfit_32(
         land_arr,
-        gdata,
+        tb_mask,
         tbs['v37'],
         tbs['h37'],
         params['ln1'],
@@ -975,7 +994,7 @@ if __name__ == '__main__':
     # Try the ret_para... values for v1937
     calc_v1937 = ret_linfit_32(
         land_arr,
-        gdata,
+        tb_mask,
         tbs['v37'],
         tbs['v19'],
         params['ln2'],
@@ -998,7 +1017,7 @@ if __name__ == '__main__':
     variables = calc_rad_coeffs_32(params, variables)
 
     # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, gdata)
+    iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, tb_mask)
 
     # *** Do sst cleaning ***
     iceout_sst = sst_clean_sb2(

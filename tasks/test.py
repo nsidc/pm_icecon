@@ -21,10 +21,20 @@ def typecheck(ctx):
     print('🎉🦆 Type checking passed.')
 
 
+@task()
+def unit(ctx):
+    """Run unit tests."""
+    print_and_run(
+        f'pytest {PROJECT_DIR}/bt_py/test.py',
+        pty=True,
+    )
+
+
 @task(
     pre=[
         lint,
         typecheck,
+        unit,
     ],
     default=True,
 )
