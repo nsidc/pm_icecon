@@ -1,7 +1,4 @@
-"""
-compute_nt_ic.py
-
-Compute the NASA Team ice concentration
+"""Compute the NASA Team ice concentration.
 
 Note: the original Goddard code involves the following files:
     0: tb files, exactly the same as NSIDC-0001 except:
@@ -217,6 +214,7 @@ def compute_nt_coefficients(tp):
 def compute_ratios(tbs, coefs, grs):
     # Compute NASA Team sea ice concentration estimate
 
+    # TODO: does this need to be applied somehow? Variable not currently used.
     is_okay = (tbs['v19'] != 0) & (tbs['h19'] != 0) & (tbs['v37'] != 0)
 
     ratios = {}
@@ -383,7 +381,10 @@ def apply_sst(conc):
     sst_threshold = 2780
     sst = conc.copy()
 
-    sst_fn = '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
+    sst_fn = (
+        '/home/vagrant/cdr_amsr2/nt_orig'
+        '/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
+    )
     sst_field = np.fromfile(sst_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read sst from:\n  .../{os.path.basename(sst_fn)}')
     print(f'  sst_field min: {sst_field.min()}')
@@ -399,7 +400,10 @@ def apply_polehole(conc):
     # Apply the pole hole
     new_conc = conc.copy()
 
-    polehole_fn = '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
+    polehole_fn = (
+        '/home/vagrant/cdr_amsr2/nt_orig'
+        '/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
+    )
     polehole = np.fromfile(polehole_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read polehole from:\n  .../{os.path.basename(polehole_fn)}')
     print(f'  polehole min: {polehole.min()}')
