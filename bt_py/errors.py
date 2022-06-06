@@ -8,3 +8,7 @@ class BootstrapAlgError(CdrAmsr2Error):
 
 class UnexpectedSatelliteError(CdrAmsr2Error):
     pass
+
+
+class UnexpectedFilenameError(CdrAmsr2Error):
+    pass
