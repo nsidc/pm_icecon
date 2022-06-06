@@ -57,7 +57,7 @@ class Variables(TypedDict):
     adoff: float
     itp: list[float]  # len 2
     itp2: list[float]  # len 2
-    radlen: float
+    radlen1: float
     radlen2: float
     radoff1: float
     radoff2: float
