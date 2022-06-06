@@ -15,13 +15,13 @@ import numpy as np
 import numpy.typing as npt
 
 from cdr_amsr2.bt._types import Params, ParaVals, Variables
-from cdr_amsr2.bt.errors import (
+from cdr_amsr2.config import import_cfg_file
+from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.errors import (
     BootstrapAlgError,
     UnexpectedFilenameError,
     UnexpectedSatelliteError,
 )
-from cdr_amsr2.config import import_cfg_file
-from cdr_amsr2.constants import PACKAGE_DIR
 
 THIS_DIR = Path(__file__).parent
 

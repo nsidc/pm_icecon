@@ -19,12 +19,9 @@ import numpy as np
 
 from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.errors import NasateamAlgError
 
 THIS_DIR = Path(__file__).parent
-
-
-def xwm(m='exiting in xwm()'):
-    raise SystemExit(m)
 
 
 def fdiv(a, b):
@@ -119,7 +116,7 @@ def get_tiepoints(sat, hem):
     if have_combo:
         return tiepoints
     else:
-        xwm(f'No such combo for tiepoints: sat: {sat}, hem: {hem}')
+        raise NasateamAlgError(f'No such combo for tiepoints: sat: {sat}, hem: {hem}')
 
 
 def compute_nt_coefficients(tp):
