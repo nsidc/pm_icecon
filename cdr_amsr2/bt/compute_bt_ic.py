@@ -20,6 +20,7 @@ from cdr_amsr2.bt.errors import (
     UnexpectedFilenameError,
     UnexpectedSatelliteError,
 )
+from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
 
 THIS_DIR = Path(__file__).parent
@@ -28,10 +29,6 @@ THIS_DIR = Path(__file__).parent
 def f(num):
     # return float32 of num
     return np.float32(num)
-
-
-def import_cfg_file(ifn: Path):
-    return json.loads(ifn.read_text())
 
 
 def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:

@@ -17,6 +17,7 @@ from typing import Any
 
 import numpy as np
 
+from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
 
 THIS_DIR = Path(__file__).parent
@@ -24,13 +25,6 @@ THIS_DIR = Path(__file__).parent
 
 def xwm(m='exiting in xwm()'):
     raise SystemExit(m)
-
-
-def import_cfg_file(ifn: Path):
-    with open(ifn) as f:
-        params = json.load(f)
-
-    return params
 
 
 def fdiv(a, b):
