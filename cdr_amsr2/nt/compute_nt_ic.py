@@ -428,13 +428,6 @@ if __name__ == '__main__':
     if do_exact:
         spi_tbs = correct_spi_tbs(spi_tbs)
 
-    """
-    for tb in spi_tbs.keys():
-        ofn = f'spi_{tb}.dat'
-        spi_tbs[tb].tofile(ofn)
-        print(f'Wrote: {ofn}')
-    """
-
     # Here, the tbs are identical to the output of the Goddard code
 
     # The next step is to implement:
