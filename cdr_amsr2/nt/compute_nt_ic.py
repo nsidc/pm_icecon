@@ -92,7 +92,6 @@ def correct_spi_tbs(tbs):
 
 def get_tiepoints(sat: str, hem: str) -> dict[str, dict[str, float]]:
     """Return the tiepoints for this sat/hem combo."""
-
     tiepoints: dict[str, dict[str, float]] = {}
     if sat == 'f17':
         tiepoints['v19'] = {}
@@ -128,7 +127,6 @@ def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]
                tiepoint is 'ow', 'my', 'fy'
                         for open water, multiyear, first-year respectively
     """
-
     # Intermediate variables
     # TODO: better type annotations.
     diff: dict[str, dict[str, Any]] = {}
@@ -319,7 +317,6 @@ def compute_nt_conc(
 
 def apply_nt_spillover(conc_int16: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
     """Apply the NASA Team land spillover routine."""
-
     shoremap_fn = (
         PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
     )
@@ -432,6 +429,9 @@ def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
 
 
 if __name__ == '__main__':
+    # Given date, hemisphere, and input source., get tbs (multiple channels)
+    #
+
     do_exact = True
 
     params = import_cfg_file(THIS_DIR / 'nt_sample_nh.json')
