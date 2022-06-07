@@ -501,11 +501,9 @@ if __name__ == '__main__':
 
     # Apply SST-threshold
     conc_sst = apply_sst(conc_spill)
-    # conc_sst.tofile('conc_sst_py.dat')
 
     # Apply pole hole
     conc_pole = apply_polehole(conc_sst)
-    # conc_pole.tofile('conc_pole_py.dat')
 
     # Write output file
     conc_pole.tofile('nt_sample_nh.dat')
