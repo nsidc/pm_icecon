@@ -1019,7 +1019,7 @@ if __name__ == '__main__':
     # *** Write the output to a similar file name as fortran code ***
     # Derive year from a tb filename
     sat, year, month, day = get_satymd_from_tb_filepath(Path(params['raw_fns']['v37']))
-    ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
+    ofn = f'NH_{year}{month}{day}_py_NRT_{sat}.ic'
     # TODO: consider writing this file out to an explicit output dir. Where?
     fixout.tofile(THIS_DIR / ofn)
     print(f'Wrote output file: {ofn}')
