@@ -34,8 +34,8 @@ def _get_au_si25_data_fields(
 
     if len(results) != 1:
         raise FileNotFoundError(
-            'Expected to find 1 granule for AU_SI25 for {date:%Y%m%d}.'
-            ' Found {len(results)}.'
+            f'Expected to find 1 granule for AU_SI25 for {date:%Y-%m-%d}.'
+            f' Found {len(results)}.'
         )
 
     granule_fp = results[0]
