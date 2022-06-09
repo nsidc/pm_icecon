@@ -39,8 +39,6 @@ def _get_au_si25_data_fields(
         )
 
     granule_fp = results[0]
-    # TODO: opening the dataset with xarray should work, but it throws an error
-    # when trying to access the `Data_Fields` group under `NpPolarGrid25km'.
     ds = xr.open_dataset(
         granule_fp,
         group=f'HDFEOS/GRIDS/{hemisphere[0].upper()}pPolarGrid25km/Data Fields',
