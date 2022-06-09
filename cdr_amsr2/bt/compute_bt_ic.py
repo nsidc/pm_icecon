@@ -5,7 +5,6 @@ and computes:
     iceout
 """
 
-import json
 import re
 from functools import reduce
 from pathlib import Path
@@ -14,8 +13,10 @@ from typing import Sequence
 import numpy as np
 import numpy.typing as npt
 
-from bt_py._types import Params, ParaVals, Variables
-from bt_py.errors import (
+from cdr_amsr2.bt._types import Params, ParaVals, Variables
+from cdr_amsr2.config import import_cfg_file
+from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.errors import (
     BootstrapAlgError,
     UnexpectedFilenameError,
     UnexpectedSatelliteError,
@@ -27,10 +28,6 @@ THIS_DIR = Path(__file__).parent
 def f(num):
     # return float32 of num
     return np.float32(num)
-
-
-def import_cfg_file(ifn: Path):
-    return json.loads(ifn.read_text())
 
 
 def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
@@ -417,8 +414,8 @@ def sst_clean_sb2(iceout, missval, landval, month):
     # implement fortran's sst_clean_sb2() routine
     imonth = int(month)
     sst_fn = (
-        THIS_DIR
-        / '..'
+        PACKAGE_DIR
+        / '../legacy'
         / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
     ).resolve()
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
@@ -851,12 +848,17 @@ if __name__ == '__main__':
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = read_tb_field(
             (
-                THIS_DIR / params['raw_fns'][tb]  # type: ignore [literal-required]
+                PACKAGE_DIR
+                / '../legacy/SB2_NRT_programs'
+                / params['raw_fns'][tb]  # type: ignore [literal-required]
             ).resolve()
         )
 
     land_arr = np.fromfile(
-        (THIS_DIR / params['raw_fns']['land']).resolve(), dtype=np.int16
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
+        ).resolve(),
+        dtype=np.int16,
     ).reshape(448, 304)
 
     tb_mask = tb_data_mask(
@@ -998,7 +1000,9 @@ if __name__ == '__main__':
         iceout_sst,
         params['missval'],
         params['landval'],
-        (THIS_DIR / params['raw_fns']['nphole']).resolve(),
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['nphole']
+        ).resolve(),
     )
 
     # *** Do spatial interp ***
@@ -1019,7 +1023,7 @@ if __name__ == '__main__':
     # *** Write the output to a similar file name as fortran code ***
     # Derive year from a tb filename
     sat, year, month, day = get_satymd_from_tb_filepath(Path(params['raw_fns']['v37']))
-    ofn = f'NH_{year}{month}{day}_py_NRT_f{sat}.ic'
+    ofn = f'NH_{year}{month}{day}_py_NRT_{sat}.ic'
     # TODO: consider writing this file out to an explicit output dir. Where?
     fixout.tofile(THIS_DIR / ofn)
     print(f'Wrote output file: {ofn}')

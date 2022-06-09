@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_equal
 
-from bt_py.compute_bt_ic import tb_data_mask
+from cdr_amsr2.bt.compute_bt_ic import tb_data_mask
 
 
 def test_tb_data_mask():

@@ -25,7 +25,7 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f'pytest {PROJECT_DIR}/bt_py/test.py',
+        f'PYTHONPATH={PROJECT_DIR} pytest {PROJECT_DIR}/cdr_amsr2/tests',
         pty=True,
     )
 
@@ -35,7 +35,8 @@ def vulture(ctx):
     """Use `vulture` to detect dead code."""
     print_and_run(
         f'vulture'
-        f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/bt_py/_types.py'
+        # ignore `_types.py` because vulture doesn't understand typed dicts.
+        f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/cdr_amsr2/bt/_types.py'
         f' {PROJECT_DIR}',
         pty=True,
     )

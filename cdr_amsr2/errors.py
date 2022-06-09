@@ -6,6 +6,10 @@ class BootstrapAlgError(CdrAmsr2Error):
     pass
 
 
+class NasateamAlgError(CdrAmsr2Error):
+    pass
+
+
 class UnexpectedSatelliteError(CdrAmsr2Error):
     pass
 

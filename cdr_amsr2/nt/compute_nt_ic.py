@@ -10,22 +10,17 @@ Note: the original Goddard code involves the following files:
     3: NT ice conc, including land spillover and valid ice masking
 """
 
-import json
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from cdr_amsr2.config import import_cfg_file
+from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.errors import NasateamAlgError
 
-def xwm(m='exiting in xwm()'):
-    raise SystemExit(m)
-
-
-def import_cfg_file(ifn):
-    with open(ifn) as f:
-        params = json.load(f)
-
-    return params
+THIS_DIR = Path(__file__).parent
 
 
 def fdiv(a, b):
@@ -120,7 +115,7 @@ def get_tiepoints(sat, hem):
     if have_combo:
         return tiepoints
     else:
-        xwm(f'No such combo for tiepoints: sat: {sat}, hem: {hem}')
+        raise NasateamAlgError(f'No such combo for tiepoints: sat: {sat}, hem: {hem}')
 
 
 def compute_nt_coefficients(tp):
@@ -305,7 +300,7 @@ def apply_nt_spillover(conc_int16):
     # Apply the NASA Team land spillover routine
 
     shoremap_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
+        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
     )
     shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read shoremap from:\n  .../{os.path.basename(shoremap_fn)}')
@@ -313,7 +308,7 @@ def apply_nt_spillover(conc_int16):
     print(f'  shoremap max: {shoremap.max()}')
 
     minic_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
+        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
     )
     minic = np.fromfile(minic_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read minic from:\n  .../{os.path.basename(minic_fn)}')
@@ -380,8 +375,9 @@ def apply_sst(conc):
     sst = conc.copy()
 
     sst_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig'
-        '/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
+        PACKAGE_DIR
+        / '../legacy'
+        / 'nt_orig/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
     )
     sst_field = np.fromfile(sst_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read sst from:\n  .../{os.path.basename(sst_fn)}')
@@ -399,8 +395,9 @@ def apply_polehole(conc):
     new_conc = conc.copy()
 
     polehole_fn = (
-        '/home/vagrant/cdr_amsr2/nt_orig'
-        '/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
+        PACKAGE_DIR
+        / '..'
+        / 'legacy/nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
     )
     polehole = np.fromfile(polehole_fn, dtype='>i2')[150:].reshape(448, 304)
     print(f'Read polehole from:\n  .../{os.path.basename(polehole_fn)}')
@@ -416,7 +413,7 @@ def apply_polehole(conc):
 if __name__ == '__main__':
     do_exact = True
 
-    params = import_cfg_file('./nt_sample_nh.json')
+    params = import_cfg_file(THIS_DIR / 'nt_sample_nh.json')
 
     params['sat'] = 'f17'
     params['hem'] = 'n'
