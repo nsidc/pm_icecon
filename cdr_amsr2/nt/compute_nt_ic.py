@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
@@ -89,9 +90,8 @@ def correct_spi_tbs(tbs):
     return tbs
 
 
-def get_tiepoints(sat, hem):
-    # Return the tiepoints for this sat/hem combo
-
+def get_tiepoints(sat: str, hem: str) -> dict[str, dict[str, float]]:
+    """Return the tiepoints for this sat/hem combo."""
     tiepoints: dict[str, dict[str, float]] = {}
     if sat == 'f17':
         tiepoints['v19'] = {}
@@ -118,14 +118,15 @@ def get_tiepoints(sat, hem):
         raise NasateamAlgError(f'No such combo for tiepoints: sat: {sat}, hem: {hem}')
 
 
-def compute_nt_coefficients(tp):
-    # Compute coefficients for the NT algorithm
-    # tp are the tiepoints, a dictionary of structure:
-    #   tp[channel][tiepoint]
-    #      where channel is 'v19', 'h19', 'v37'
-    #            tiepoint is 'ow', 'my', 'fy'
-    #                     for open water, multiyear, first-year respectively
+def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]:
+    """Compute coefficients for the NT algorithm.
 
+    tp are the tiepoints, a dictionary of structure:
+      tp[channel][tiepoint]
+         where channel is 'v19', 'h19', 'v37'
+               tiepoint is 'ow', 'my', 'fy'
+                        for open water, multiyear, first-year respectively
+    """
     # Intermediate variables
     # TODO: better type annotations.
     diff: dict[str, dict[str, Any]] = {}
@@ -208,8 +209,12 @@ def compute_nt_coefficients(tp):
     return coefs
 
 
-def compute_ratios(tbs, coefs):
-    # Compute NASA Team sea ice concentration estimate
+def compute_ratios(tbs, coefs) -> dict[str, npt.NDArray]:
+    """Return calculated gradient ratios.
+
+    TODO: make this function more generic. There should be a func for computing
+    a single gradient ratio. This function could call that.
+    """
     ratios = {}
 
     dif_37v19v = tbs['v37'] - tbs['v19']
@@ -230,8 +235,8 @@ def compute_ratios(tbs, coefs):
     return ratios
 
 
-def get_gr_thresholds(sat, hem):
-    # Return the gradient ratio thresholds for this sat, hem combo
+def get_gr_thresholds(sat: str, hem: str) -> dict[str, float]:
+    """Return the gradient ratio thresholds for this sat, hem combo."""
     gr_thresholds = {}
     if sat == 'f17':
         if hem == 'n':
@@ -244,7 +249,15 @@ def get_gr_thresholds(sat, hem):
     return gr_thresholds
 
 
-def compute_weather_filtered(tbs, ratios, thres):
+def compute_weather_filtered(
+    tbs: dict[str, npt.NDArray], ratios: dict[str, npt.NDArray], thres: dict[str, float]
+) -> npt.NDArray[np.bool_]:
+    """Return a mask representing a weather filter.
+
+    `True` values represent areas that should be excluded.
+
+    TODO: rename this function to something like `get_weather_mask`.
+    """
     # Determine where array is weather-filtered
     print(f'thres 2219: {thres["2219"]}')
     print(f'thres 3719: {thres["3719"]}')
@@ -254,13 +267,19 @@ def compute_weather_filtered(tbs, ratios, thres):
     return filtered
 
 
-def compute_valid_tbs(tbs):
-    # Return boolean array where TBs are valid
+def compute_valid_tbs(tbs: dict[str, npt.NDArray]) -> npt.NDArray[np.bool_]:
+    """Return boolean array where TBs are valid.
+
+    TODO: rename to `tb_mask` or similar. Since masks usually have `True`
+    elements representing data that's masked out, invert the bool here as well.
+    """
     return (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
 
 
-def compute_nt_conc(tbs, coefs, ratios):
-    # Compute NASA Team sea ice concentration estimate
+def compute_nt_conc(
+    tbs: dict[str, npt.NDArray], coefs: dict[str, float], ratios: dict[str, npt.NDArray]
+) -> npt.NDArray:
+    """Compute NASA Team sea ice concentration estimate."""
     pr_gr_product = ratios['pr_1919'] * ratios['gr_3719']
 
     dd = (
@@ -296,9 +315,8 @@ def compute_nt_conc(tbs, coefs, ratios):
     return conc
 
 
-def apply_nt_spillover(conc_int16):
-    # Apply the NASA Team land spillover routine
-
+def apply_nt_spillover(conc_int16: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
+    """Apply the NASA Team land spillover routine."""
     shoremap_fn = (
         PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
     )
@@ -369,8 +387,8 @@ def apply_nt_spillover(conc_int16):
     return newice
 
 
-def apply_sst(conc):
-    # Apply the sst filter
+def apply_sst(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
+    """Apply the sst filter."""
     sst_threshold = 2780
     sst = conc.copy()
 
@@ -390,8 +408,8 @@ def apply_sst(conc):
     return sst
 
 
-def apply_polehole(conc):
-    # Apply the pole hole
+def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
+    """Apply the pole hole."""
     new_conc = conc.copy()
 
     polehole_fn = (
@@ -411,6 +429,9 @@ def apply_polehole(conc):
 
 
 if __name__ == '__main__':
+    # Given date, hemisphere, and input source., get tbs (multiple channels)
+    #
+
     do_exact = True
 
     params = import_cfg_file(THIS_DIR / 'nt_sample_nh.json')
@@ -426,17 +447,13 @@ if __name__ == '__main__':
 
     spi_tbs = nt_spatint(orig_tbs)
     if do_exact:
+        # overwrites values at 4 gridcells to match the C code output.
+        # TODO: move this logic to regression test.
         spi_tbs = correct_spi_tbs(spi_tbs)
-
-    """
-    for tb in spi_tbs.keys():
-        ofn = f'spi_{tb}.dat'
-        spi_tbs[tb].tofile(ofn)
-        print(f'Wrote: {ofn}')
-    """
 
     # Here, the tbs are identical to the output of the Goddard code
 
+    # TODO: what is this 'next step to implement'?
     # The next step is to implement:
     #   seaice5con 001 2018 001 2018 TOT_CON ssmif17 n
     #
@@ -484,11 +501,9 @@ if __name__ == '__main__':
 
     # Apply SST-threshold
     conc_sst = apply_sst(conc_spill)
-    # conc_sst.tofile('conc_sst_py.dat')
 
     # Apply pole hole
     conc_pole = apply_polehole(conc_sst)
-    # conc_pole.tofile('conc_pole_py.dat')
 
     # Write output file
     conc_pole.tofile('nt_sample_nh.dat')
