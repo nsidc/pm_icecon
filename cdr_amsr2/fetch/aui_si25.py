@@ -1,4 +1,18 @@
-"""Locate tb files on disk and return ndarrays representing the data."""
+"""Locate tb files on disk and return xarray objects representing the data.
+
+E.g,
+
+```
+import datetime as dt
+
+
+tbs = get_au_si25_tbs(
+    base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
+    date=dt.date(2022, 6, 8),
+    hemisphere='north',
+)
+```
+"""
 import datetime as dt
 import re
 from pathlib import Path
