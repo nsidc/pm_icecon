@@ -831,6 +831,17 @@ def calc_bt_ice(
     return ic
 
 
+def _get_land_arr(params):
+    land_arr = np.fromfile(
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
+        ).resolve(),
+        dtype=np.int16,
+    ).reshape(448, 304)
+
+    return land_arr
+
+
 if __name__ == '__main__':
     # Set a flag for getting *exactly* the same output file
     # as the Goddard fortran code produces
@@ -854,12 +865,7 @@ if __name__ == '__main__':
             ).resolve()
         )
 
-    land_arr = np.fromfile(
-        (
-            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
-        ).resolve(),
-        dtype=np.int16,
-    ).reshape(448, 304)
+    land_arr = _get_land_arr(params)
 
     tb_mask = tb_data_mask(
         tbs=(
