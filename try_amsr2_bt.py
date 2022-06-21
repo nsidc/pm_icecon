@@ -3,9 +3,9 @@ from pathlib import Path
 
 import xarray as xr
 
+import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
-import cdr_amsr2.bt.compute_bt_ic as bt
 
 if __name__ == '__main__':
     date = dt.date(2022, 5, 4)
@@ -38,13 +38,9 @@ if __name__ == '__main__':
         max_tb=params['maxtb'],
     )
 
-    tbs = bt.xfer_tbs_nrt(
-        tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params['sat']
-    )
+    tbs = bt.xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params['sat'])
 
-    params.update(
-        bt.ret_para_nsb2('vh37', params['sat'], params['seas'])
-    )
+    params.update(bt.ret_para_nsb2('vh37', params['sat'], params['seas']))
 
     water_arr = bt.ret_water_ssmi(
         tbs['v37'],

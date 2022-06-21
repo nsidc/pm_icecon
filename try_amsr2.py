@@ -3,9 +3,8 @@ from pathlib import Path
 
 import numpy as np
 
-from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 import cdr_amsr2.nt.compute_nt_ic as nt
-
+from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 
 if __name__ == '__main__':
     # TODO: this obviously isn't right...still need to get the new tiepoints for
