@@ -3,18 +3,16 @@ from pathlib import Path
 
 import xarray as xr
 
+import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import PACKAGE_DIR
-import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
     """Compute sea ice concentration from AU_SI25 TBs."""
     if hemisphere == 'south':
-        raise NotImplementedError(
-            'Southern hemisphere is not currently supported.'
-        )
+        raise NotImplementedError('Southern hemisphere is not currently supported.')
 
     xr_tbs = get_au_si25_tbs(
         base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
