@@ -46,14 +46,16 @@ def tb_data_mask(
     """Return a boolean ndarray inidcating areas of bad data.
 
     Bad data are locations where any of the given Tbs are outside the range
-    defined by (mintb, maxtb)
+    defined by (mintb, maxtb).
+
+    NaN values are also considered 'bad' data.
 
     True values indicate bad data that should be masked. False values indicate
     good data.
     """
 
     def _is_outofrange_tb(tb, min_tb, max_tb):
-        return (tb < min_tb) | (tb > max_tb)
+        return np.isnan(tb) | (tb < min_tb) | (tb > max_tb)
 
     is_bad_tb = reduce(
         np.logical_or,

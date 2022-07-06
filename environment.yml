@@ -18,6 +18,9 @@ dependencies:
   - mypy ~=0.961
   - pytest ~=7.1
   - vulture ~=2.4
+  # debugging/development tools
+  - ipython
+  - ipdb
 
   # Runtime dependencies
   - python ~=3.10.4
@@ -25,3 +28,4 @@ dependencies:
   - h5py ~=3.6
   - xarray ~=2022.3
   - netCDF4 ~=1.5.8
+  - cartopy
