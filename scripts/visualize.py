@@ -9,13 +9,12 @@ import datetime as dt
 from pathlib import Path
 
 import cartopy.crs as ccrs
-from matplotlib import pyplot as plt
 import numpy as np
 import xarray as xr
+from matplotlib import pyplot as plt
 
-from cdr_amsr2.fetch import au_si25
 from cdr_amsr2.constants import PACKAGE_DIR
-
+from cdr_amsr2.fetch import au_si25
 
 EXAMPLE_BT_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression/')
 EXAMPLE_BT_NC = EXAMPLE_BT_DIR / 'NH_20200101_py_NRT_amsr2.nc'
@@ -24,51 +23,51 @@ EXAMPLE_BT_NC = EXAMPLE_BT_DIR / 'NH_20200101_py_NRT_amsr2.nc'
 # to be able to generate 'standard' images using the `seaice` library, but that
 # will take some additional work.
 COLORS = [
-    '#093c70',   # 0-5
-    '#093c70',   # 5-10
-    '#093c70',   # 10-15
-    '#137AE3',   # 15-20
-    '#1684EB',   # 20-25
-    '#178CF2',   # 25-30
-    '#1994F9',   # 30-35
-    '#1A9BFC',   # 35-40
-    '#23A3FC',   # 40-45
-    '#31ABFC',   # 45-50
-    '#45B4FC',   # 50-55
-    '#57BCFC',   # 55-60
-    '#6AC4FC',   # 60-65
-    '#7DCCFD',   # 65-70
-    '#94D5FD',   # 70-75
-    '#A8DCFD',   # 75-80
-    '#BCE4FE',   # 80-85
-    '#D0ECFE',   # 85-90
-    '#E4F4FE',   # 90-95
-    '#F7FCFF',   # 95-100
+    '#093c70',  # 0-5
+    '#093c70',  # 5-10
+    '#093c70',  # 10-15
+    '#137AE3',  # 15-20
+    '#1684EB',  # 20-25
+    '#178CF2',  # 25-30
+    '#1994F9',  # 30-35
+    '#1A9BFC',  # 35-40
+    '#23A3FC',  # 40-45
+    '#31ABFC',  # 45-50
+    '#45B4FC',  # 50-55
+    '#57BCFC',  # 55-60
+    '#6AC4FC',  # 60-65
+    '#7DCCFD',  # 65-70
+    '#94D5FD',  # 70-75
+    '#A8DCFD',  # 75-80
+    '#BCE4FE',  # 80-85
+    '#D0ECFE',  # 85-90
+    '#E4F4FE',  # 90-95
+    '#F7FCFF',  # 95-100
     '#e9cb00',  # 110missing
-    '#777777',   # 120land
+    '#777777',  # 120land
 ]
 
 COLORBOUNDS = [
-    0.,
-    5.,
-    10.,
-    15.,
-    20.,
-    25.,
-    30.,
-    35.,
-    40.,
-    45.,
-    50.,
-    55.,
-    60.,
-    65.,
-    70.,
-    75.,
-    80.,
-    85.,
-    90.,
-    95.,
+    0.0,
+    5.0,
+    10.0,
+    15.0,
+    20.0,
+    25.0,
+    30.0,
+    35.0,
+    40.0,
+    45.0,
+    50.0,
+    55.0,
+    60.0,
+    65.0,
+    70.0,
+    75.0,
+    80.0,
+    85.0,
+    90.0,
+    95.0,
     100.0001,
     110.001,
     120.001,
@@ -91,7 +90,7 @@ def get_example_output() -> xr.Dataset:
     * Scale the data by 10 and round to np.uint8 dtype.
     """
     # golden = xr.open_dataset(EXAMPLE_BT_NC)
-    example_ds = xr.open_dataset(PACKAGE_DIR / '..' /  'NH_20200101_py_NRT_amsr2.nc')
+    example_ds = xr.open_dataset(PACKAGE_DIR / '..' / 'NH_20200101_py_NRT_amsr2.nc')
     # flip the image to be 'right-side' up
     example_ds = example_ds.reindex(y=example_ds.y[::-1], x=example_ds.x)
 
@@ -111,7 +110,7 @@ def save_n_conc_image(conc_array: xr.DataArray, filepath: Path) -> None:
         colors=COLORS,
         levels=COLORBOUNDS,
         add_colorbar=False,
-        add_labels=False
+        add_labels=False,
     )
     plt.savefig(filepath, bbox_inches='tight', pad_inches=0.05)
 
@@ -173,7 +172,9 @@ if __name__ == '__main__':
         / '../legacy/SB2_NRT_programs'
         / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
     ).resolve()
-    holemask = np.fromfile(pole_hole_path, dtype=np.int16).reshape(448, 304).astype(bool)
+    holemask = (
+        np.fromfile(pole_hole_path, dtype=np.int16).reshape(448, 304).astype(bool)
+    )
     aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
 
     diff = example_ds.conc - aui_si25_conc_masked
@@ -186,7 +187,7 @@ if __name__ == '__main__':
         add_colorbar=True,
         transform=N_PROJ,
         # (left, right, bottom, top)
-        extent=[-3850000.000, 3750000., -5350000., 5850000.000],
+        extent=[-3850000.000, 3750000.0, -5350000.0, 5850000.000],
     )
     ax.coastlines()
     plt.savefig(
