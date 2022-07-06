@@ -17,7 +17,7 @@ from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch import au_si25
 
 EXAMPLE_BT_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression/')
-EXAMPLE_BT_NC = EXAMPLE_BT_DIR / 'NH_20200101_py_NRT_amsr2.nc'
+EXAMPLE_BT_NC = EXAMPLE_BT_DIR / 'NH_20200101_py_NRT_amsr2.nc'  # noqa
 
 # TODO: these stolen from `seaice`'s `image` submodules. Eventually we'll want
 # to be able to generate 'standard' images using the `seaice` library, but that
