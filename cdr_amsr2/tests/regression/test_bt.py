@@ -9,7 +9,9 @@ REGRESSION_DATA_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regressi
 
 
 def test_bt_amsr2_regression():
-    """Compare output from bt algorithm for 2020-01-01 and 2022-05-04 against
+    """Regression test for BT AMSR2 outputs.
+
+    Compare output from bt algorithm for 2020-01-01 and 2022-05-04 against
     regression data.
 
     Scott Stewart manually examined the regression data and determined it looks
