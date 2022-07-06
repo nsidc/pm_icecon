@@ -1,3 +1,10 @@
+"""One-off script to produce visualizations for the NOAA stakeholders meeting.
+
+Meeting took place on June 30th, 2022 and went well!
+
+This code is a bit of a mess, but may serve as reference for future
+visualization code.
+"""
 import datetime as dt
 from pathlib import Path
 
