@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from numpy.testing import assert_equal
 import xarray as xr
+from numpy.testing import assert_equal
 
 from cdr_amsr2.constants import PACKAGE_DIR
-
 
 REGRESSION_DATA_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression')
 
