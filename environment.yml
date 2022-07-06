@@ -18,6 +18,9 @@ dependencies:
   - mypy ~=0.961
   - pytest ~=7.1
   - vulture ~=2.4
+  # debugging/development tools
+  - ipython
+  - ipdb
 
   # Runtime dependencies
   - python ~=3.10.4
