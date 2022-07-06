@@ -12,6 +12,7 @@ from typing import Literal, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import xarray as xr
 
 from cdr_amsr2.bt._types import Params, ParaVals, Variables
 from cdr_amsr2.config import import_cfg_file
@@ -875,6 +876,143 @@ def _get_land_arr(params):
     ).reshape(448, 304)
 
     return land_arr
+
+
+def bootstrap(
+    *,
+    tbs: dict[str, npt.NDArray],
+    params: Params,
+    variables: Variables,
+) -> xr.Dataset:
+    """Run the boostrap algorithm."""
+    land_arr = _get_land_arr(params)
+
+    tb_mask = tb_data_mask(
+        tbs=(
+            tbs['v37'],
+            tbs['h37'],
+            tbs['v19'],
+            tbs['v22'],
+        ),
+        min_tb=params['mintb'],
+        max_tb=params['maxtb'],
+    )
+
+    tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params['sat'])
+
+    para_vals_vh37 = ret_para_nsb2('vh37', params['sat'], params['seas'])
+    params['wintrc'] = para_vals_vh37['wintrc']
+    params['wslope'] = para_vals_vh37['wslope']
+    params['wxlimt'] = para_vals_vh37['wxlimt']
+    params['ln1'] = para_vals_vh37['lnline']
+    params['lnchk'] = para_vals_vh37['lnchk']
+    variables['wtp'] = para_vals_vh37['wtp']
+    variables['itp'] = para_vals_vh37['itp']
+
+    water_arr = ret_water_ssmi(
+        tbs['v37'],
+        tbs['h37'],
+        tbs['v22'],
+        tbs['v19'],
+        land_arr,
+        tb_mask,
+        params['wslope'],
+        params['wintrc'],
+        params['wxlimt'],
+        params['ln1'],
+    )
+
+    # Set wtp, which is tp37v and tp37h
+    variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
+    variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
+
+    if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
+        variables['wtp'][0] = variables['wtp37v']
+    if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
+        variables['wtp'][1] = variables['wtp37h']
+
+    calc_vh37 = ret_linfit_32(
+        land_arr,
+        tb_mask,
+        tbs['v37'],
+        tbs['h37'],
+        params['ln1'],
+        params['lnchk'],
+        params['add1'],
+        water_arr,
+    )
+    variables['vh37'] = calc_vh37
+
+    variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
+
+    para_vals_v1937 = ret_para_nsb2('v1937', params['sat'], params['seas'])
+    params['ln2'] = para_vals_v1937['lnline']
+    variables['wtp2'] = para_vals_v1937['wtp']
+    variables['itp2'] = para_vals_v1937['itp']
+    variables['v1937'] = para_vals_v1937['iceline']
+
+    variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+
+    if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
+        variables['wtp2'][0] = variables['wtp37v']
+    if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
+        variables['wtp2'][1] = variables['wtp19v']
+
+    # Try the ret_para... values for v1937
+    calc_v1937 = ret_linfit_32(
+        land_arr,
+        tb_mask,
+        tbs['v37'],
+        tbs['v19'],
+        params['ln2'],
+        params['lnchk'],
+        params['add2'],
+        water_arr,
+        tba=tbs['h37'],
+        iceline=variables['vh37'],
+        adoff=variables['adoff'],
+    )
+    variables['v1937'] = calc_v1937
+
+    # ## LINES calculating radslp1 ... to radlen2 ###
+    variables = calc_rad_coeffs_32(variables)
+
+    # ## LINES with loop calling (in part) ret_ic() ###
+    iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, tb_mask)
+
+    # *** Do sst cleaning ***
+    iceout_sst = sst_clean_sb2(
+        iceout, params['missval'], params['landval'], params['month']
+    )
+
+    # *** Do spatial interp ***
+    iceout_sst = spatial_interp(
+        iceout_sst,
+        params['missval'],
+        params['landval'],
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['nphole']
+        ).resolve(),
+    )
+
+    # *** Do spatial interp ***
+    iceout_fix = coastal_fix(
+        iceout_sst, params['missval'], params['landval'], params['minic']
+    )
+    iceout_fix[iceout_fix < params['minic']] = 0
+
+    # *** Do fix_output ***
+    fixout = fix_output_gdprod(
+        iceout_fix,
+        params['minval'],
+        params['maxval'],
+        params['landval'],
+        params['missval'],
+    )
+
+    ds = xr.Dataset({'conc': (('y', 'x'), fixout)})
+
+    return ds
 
 
 if __name__ == '__main__':
