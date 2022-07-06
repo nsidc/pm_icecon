@@ -7,6 +7,7 @@ import numpy as np
 import xarray as xr
 
 from cdr_amsr2.fetch import au_si25
+from cdr_amsr2.constants import PACKAGE_DIR
 
 
 EXAMPLE_BT_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression/')
@@ -82,7 +83,8 @@ def get_example_output() -> xr.Dataset:
     * Flip the data so that North is 'up'.
     * Scale the data by 10 and round to np.uint8 dtype.
     """
-    example_ds = xr.open_dataset(EXAMPLE_BT_NC)
+    # golden = xr.open_dataset(EXAMPLE_BT_NC)
+    example_ds = xr.open_dataset(PACKAGE_DIR / '..' /  'NH_20200101_py_NRT_amsr2.nc')
     # flip the image to be 'right-side' up
     example_ds = example_ds.reindex(y=example_ds.y[::-1], x=example_ds.x)
 
@@ -130,6 +132,13 @@ def get_au_si25_bt_conc() -> xr.DataArray:
     return bt_conc
 
 
+def _get_valid_icemask():
+    ds = xr.open_dataset(
+        '/projects/DATASETS/nsidc0622_valid_seaice_masks/NIC_valid_ice_mask.N25km.01.1972-2007.nc'
+    )
+
+    return ds
+
 
 if __name__ == '__main__':
     # Get and save an image of the NH example data produced by our python code.
@@ -142,16 +151,61 @@ if __name__ == '__main__':
     save_n_conc_image(au_si25_conc, Path('/tmp/NH_20200101_au_si25_amsr2.png'))
 
     # Do a difference between the two images.
-    diff = example_ds.conc - au_si25_conc
+    aui_si25_conc_masked = au_si25_conc.where(au_si25_conc != 110, 0)
+
+    # Mask out lakes (value of 4)
+    valid_icemask = _get_valid_icemask()
+    aui_si25_conc_masked = aui_si25_conc_masked.where(
+        valid_icemask.valid_ice_flag.data != 4,
+        0,
+    )
+
+    # mask out pole hole
+    pole_hole_path = (
+        PACKAGE_DIR
+        / '../legacy/SB2_NRT_programs'
+        / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
+    ).resolve()
+    holemask = np.fromfile(pole_hole_path, dtype=np.int16).reshape(448, 304).astype(bool)
+    aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
+
+    diff = example_ds.conc - aui_si25_conc_masked
     plt.clf()
     plt.cla()
     plt.close()
+    ax = plt.axes((0, 0, 1, 1), projection=N_PROJ)
     diff.plot.imshow(
-        ax=plt.axes((0, 0, 1, 1), projection=N_PROJ),
+        ax=ax,
         add_colorbar=True,
+        transform=N_PROJ,
+        # (left, right, bottom, top)
+        extent=[-3850000.000, 3750000., -5350000., 5850000.000],
     )
+    ax.coastlines()
     plt.savefig(
         '/tmp/NH_20200101_diff_amsr2.png',
+        bbox_inches='tight',
+        pad_inches=0.05,
+    )
+
+    # Histogram
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+    diff = diff.data.flatten()
+    diff_excluding_0 = diff[diff != 0]
+    breakpoint()
+    plt.hist(
+        diff_excluding_0,
+        bins=list(range(-100, 120, 5)),
+        log=True,
+    )
+
+    plt.xticks(list(range(-100, 120, 20)))
+
+    plt.savefig(
+        '/tmp/NH_20200101_diff_hist_amsr2.png',
         bbox_inches='tight',
         pad_inches=0.05,
     )
