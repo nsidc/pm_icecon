@@ -142,7 +142,9 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> Par
             wintrc2 = 12.22
             wslope2 = 0.7020
         else:
-            raise AMSRU_Error(f'season {season} params not defined for sat: {sat}')
+            raise BootstrapAlgError(
+                f'season {season} params not defined for sat: {sat}'
+            )
     else:
         if season == 1:
             if sat != '17' and sat != '18':
