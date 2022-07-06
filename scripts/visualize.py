@@ -140,7 +140,8 @@ def get_au_si25_bt_conc() -> xr.DataArray:
 
 def _get_valid_icemask():
     ds = xr.open_dataset(
-        '/projects/DATASETS/nsidc0622_valid_seaice_masks/NIC_valid_ice_mask.N25km.01.1972-2007.nc'
+        '/projects/DATASETS/nsidc0622_valid_seaice_masks'
+        '/NIC_valid_ice_mask.N25km.01.1972-2007.nc'
     )
 
     return ds
