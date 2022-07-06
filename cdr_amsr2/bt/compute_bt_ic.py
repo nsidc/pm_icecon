@@ -139,6 +139,7 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> Par
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
+            # TODO: are these necessary? Can we remove these?
             wintrc2 = 12.22
             wslope2 = 0.7020
         else:
