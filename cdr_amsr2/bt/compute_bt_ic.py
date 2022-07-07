@@ -18,7 +18,6 @@ from cdr_amsr2.bt._types import Params, ParaVals, Variables
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.errors import (
     BootstrapAlgError,
-    UnexpectedFilenameError,
     UnexpectedSatelliteError,
 )
 
@@ -775,25 +774,6 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval):
     fixout[is_missing] = fmul(conc[is_missing], scaling_factor).astype(np.int16)
 
     return fixout
-
-
-def get_satymd_from_tb_filepath(filepath: Path):
-    # expect filename of format:
-    #  ../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin
-    # Note: this is *extremely* hard-coded
-    filename = filepath.name
-    fn_regex = re.compile(
-        r'tb_(?P<sat>\w{3})_(?P<yyyy>\d{4})(?P<mm>\d{2})(?P<dd>\d{2})_.*bin'
-    )
-    match = fn_regex.match(filename)
-    if not match:
-        raise UnexpectedFilenameError(filepath)
-    sat = match.group('sat')
-    year = match.group('yyyy')
-    month = match.group('mm')
-    day = match.group('dd')
-
-    return sat, year, month, day
 
 
 def calc_bt_ice(
