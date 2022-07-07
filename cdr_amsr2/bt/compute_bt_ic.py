@@ -15,7 +15,6 @@ import numpy.typing as npt
 import xarray as xr
 
 from cdr_amsr2.bt._types import Params, ParaVals, Variables
-from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.errors import (
     BootstrapAlgError,

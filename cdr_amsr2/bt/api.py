@@ -7,6 +7,7 @@ import xarray as xr
 
 import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 
@@ -22,8 +23,8 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         hemisphere='north',
     )
 
-    params = bt.import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params_amsru.json')
-    variables = bt.import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
+    params = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params_amsru.json')
+    variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
 
     tbs = {
         'v19': xr_tbs['v18'].data,
@@ -55,8 +56,8 @@ def original_f18_example() -> xr.Dataset:
     array([983, 992, 974, 829], dtype=int16)
     ```
     """
-    params = bt.import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params.json')
-    variables = bt.import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
+    params = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params.json')
+    variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 
     otbs: dict[str, npt.NDArray[np.float32]] = {}
 
