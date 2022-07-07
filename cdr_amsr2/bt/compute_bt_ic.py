@@ -926,6 +926,10 @@ def bootstrap(
     variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
     variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
 
+    # assert these keys are not None so the typechecker does not complain.
+    assert variables['wtp37v'] is not None
+    assert variables['wtp37h'] is not None
+
     if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
         variables['wtp'][0] = variables['wtp37v']
     if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
@@ -952,6 +956,8 @@ def bootstrap(
     variables['v1937'] = para_vals_v1937['iceline']
 
     variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+
+    assert variables['wtp19v'] is not None
 
     if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
         variables['wtp2'][0] = variables['wtp37v']
