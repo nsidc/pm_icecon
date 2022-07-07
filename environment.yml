@@ -28,4 +28,6 @@ dependencies:
   - h5py ~=3.6
   - xarray ~=2022.3
   - netCDF4 ~=1.5.8
-  - cartopy
+  - cartopy ~=0.20
+  - click ~=8.1
+  - loguru ~=0.6
