@@ -1,6 +1,7 @@
 import datetime as dt
 from pathlib import Path
 
+import numpy.typing as npt
 import xarray as xr
 
 import cdr_amsr2.bt.compute_bt_ic as bt
@@ -32,6 +33,43 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
 
     conc_ds = bt.bootstrap(
         tbs=tbs,
+        params=params,
+        variables=variables,
+    )
+
+    return conc_ds
+
+
+def original_f18_example() -> xr.Dataset:
+    """Return concentration field example for f18_20180217.
+
+    This example data does not perfectly match the outputs given by Goddard's
+    code, but it is very close. A total of 4 cells differ 1.
+
+    ```
+    >>> exact[not_eq]
+    array([984, 991, 975, 830], dtype=int16)
+    >>> not_eq = exact != not_exact
+    >>> not_exact[not_eq]
+    array([983, 992, 974, 829], dtype=int16)
+    ```
+    """
+    params = bt.import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params.json')
+    variables = bt.import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
+
+    otbs: dict[str, npt.NDArray[np.float32]] = {}
+
+    for tb in ('v19', 'h37', 'v37', 'v22'):
+        otbs[tb] = bt.read_tb_field(
+            (
+                PACKAGE_DIR
+                / '../legacy/SB2_NRT_programs'
+                / params['raw_fns'][tb]  # type: ignore [literal-required]
+            ).resolve()
+        )
+
+    conc_ds = bt.bootstrap(
+        tbs=otbs,
         params=params,
         variables=variables,
     )
