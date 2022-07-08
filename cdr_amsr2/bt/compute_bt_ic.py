@@ -5,7 +5,6 @@ and computes:
     iceout
 """
 
-import re
 from functools import reduce
 from pathlib import Path
 from typing import Literal, Sequence
