@@ -36,7 +36,6 @@ def test_bt_amsr2_regression():
         )
 
 
-# TODO: move regression data to share location on vm
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     regression_data = np.fromfile(
