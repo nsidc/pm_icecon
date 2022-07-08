@@ -747,8 +747,17 @@ def coastal_fix(arr, missval, landval, minic):
     return arr2
 
 
-def fix_output_gdprod(conc, minval, maxval, landval, missval):
-    # Return fixout, a 2-byte integer field with ice concentration
+def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.int16]:
+    """Scale the given concentration field by 10.
+
+    TODO:
+      * Do we want to scale the output by 10? If not, get rid of this? Maybe
+        make this optional?
+      * Is there ever a case where the valid conc range isn't going to be 0-100?
+        If we just need to set neg values to 0 and cap out concs at 100, then we
+        can get rid of the 'minval' and 'maxval' parameters. This is the only
+        place they're used.
+    """
     fixout = np.zeros_like(conc, dtype=np.int16)
     scaling_factor = 10.0
 
@@ -773,8 +782,8 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval):
 
 
 def calc_bt_ice(
-    p,
-    v,
+    p: Params,
+    v: Variables,
     tbs,
     land,
     water_arr,
