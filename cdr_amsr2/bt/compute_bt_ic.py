@@ -5,6 +5,7 @@ and computes:
     iceout
 """
 
+import datetime as dt
 from functools import reduce
 from pathlib import Path
 from typing import Literal, Sequence
@@ -440,13 +441,12 @@ def calc_rad_coeffs_32(v: Variables):
     return v_out
 
 
-def sst_clean_sb2(iceout, missval, landval, month):
+def sst_clean_sb2(*, iceout, missval, landval, date: dt.date):
     # implement fortran's sst_clean_sb2() routine
-    imonth = int(month)
     sst_fn = (
         PACKAGE_DIR
         / '../legacy'
-        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
     ).resolve()
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
 
@@ -858,6 +858,7 @@ def bootstrap(
     tbs: dict[str, npt.NDArray],
     params: Params,
     variables: Variables,
+    date: dt.date,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     land_arr = _get_land_arr(params)
@@ -963,7 +964,10 @@ def bootstrap(
 
     # *** Do sst cleaning ***
     iceout_sst = sst_clean_sb2(
-        iceout, params['missval'], params['landval'], params['month']
+        iceout=iceout,
+        missval=params['missval'],
+        landval=params['landval'],
+        date=date,
     )
 
     # *** Do spatial interp ***

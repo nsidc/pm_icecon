@@ -37,6 +37,7 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         tbs=tbs,
         params=params,
         variables=variables,
+        date=date,
     )
 
     return conc_ds
@@ -77,6 +78,7 @@ def original_f18_example() -> xr.Dataset:
         tbs=otbs,
         params=params,
         variables=variables,
+        date=dt.date(2018, 2, 17),
     )
 
     return conc_ds
