@@ -15,10 +15,7 @@ import xarray as xr
 
 from cdr_amsr2.bt._types import Params, ParaVals, Variables
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.errors import (
-    BootstrapAlgError,
-    UnexpectedSatelliteError,
-)
+from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 THIS_DIR = Path(__file__).parent
 
