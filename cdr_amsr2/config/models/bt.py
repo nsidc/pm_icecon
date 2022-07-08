@@ -2,8 +2,10 @@ from cdr_amsr2.config.models.base_model import ConfigBaseModel
 
 
 class BootstrapParams(ConfigBaseModel):
-    add1: float
-    add2: float
+    # TODO: what do these values represent? Are they likely to change from 0 and
+    # -2?
+    add1: float = 0.0
+    add2: float = -2.0
 
     # Flags
     landval: float = 120.0
