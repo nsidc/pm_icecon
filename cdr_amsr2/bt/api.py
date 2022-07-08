@@ -55,6 +55,9 @@ def original_f18_example() -> xr.Dataset:
     >>> not_exact[not_eq]
     array([983, 992, 974, 829], dtype=int16)
     ```
+
+    the exact grid produced by the fortran code is in
+    `legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic`
     """
     params = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params.json')
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
