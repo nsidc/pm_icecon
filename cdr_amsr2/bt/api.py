@@ -10,6 +10,26 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
+from cdr_amsr2.config.models.bt import BootstrapParams
+
+
+LAND_ARRAY = np.fromfile(
+    (
+        PACKAGE_DIR
+        / '../legacy/SB2_NRT_programs'
+        / '../SB2_NRT_programs/ANCILLARY/north_land_25'
+    ).resolve(),
+    dtype=np.int16,
+).reshape(448, 304)
+
+HOLEMASK = np.fromfile(
+    (
+        PACKAGE_DIR
+        / '../legacy/SB2_NRT_programs'
+        / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
+    ).resolve(),
+    dtype=np.int16
+).reshape(448, 304)
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
@@ -23,7 +43,12 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         hemisphere='north',
     )
 
-    params = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params_amsru.json')
+    params = BootstrapParams(
+        sat='u2',
+        land_mask=LAND_ARRAY,
+        pole_mask=HOLEMASK,
+    )
+
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
 
     tbs = {
@@ -60,17 +85,28 @@ def original_f18_example() -> xr.Dataset:
     the exact grid produced by the fortran code is in
     `legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic`
     """
-    params = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_params.json')
+    params = BootstrapParams(
+        sat='18',
+        land_mask=LAND_ARRAY,
+        pole_mask=HOLEMASK,
+    )
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 
     otbs: dict[str, npt.NDArray[np.float32]] = {}
 
+    # TODO: read this data from a fetch operation.
+    raw_fns = {
+        "v19": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n19v.bin",
+        "h37": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37h.bin",
+        "v37": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin",
+        "v22": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n22v.bin",
+    }
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = bt.read_tb_field(
             (
                 PACKAGE_DIR
                 / '../legacy/SB2_NRT_programs'
-                / params['raw_fns'][tb]  # type: ignore [literal-required]
+                / raw_fns[tb]  # type: ignore [literal-required]
             ).resolve()
         )
 

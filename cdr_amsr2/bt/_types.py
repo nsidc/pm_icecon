@@ -23,36 +23,6 @@ class ParaVals(TypedDict):
     wxlimt: float
 
 
-class Params(TypedDict):
-    add1: float
-    add2: float
-    landval: float
-    ln1: list[float]  # len 2
-    ln2: list[float]  # len 2
-    lnchk: float
-    maxic: float
-    maxtb: float
-    maxval: float
-    minic: float
-    mintb: float
-    minval: float
-    missval: float
-    # e.g., `'02'`
-    month: str
-    # TODO: boolean?
-    pole: int
-    raw_fns: RawFns
-    # TOOD: literal?
-    sat: str
-    # TODO: boolean?
-    seas: int
-
-    # params takes these vals from ParaVals
-    wintrc: Optional[float]
-    wslope: Optional[float]
-    wxlimt: Optional[float]
-
-
 class Variables(TypedDict):
     adoff: float
     itp: list[float]  # len 2
