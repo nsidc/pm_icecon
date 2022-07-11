@@ -12,7 +12,8 @@ from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 
-LAND_ARRAY = np.fromfile(
+# Ocean has a value of 0, land a value of 1, and coast a value of 2.
+_land_coast_array = np.fromfile(
     (
         PACKAGE_DIR
         / '../legacy/SB2_NRT_programs'
@@ -21,14 +22,19 @@ LAND_ARRAY = np.fromfile(
     dtype=np.int16,
 ).reshape(448, 304)
 
-HOLEMASK = np.fromfile(
+# TODO: land mask currently includes land and coast. Does this make sense? Are
+# we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
+LAND_MASK = _land_coast_array != 0
+
+# values of 1 indicate the pole hole.
+POLE_MASK = np.fromfile(
     (
         PACKAGE_DIR
         / '../legacy/SB2_NRT_programs'
         / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
     ).resolve(),
     dtype=np.int16,
-).reshape(448, 304)
+).reshape(448, 304) == 1
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
@@ -44,8 +50,8 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
 
     params = BootstrapParams(
         sat='u2',
-        land_mask=LAND_ARRAY,
-        pole_mask=HOLEMASK,
+        land_mask=LAND_MASK,
+        pole_mask=POLE_MASK,
     )
 
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
@@ -86,8 +92,8 @@ def original_f18_example() -> xr.Dataset:
     """
     params = BootstrapParams(
         sat='18',
-        land_mask=LAND_ARRAY,
-        pole_mask=HOLEMASK,
+        land_mask=LAND_MASK,
+        pole_mask=POLE_MASK,
     )
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 

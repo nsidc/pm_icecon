@@ -58,11 +58,11 @@ class BootstrapParams(ConfigBaseModel):
     """Season."""
 
     # TODO: change to boolean type mask
-    land_mask: npt.NDArray[np.int16]
+    land_mask: npt.NDArray[np.bool_]
 
     # TODO: change to boolean type mask
     # Hemisphere dependent. Should be required for Northern hemisphere. Should
     # be exlcluded in South. TODO: should we create a custom validator for this?
     # We would also want to add Hemisphere to this config object as well in that
     # case.
-    pole_mask: Optional[npt.NDArray[np.int16]] = None
+    pole_mask: Optional[npt.NDArray[np.bool_]] = None

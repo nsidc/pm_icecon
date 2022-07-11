@@ -264,7 +264,7 @@ def linfit_32(xvals, yvals):
 
 
 def ret_linfit_32(
-    land,
+    land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
@@ -280,7 +280,7 @@ def ret_linfit_32(
     # Note: lnline is two, 0 is offset, 1 is slope
     # Note: iceline is two, 0 is offset, 1 is slope
 
-    not_land_or_masked = (land == 0) & ~tb_mask
+    not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None:
         is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
     else:
@@ -373,7 +373,7 @@ def ret_water_ssmi(
     h37,
     v22,
     v19,
-    land,
+    land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
     wslope,
     wintrc,
@@ -381,7 +381,7 @@ def ret_water_ssmi(
     ln1,
 ) -> npt.NDArray[np.int16]:
     # Determine where there is definitely water
-    not_land_or_masked = (land == 0) & ~tb_mask
+    not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
@@ -391,7 +391,7 @@ def ret_water_ssmi(
 
     is_water = not_land_or_masked & is_cond1 & is_cond2
 
-    water = np.zeros_like(land, dtype=np.int16)
+    water = np.zeros_like(land_mask, dtype=np.int16)
     water[is_water] = 1
 
     return water
@@ -466,7 +466,7 @@ def spatial_interp(
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
-    pole_mask: Optional[npt.NDArray[np.int16]],
+    pole_mask: Optional[npt.NDArray[np.bool_]],
 ) -> npt.NDArray[np.float32]:
     iceout = ice.copy()
     # implement fortran's spatial_interp() routine
@@ -487,7 +487,7 @@ def spatial_interp(
     replace_vals = fdiv(total, count)
     replace_locs = (oceanvals == missval) & (count >= 1)
     if pole_mask is not None:
-        replace_locs = replace_locs & (pole_mask == 0)
+        replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
 
@@ -782,7 +782,7 @@ def calc_bt_ice(
     p: BootstrapParams,
     v: Variables,
     tbs,
-    land,
+    land_mask: npt.NDArray[np.bool_],
     water_arr,
     tb_mask: npt.NDArray[np.bool_],
 ):
@@ -843,7 +843,7 @@ def calc_bt_ice(
 
     ic[water_arr == 1] = 0.0
     ic[tb_mask] = p.missval
-    ic[land != 0] = p.landval
+    ic[land_mask] = p.landval
 
     return ic
 
