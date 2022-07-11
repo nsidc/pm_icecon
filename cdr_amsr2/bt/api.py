@@ -27,14 +27,17 @@ _land_coast_array = np.fromfile(
 LAND_MASK = _land_coast_array != 0
 
 # values of 1 indicate the pole hole.
-POLE_MASK = np.fromfile(
-    (
-        PACKAGE_DIR
-        / '../legacy/SB2_NRT_programs'
-        / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-    ).resolve(),
-    dtype=np.int16,
-).reshape(448, 304) == 1
+POLE_MASK = (
+    np.fromfile(
+        (
+            PACKAGE_DIR
+            / '../legacy/SB2_NRT_programs'
+            / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
+        ).resolve(),
+        dtype=np.int16,
+    ).reshape(448, 304)
+    == 1
+)
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
