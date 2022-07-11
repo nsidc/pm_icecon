@@ -869,7 +869,7 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, params.seas)
+    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, params.season)
     wintrc = para_vals_vh37['wintrc']
     wslope = para_vals_vh37['wslope']
     wxlimt = para_vals_vh37['wxlimt']
@@ -918,7 +918,7 @@ def bootstrap(
 
     variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, params.seas)
+    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, params.season)
     ln2 = para_vals_v1937['lnline']
     variables['wtp2'] = para_vals_v1937['wtp']
     variables['itp2'] = para_vals_v1937['itp']
