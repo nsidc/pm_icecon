@@ -1,4 +1,10 @@
+from typing import Optional
+
+import numpy as np
+import numpy.typing as npt
+
 from cdr_amsr2.config.models.base_model import ConfigBaseModel
+from cdr_amsr2._types import ValidSatellites
 
 
 class BootstrapParams(ConfigBaseModel):
@@ -15,12 +21,14 @@ class BootstrapParams(ConfigBaseModel):
 
     # TODO: what do these values represent?
     # TODO: enforce length of list w/ pydantic validator.
-    ln1: list[float]  # len 2
-    ln2: list[float]  # len 2
+    # TODO: tuple?
+    # TODO: do we want these values as params? they get overwritten by `ret_para_nsb2`
+    # ln1: list[float]  # len 2
+    # ln2: list[float]  # len 2
 
     # TODO: in the code, this is actually given by `ret_para_nsb2`. Should we
     # let it be overridden? What does this represent/do?
-    lnchk: float = 1.5
+    # lnchk: float = 1.5
 
     # TODO: what do these represent?
     minic: float = 10.0
@@ -41,13 +49,20 @@ class BootstrapParams(ConfigBaseModel):
 
     # TODO: consider just adding this as an argument to the bootstrap alg
     # entrypoint?
-    sat: str
+    sat: ValidSatellites
+    """String representing satellite."""
 
     # TODO: rename to 'season'. Can we just extract this from the date?
     # What does 1 even mean?
     seas: int = 1
     """Season."""
 
-    # TODO: 'raw_fns' replacement for land and pole hole paths. Or maybe these
-    # could be np arrays and it's up to the caller to implement where they come
-    # from.
+    # TODO: change to boolean type mask
+    land_mask: npt.NDArray[np.int16]
+
+    # TODO: change to boolean type mask
+    # Hemisphere dependent. Should be required for Northern hemisphere. Should
+    # be exlcluded in South. TODO: should we create a custom validator for this?
+    # We would also want to add Hemisphere to this config object as well in that
+    # case.
+    pole_mask: Optional[npt.NDArray[np.int16]] = None
