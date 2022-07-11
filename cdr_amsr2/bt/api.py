@@ -95,10 +95,10 @@ def original_f18_example() -> xr.Dataset:
 
     # TODO: read this data from a fetch operation.
     raw_fns = {
-        "v19": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n19v.bin",
-        "h37": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37h.bin",
-        "v37": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin",
-        "v22": "../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n22v.bin",
+        'v19': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n19v.bin',
+        'h37': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37h.bin',
+        'v37': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin',
+        'v22': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n22v.bin',
     }
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = bt.read_tb_field(
