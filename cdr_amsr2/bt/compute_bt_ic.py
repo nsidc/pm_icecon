@@ -120,43 +120,35 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
     #       So, tbset is 'v1937' or 'vh37'
     # Note: 'sat' is a *string*, not an integer
 
-    season = 1
-    if (date.month >= 6 and date.month <= 9) or (date.month == 10 and date.day <= 15):
-        season = 2
+    is_june_through_oct15 = (date.month >= 6 and date.month <= 9) or (
+        date.month == 10 and date.day <= 15
+    )
 
     # Set wintrc, wslope, wxlimt
     print(f'in ret_para_nsb2(): sat is {sat}')
     if sat == '00':
-        if season == 1:
-            wintrc = 53.4153
-            wslope = 0.661017
-            wxlimt = 22.00
-        else:
+        if is_june_through_oct15:
             wintrc = 60.1667
             wslope = 0.633333
             wxlimt = 24.00
+        else:
+            wintrc = 53.4153
+            wslope = 0.661017
+            wxlimt = 22.00
     elif sat == 'u2':
-        if season == 1:
+        if is_june_through_oct15:
+            raise BootstrapAlgError(
+                'Season June-Oct. 15 params not defined for sat: {sat}'
+            )
+        else:
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
             # TODO: are these necessary? Can we remove these?
             wintrc2 = 12.22
             wslope2 = 0.7020
-        else:
-            raise BootstrapAlgError(
-                f'season {season} params not defined for sat: {sat}'
-            )
     else:
-        if season == 1:
-            if sat != '17' and sat != '18':
-                wintrc = 90.3355
-                wslope = 0.501537
-            else:
-                wintrc = 87.6467
-                wslope = 0.517333
-            wxlimt = 14.00
-        else:
+        if is_june_through_oct15:
             if sat != '17' and sat != '18':
                 wintrc = 89.3316
                 wslope = 0.501537
@@ -164,6 +156,14 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
                 wintrc = 89.2000
                 wslope = 0.503750
             wxlimt = 21.00
+        else:
+            if sat != '17' and sat != '18':
+                wintrc = 90.3355
+                wslope = 0.501537
+            else:
+                wintrc = 87.6467
+                wslope = 0.517333
+            wxlimt = 14.00
 
     if sat == 'u2':
         # Values for AMSRU
