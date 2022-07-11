@@ -3,8 +3,8 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
-from cdr_amsr2.config.models.base_model import ConfigBaseModel
 from cdr_amsr2._types import ValidSatellites
+from cdr_amsr2.config.models.base_model import ConfigBaseModel
 
 
 class BootstrapParams(ConfigBaseModel):

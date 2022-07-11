@@ -970,9 +970,7 @@ def bootstrap(
     )
 
     # *** Do spatial interp ***
-    iceout_fix = coastal_fix(
-        iceout_sst, params.missval, params.landval, params.minic
-    )
+    iceout_fix = coastal_fix(iceout_sst, params.missval, params.landval, params.minic)
     iceout_fix[iceout_fix < params.minic] = 0
 
     # *** Do fix_output ***

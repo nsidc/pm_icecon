@@ -8,10 +8,9 @@ import xarray as xr
 import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.config import import_cfg_file
+from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
-from cdr_amsr2.config.models.bt import BootstrapParams
-
 
 LAND_ARRAY = np.fromfile(
     (
@@ -28,7 +27,7 @@ HOLEMASK = np.fromfile(
         / '../legacy/SB2_NRT_programs'
         / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
     ).resolve(),
-    dtype=np.int16
+    dtype=np.int16,
 ).reshape(448, 304)
 
 

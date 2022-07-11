@@ -13,9 +13,9 @@ import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
 
+from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch import au_si25
-from cdr_amsr2.bt.api import amsr2_bootstrap
 
 EXAMPLE_BT_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression/')
 EXAMPLE_BT_NC = EXAMPLE_BT_DIR / 'NH_20200101_py_NRT_amsr2.nc'  # noqa
