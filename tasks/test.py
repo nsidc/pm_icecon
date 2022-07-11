@@ -60,6 +60,23 @@ def vulture(ctx):
         typecheck,
         vulture,
         unit,
+    ],
+)
+def ci(ctx):
+    """Run tests in CircleCI.
+
+    Excludes regression tests that require access to data on NSIDC-specific
+    infrastructure.
+    """
+    ...
+
+
+@task(
+    pre=[
+        lint,
+        typecheck,
+        vulture,
+        unit,
         regression,
     ],
     default=True,
