@@ -112,13 +112,17 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> ParaVals:
+def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> ParaVals:
     # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
     #       to identify the TB set whose parameters are being set
     #       So, tbset is 'v1937' or 'vh37'
     # Note: 'sat' is a *string*, not an integer
+
+    season = 1
+    if (date.month >= 6 and date.month <= 9) or (date.month == 10 and date.day <= 15):
+        season = 2
 
     # Set wintrc, wslope, wxlimt
     print(f'in ret_para_nsb2(): sat is {sat}')
@@ -869,7 +873,7 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, params.season)
+    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date)
     wintrc = para_vals_vh37['wintrc']
     wslope = para_vals_vh37['wslope']
     wxlimt = para_vals_vh37['wxlimt']
@@ -918,7 +922,7 @@ def bootstrap(
 
     variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, params.season)
+    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date)
     ln2 = para_vals_v1937['lnline']
     variables['wtp2'] = para_vals_v1937['wtp']
     variables['itp2'] = para_vals_v1937['itp']
