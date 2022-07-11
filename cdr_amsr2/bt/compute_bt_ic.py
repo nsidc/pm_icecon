@@ -147,6 +147,10 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             # TODO: are these necessary? Can we remove these?
             wintrc2 = 12.22
             wslope2 = 0.7020
+    # TODO: can we create a more specific condition here? A sat of e.g., `foo`
+    # would still get params (incorrect) from this. Maybe it makes more sense to
+    # shift this logic to the API (e.g., teh AU_SI25 entrypoint would have the
+    # logic for setting thse parameters and pass them to bootstrap.
     else:
         if is_june_through_oct15:
             if sat != '17' and sat != '18':
