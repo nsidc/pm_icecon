@@ -8,7 +8,7 @@ and computes:
 import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Literal, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -466,7 +466,7 @@ def spatial_interp(
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
-    pole_mask: npt.NDArray[np.int16],
+    pole_mask: Optional[npt.NDArray[np.int16]],
 ) -> npt.NDArray[np.float32]:
     iceout = ice.copy()
     # implement fortran's spatial_interp() routine
@@ -485,7 +485,9 @@ def spatial_interp(
 
     count[count == 0] = 1
     replace_vals = fdiv(total, count)
-    replace_locs = (oceanvals == missval) & (count >= 1) & (pole_mask == 0)
+    replace_locs = (oceanvals == missval) & (count >= 1)
+    if pole_mask is not None:
+        replace_locs = replace_locs & (pole_mask == 0)
 
     iceout[replace_locs] = replace_vals[replace_locs]
 
