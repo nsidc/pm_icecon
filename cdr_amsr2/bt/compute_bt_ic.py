@@ -8,7 +8,7 @@ and computes:
 import re
 from functools import reduce
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -115,7 +115,7 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
+def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> ParaVals:
     # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
@@ -139,10 +139,13 @@ def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
+            # TODO: are these necessary? Can we remove these?
             wintrc2 = 12.22
             wslope2 = 0.7020
         else:
-            raise AMSRU_Error(f'season {season} params not defined for sat: {sat}')
+            raise BootstrapAlgError(
+                f'season {season} params not defined for sat: {sat}'
+            )
     else:
         if season == 1:
             if sat != '17' and sat != '18':
