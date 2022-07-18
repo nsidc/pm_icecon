@@ -5,22 +5,17 @@ and computes:
     iceout
 """
 
-import re
 from functools import reduce
 from pathlib import Path
 from typing import Literal, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import xarray as xr
 
 from cdr_amsr2.bt._types import Params, ParaVals, Variables
-from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.errors import (
-    BootstrapAlgError,
-    UnexpectedFilenameError,
-    UnexpectedSatelliteError,
-)
+from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 THIS_DIR = Path(__file__).parent
 
@@ -777,25 +772,6 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval):
     return fixout
 
 
-def get_satymd_from_tb_filepath(filepath: Path):
-    # expect filename of format:
-    #  ../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin
-    # Note: this is *extremely* hard-coded
-    filename = filepath.name
-    fn_regex = re.compile(
-        r'tb_(?P<sat>\w{3})_(?P<yyyy>\d{4})(?P<mm>\d{2})(?P<dd>\d{2})_.*bin'
-    )
-    match = fn_regex.match(filename)
-    if not match:
-        raise UnexpectedFilenameError(filepath)
-    sat = match.group('sat')
-    year = match.group('yyyy')
-    month = match.group('mm')
-    day = match.group('dd')
-
-    return sat, year, month, day
-
-
 def calc_bt_ice(
     p,
     v,
@@ -877,60 +853,37 @@ def _get_land_arr(params):
     return land_arr
 
 
-if __name__ == '__main__':
-    # Set a flag for getting *exactly* the same output file
-    # as the Goddard fortran code produces
-    do_exact = True
-    # do_exact = False
-
-    params: Params = import_cfg_file(THIS_DIR / 'ret_ic_params.json')
-
-    orig_vars: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
-    variables: Variables = import_cfg_file(THIS_DIR / 'ret_ic_variables.json')
-
-    # Convert params to variables
-    otbs: dict[str, npt.NDArray[np.float32]] = {}
-
-    for tb in ('v19', 'h37', 'v37', 'v22'):
-        otbs[tb] = read_tb_field(
-            (
-                PACKAGE_DIR
-                / '../legacy/SB2_NRT_programs'
-                / params['raw_fns'][tb]  # type: ignore [literal-required]
-            ).resolve()
-        )
-
+def bootstrap(
+    *,
+    tbs: dict[str, npt.NDArray],
+    params: Params,
+    variables: Variables,
+) -> xr.Dataset:
+    """Run the boostrap algorithm."""
     land_arr = _get_land_arr(params)
 
     tb_mask = tb_data_mask(
         tbs=(
-            otbs['v37'],
-            otbs['h37'],
-            otbs['v19'],
-            otbs['v22'],
+            tbs['v37'],
+            tbs['h37'],
+            tbs['v19'],
+            tbs['v22'],
         ),
         min_tb=params['mintb'],
         max_tb=params['maxtb'],
     )
 
-    # *** compute tbs ***
-    # Note: even though the xfer doesn not result in identical fields,
-    #       the sample output is still identical (!)
-    tbs = xfer_tbs_nrt(
-        otbs['v37'], otbs['h37'], otbs['v19'], otbs['v22'], params['sat']
-    )
+    tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params['sat'])
 
-    # *** CALL ret_para_nsb2 for vh37 ***
-    para_vals = ret_para_nsb2('vh37', params['sat'], params['seas'])
-    params['wintrc'] = para_vals['wintrc']
-    params['wslope'] = para_vals['wslope']
-    params['wxlimt'] = para_vals['wxlimt']
-    params['ln1'] = para_vals['lnline']
-    params['lnchk'] = para_vals['lnchk']
-    variables['wtp'] = para_vals['wtp']
-    variables['itp'] = para_vals['itp']
+    para_vals_vh37 = ret_para_nsb2('vh37', params['sat'], params['seas'])
+    params['wintrc'] = para_vals_vh37['wintrc']
+    params['wslope'] = para_vals_vh37['wslope']
+    params['wxlimt'] = para_vals_vh37['wxlimt']
+    params['ln1'] = para_vals_vh37['lnline']
+    params['lnchk'] = para_vals_vh37['lnchk']
+    variables['wtp'] = para_vals_vh37['wtp']
+    variables['itp'] = para_vals_vh37['itp']
 
-    # *** CALL ret_water_ssmi() ***
     water_arr = ret_water_ssmi(
         tbs['v37'],
         tbs['h37'],
@@ -957,9 +910,6 @@ if __name__ == '__main__':
     if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
         variables['wtp'][1] = variables['wtp37h']
 
-    # ## CALL ret_linifit2() for vh37 ###
-    # Note: I cannot get this to give exact answers because of roundoff
-    # The differences are roughly +/- 0.0002 in float32 conc values
     calc_vh37 = ret_linfit_32(
         land_arr,
         tb_mask,
@@ -970,26 +920,16 @@ if __name__ == '__main__':
         params['add1'],
         water_arr,
     )
-    if do_exact:
-        print('\nNot using calculated vh37:')
-        print(f'  calculated: {calc_vh37}')
-        print(f"        used: {variables['vh37']}")
-    else:
-        variables['vh37'] = calc_vh37
+    variables['vh37'] = calc_vh37
 
-    # *** CALL ret_adj_adoff ***
     variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
-    # *** CALL ret_para_nsb2 for v1937 ***
-    para_vals = ret_para_nsb2('v1937', params['sat'], params['seas'])
-    params['ln2'] = para_vals['lnline']
-    variables['wtp2'] = para_vals['wtp']
-    variables['itp2'] = para_vals['itp']
+    para_vals_v1937 = ret_para_nsb2('v1937', params['sat'], params['seas'])
+    params['ln2'] = para_vals_v1937['lnline']
+    variables['wtp2'] = para_vals_v1937['wtp']
+    variables['itp2'] = para_vals_v1937['itp']
+    variables['v1937'] = para_vals_v1937['iceline']
 
-    variables['itp2'] = para_vals['itp']
-    variables['v1937'] = para_vals['iceline']
-
-    # *** CALL ret_wtp() for wtp19v ***
     variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
 
     assert variables['wtp19v'] is not None
@@ -998,10 +938,6 @@ if __name__ == '__main__':
         variables['wtp2'][0] = variables['wtp37v']
     if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
         variables['wtp2'][1] = variables['wtp19v']
-
-    # ## CALL ret_linifit2() for v1937 ###
-    # Note: I cannot get this to give exact answers because of roundoff
-    # The differences are roughly +/- 0.0002 in float32 conc values
 
     # Try the ret_para... values for v1937
     calc_v1937 = ret_linfit_32(
@@ -1017,13 +953,7 @@ if __name__ == '__main__':
         iceline=variables['vh37'],
         adoff=variables['adoff'],
     )
-    if do_exact:
-        variables['v1937'] = orig_vars['v1937']
-        print('\nNot using calculated v1937 values:')
-        print(f'   calc v1937: {calc_v1937}')
-        print(f"   used v1937: {variables['v1937']}")
-    else:
-        variables['v1937'] = calc_v1937
+    variables['v1937'] = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
     variables = calc_rad_coeffs_32(variables)
@@ -1061,13 +991,6 @@ if __name__ == '__main__':
         params['missval'],
     )
 
-    # *** Write the output to a similar file name as fortran code ***
-    # Derive year from a tb filename
-    sat, year, month, day = get_satymd_from_tb_filepath(Path(params['raw_fns']['v37']))
-    ofn = f'NH_{year}{month}{day}_py_NRT_{sat}.ic'
-    # TODO: consider writing this file out to an explicit output dir. Where?
-    fixout.tofile(THIS_DIR / ofn)
-    print(f'Wrote output file: {ofn}')
+    ds = xr.Dataset({'conc': (('y', 'x'), fixout)})
 
-    print('Finished compute_bt_ic.py')
-    print(' ')  # To add a blank line after run
+    return ds
