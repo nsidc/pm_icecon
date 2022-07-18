@@ -31,3 +31,4 @@ dependencies:
   - cartopy ~=0.20
   - click ~=8.1
   - loguru ~=0.6
+  - pydantic ~=1.9

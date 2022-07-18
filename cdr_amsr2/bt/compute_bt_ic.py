@@ -5,15 +5,17 @@ and computes:
     iceout
 """
 
+import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Literal, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-from cdr_amsr2.bt._types import Params, ParaVals, Variables
+from cdr_amsr2.bt._types import ParaVals, Variables
+from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 
@@ -262,7 +264,7 @@ def linfit_32(xvals, yvals):
 
 
 def ret_linfit_32(
-    land,
+    land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
@@ -278,7 +280,7 @@ def ret_linfit_32(
     # Note: lnline is two, 0 is offset, 1 is slope
     # Note: iceline is two, 0 is offset, 1 is slope
 
-    not_land_or_masked = (land == 0) & ~tb_mask
+    not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None:
         is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
     else:
@@ -371,7 +373,7 @@ def ret_water_ssmi(
     h37,
     v22,
     v19,
-    land,
+    land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
     wslope,
     wintrc,
@@ -379,7 +381,7 @@ def ret_water_ssmi(
     ln1,
 ) -> npt.NDArray[np.int16]:
     # Determine where there is definitely water
-    not_land_or_masked = (land == 0) & ~tb_mask
+    not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
@@ -389,7 +391,7 @@ def ret_water_ssmi(
 
     is_water = not_land_or_masked & is_cond1 & is_cond2
 
-    water = np.zeros_like(land, dtype=np.int16)
+    water = np.zeros_like(land_mask, dtype=np.int16)
     water[is_water] = 1
 
     return water
@@ -440,13 +442,12 @@ def calc_rad_coeffs_32(v: Variables):
     return v_out
 
 
-def sst_clean_sb2(iceout, missval, landval, month):
+def sst_clean_sb2(*, iceout, missval, landval, date: dt.date):
     # implement fortran's sst_clean_sb2() routine
-    imonth = int(month)
     sst_fn = (
         PACKAGE_DIR
         / '../legacy'
-        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{imonth:02d}.int'
+        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
     ).resolve()
     sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
 
@@ -465,16 +466,10 @@ def spatial_interp(
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
-    nphole_fn: Path,
+    pole_mask: Optional[npt.NDArray[np.bool_]],
 ) -> npt.NDArray[np.float32]:
     iceout = ice.copy()
-    # TODO: the pole hole mask is only applied for the northern
-    # hemisphere. Because we want this function to take grids of arbitrary size,
-    # perhaps `nphole_fn` should be an optional kwarg with a `None`.
     # implement fortran's spatial_interp() routine
-    if iceout.shape[1] == 304:
-        holemask = np.fromfile(nphole_fn, dtype=np.int16).reshape(448, 304)
-
     # Use -200 as a not-valid ocean sentinel value
     # so that it works with np.roll
     oceanvals = iceout.copy()
@@ -490,7 +485,9 @@ def spatial_interp(
 
     count[count == 0] = 1
     replace_vals = fdiv(total, count)
-    replace_locs = (oceanvals == missval) & (count >= 1) & (holemask == 0)
+    replace_locs = (oceanvals == missval) & (count >= 1)
+    if pole_mask is not None:
+        replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
 
@@ -747,8 +744,17 @@ def coastal_fix(arr, missval, landval, minic):
     return arr2
 
 
-def fix_output_gdprod(conc, minval, maxval, landval, missval):
-    # Return fixout, a 2-byte integer field with ice concentration
+def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.int16]:
+    """Scale the given concentration field by 10.
+
+    TODO:
+      * Do we want to scale the output by 10? If not, get rid of this? Maybe
+        make this optional?
+      * Is there ever a case where the valid conc range isn't going to be 0-100?
+        If we just need to set neg values to 0 and cap out concs at 100, then we
+        can get rid of the 'minval' and 'maxval' parameters. This is the only
+        place they're used.
+    """
     fixout = np.zeros_like(conc, dtype=np.int16)
     scaling_factor = 10.0
 
@@ -773,10 +779,10 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval):
 
 
 def calc_bt_ice(
-    p,
-    v,
+    p: BootstrapParams,
+    v: Variables,
     tbs,
-    land,
+    land_mask: npt.NDArray[np.bool_],
     water_arr,
     tb_mask: npt.NDArray[np.bool_],
 ):
@@ -799,8 +805,8 @@ def calc_bt_ice(
         v['wtp'][1],
         v['vh37'][0],
         v['vh37'][1],
-        p['missval'],
-        p['maxic'],
+        p.missval,
+        p.maxic,
     )
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
     # icpix1[is_h37_lt_rc1 & (iclen1 <= v['radlen1'])]
@@ -821,8 +827,8 @@ def calc_bt_ice(
         v['wtp2'][1],
         v['v1937'][0],
         v['v1937'][1],
-        p['missval'],
-        p['maxic'],
+        p.missval,
+        p.maxic,
     )
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
@@ -831,37 +837,25 @@ def calc_bt_ice(
     ic = icpix1
     ic[~is_check1] = icpix2[~is_check1]
 
-    is_ic_is_missval = ic == p['missval']
-    ic[is_ic_is_missval] = p['missval']
+    is_ic_is_missval = ic == p.missval
+    ic[is_ic_is_missval] = p.missval
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_arr == 1] = 0.0
-    ic[tb_mask] = p['missval']
-    ic[land != 0] = p['landval']
+    ic[tb_mask] = p.missval
+    ic[land_mask] = p.landval
 
     return ic
-
-
-def _get_land_arr(params):
-    land_arr = np.fromfile(
-        (
-            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
-        ).resolve(),
-        dtype=np.int16,
-    ).reshape(448, 304)
-
-    return land_arr
 
 
 def bootstrap(
     *,
     tbs: dict[str, npt.NDArray],
-    params: Params,
+    params: BootstrapParams,
     variables: Variables,
+    date: dt.date,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
-    land_arr = _get_land_arr(params)
-
     tb_mask = tb_data_mask(
         tbs=(
             tbs['v37'],
@@ -869,18 +863,18 @@ def bootstrap(
             tbs['v19'],
             tbs['v22'],
         ),
-        min_tb=params['mintb'],
-        max_tb=params['maxtb'],
+        min_tb=params.mintb,
+        max_tb=params.maxtb,
     )
 
-    tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params['sat'])
+    tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params['sat'], params['seas'])
-    params['wintrc'] = para_vals_vh37['wintrc']
-    params['wslope'] = para_vals_vh37['wslope']
-    params['wxlimt'] = para_vals_vh37['wxlimt']
-    params['ln1'] = para_vals_vh37['lnline']
-    params['lnchk'] = para_vals_vh37['lnchk']
+    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, params.season)
+    wintrc = para_vals_vh37['wintrc']
+    wslope = para_vals_vh37['wslope']
+    wxlimt = para_vals_vh37['wxlimt']
+    ln1 = para_vals_vh37['lnline']
+    lnchk = para_vals_vh37['lnchk']
     variables['wtp'] = para_vals_vh37['wtp']
     variables['itp'] = para_vals_vh37['itp']
 
@@ -889,12 +883,12 @@ def bootstrap(
         tbs['h37'],
         tbs['v22'],
         tbs['v19'],
-        land_arr,
+        params.land_mask,
         tb_mask,
-        params['wslope'],
-        params['wintrc'],
-        params['wxlimt'],
-        params['ln1'],
+        wslope,
+        wintrc,
+        wxlimt,
+        ln1,
     )
 
     # Set wtp, which is tp37v and tp37h
@@ -911,21 +905,21 @@ def bootstrap(
         variables['wtp'][1] = variables['wtp37h']
 
     calc_vh37 = ret_linfit_32(
-        land_arr,
+        params.land_mask,
         tb_mask,
         tbs['v37'],
         tbs['h37'],
-        params['ln1'],
-        params['lnchk'],
-        params['add1'],
+        ln1,
+        lnchk,
+        params.add1,
         water_arr,
     )
     variables['vh37'] = calc_vh37
 
     variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params['sat'], params['seas'])
-    params['ln2'] = para_vals_v1937['lnline']
+    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, params.season)
+    ln2 = para_vals_v1937['lnline']
     variables['wtp2'] = para_vals_v1937['wtp']
     variables['itp2'] = para_vals_v1937['itp']
     variables['v1937'] = para_vals_v1937['iceline']
@@ -941,13 +935,13 @@ def bootstrap(
 
     # Try the ret_para... values for v1937
     calc_v1937 = ret_linfit_32(
-        land_arr,
+        params.land_mask,
         tb_mask,
         tbs['v37'],
         tbs['v19'],
-        params['ln2'],
-        params['lnchk'],
-        params['add2'],
+        ln2,
+        lnchk,
+        params.add2,
         water_arr,
         tba=tbs['h37'],
         iceline=variables['vh37'],
@@ -959,36 +953,35 @@ def bootstrap(
     variables = calc_rad_coeffs_32(variables)
 
     # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(params, variables, tbs, land_arr, water_arr, tb_mask)
+    iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
 
     # *** Do sst cleaning ***
     iceout_sst = sst_clean_sb2(
-        iceout, params['missval'], params['landval'], params['month']
+        iceout=iceout,
+        missval=params.missval,
+        landval=params.landval,
+        date=date,
     )
 
     # *** Do spatial interp ***
     iceout_sst = spatial_interp(
         iceout_sst,
-        params['missval'],
-        params['landval'],
-        (
-            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['nphole']
-        ).resolve(),
+        params.missval,
+        params.landval,
+        params.pole_mask,
     )
 
     # *** Do spatial interp ***
-    iceout_fix = coastal_fix(
-        iceout_sst, params['missval'], params['landval'], params['minic']
-    )
-    iceout_fix[iceout_fix < params['minic']] = 0
+    iceout_fix = coastal_fix(iceout_sst, params.missval, params.landval, params.minic)
+    iceout_fix[iceout_fix < params.minic] = 0
 
     # *** Do fix_output ***
     fixout = fix_output_gdprod(
         iceout_fix,
-        params['minval'],
-        params['maxval'],
-        params['landval'],
-        params['missval'],
+        params.minval,
+        params.maxval,
+        params.landval,
+        params.missval,
     )
 
     ds = xr.Dataset({'conc': (('y', 'x'), fixout)})

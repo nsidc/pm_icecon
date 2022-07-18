@@ -13,6 +13,7 @@ import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
 
+from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch import au_si25
 
@@ -90,7 +91,11 @@ def get_example_output() -> xr.Dataset:
     * Scale the data by 10 and round to np.uint8 dtype.
     """
     # golden = xr.open_dataset(EXAMPLE_BT_NC)
-    example_ds = xr.open_dataset(PACKAGE_DIR / '..' / 'NH_20200101_py_NRT_amsr2.nc')
+    # example_ds = xr.open_dataset(PACKAGE_DIR / '..' / 'NH_20200101_py_NRT_amsr2.nc')
+    example_ds = amsr2_bootstrap(
+        date=dt.date(2020, 1, 1),
+        hemisphere='north',
+    )
     # flip the image to be 'right-side' up
     example_ds = example_ds.reindex(y=example_ds.y[::-1], x=example_ds.x)
 
@@ -147,18 +152,8 @@ def _get_valid_icemask():
     return ds
 
 
-if __name__ == '__main__':
-    # Get and save an image of the NH example data produced by our python code.
-    example_ds = get_example_output()
-    save_n_conc_image(example_ds.conc, Path('/tmp/NH_20200101_py_amsr2.png'))
-
-    # Do the same for the bootstrap concentration field that comes with the
-    # AU_SI25 data.
-    au_si25_conc = get_au_si25_bt_conc()
-    save_n_conc_image(au_si25_conc, Path('/tmp/NH_20200101_au_si25_amsr2.png'))
-
-    # Do a difference between the two images.
-    aui_si25_conc_masked = au_si25_conc.where(au_si25_conc != 110, 0)
+def _mask_data(data):
+    aui_si25_conc_masked = data.where(data != 110, 0)
 
     # Mask out lakes (value of 4)
     valid_icemask = _get_valid_icemask()
@@ -177,6 +172,22 @@ if __name__ == '__main__':
         np.fromfile(pole_hole_path, dtype=np.int16).reshape(448, 304).astype(bool)
     )
     aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
+
+    return aui_si25_conc_masked
+
+
+if __name__ == '__main__':
+    # Get and save an image of the NH example data produced by our python code.
+    example_ds = get_example_output()
+    save_n_conc_image(example_ds.conc, Path('/tmp/NH_20200101_py_amsr2.png'))
+
+    # Do the same for the bootstrap concentration field that comes with the
+    # AU_SI25 data.
+    au_si25_conc = get_au_si25_bt_conc()
+    save_n_conc_image(au_si25_conc, Path('/tmp/NH_20200101_au_si25_amsr2.png'))
+
+    # Do a difference between the two images.
+    aui_si25_conc_masked = _mask_data(au_si25_conc)
 
     diff = example_ds.conc - aui_si25_conc_masked
     plt.clf()
@@ -204,7 +215,9 @@ if __name__ == '__main__':
 
     diff = diff.data.flatten()
     diff_excluding_0 = diff[diff != 0]
+
     breakpoint()
+
     plt.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),

@@ -25,7 +25,7 @@ jobs:
           command: |
             source activate cdr_amsr2
 
-            invoke test.all
+            invoke test.ci
 
 
 workflows:
