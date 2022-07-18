@@ -8,7 +8,7 @@ and computes:
 import re
 from functools import reduce
 from pathlib import Path
-from typing import Sequence
+from typing import Literal, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -46,14 +46,16 @@ def tb_data_mask(
     """Return a boolean ndarray inidcating areas of bad data.
 
     Bad data are locations where any of the given Tbs are outside the range
-    defined by (mintb, maxtb)
+    defined by (mintb, maxtb).
+
+    NaN values are also considered 'bad' data.
 
     True values indicate bad data that should be masked. False values indicate
     good data.
     """
 
     def _is_outofrange_tb(tb, min_tb, max_tb):
-        return (tb < min_tb) | (tb > max_tb)
+        return np.isnan(tb) | (tb < min_tb) | (tb > max_tb)
 
     is_bad_tb = reduce(
         np.logical_or,
@@ -75,6 +77,8 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
         h37 = fadd(fmul(0.98914390, h37), 1.2031835)
         v19 = fadd(fmul(1.0057373, v19), -0.92638520)
         v22 = fadd(fmul(0.98793409, v22), 1.2108198)
+    elif sat == 'u2':
+        print(f'No TB modifications for sat: {sat}')
     else:
         raise UnexpectedSatelliteError(f'No such sat tb xform: {sat}')
 
@@ -111,7 +115,7 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
+def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> ParaVals:
     # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
@@ -120,6 +124,7 @@ def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
     # Note: 'sat' is a *string*, not an integer
 
     # Set wintrc, wslope, wxlimt
+    print(f'in ret_para_nsb2(): sat is {sat}')
     if sat == '00':
         if season == 1:
             wintrc = 53.4153
@@ -129,6 +134,18 @@ def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
             wintrc = 60.1667
             wslope = 0.633333
             wxlimt = 24.00
+    elif sat == 'u2':
+        if season == 1:
+            wintrc = 84.73
+            wslope = 0.5352
+            wxlimt = 18.39
+            # TODO: are these necessary? Can we remove these?
+            wintrc2 = 12.22
+            wslope2 = 0.7020
+        else:
+            raise BootstrapAlgError(
+                f'season {season} params not defined for sat: {sat}'
+            )
     else:
         if season == 1:
             if sat != '17' and sat != '18':
@@ -147,18 +164,36 @@ def ret_para_nsb2(tbset, sat: str, season) -> ParaVals:
                 wslope = 0.503750
             wxlimt = 21.00
 
-    if tbset == 'vh37':
-        wtp = [201.916, 132.815]
-        itp = [255.670, 241.713]
-        lnline = [-73.5471, 1.21104]
-        iceline = [-25.9729, 1.04382]
-        lnchk = 1.5
-    elif tbset == 'v1937':
-        wtp = [201.916, 178.771]
-        itp = [255.670, 258.341]
-        lnline = [47.0061, 0.809335]
-        iceline = [112.803, 0.550296]
-        lnchk = 1.5
+    if sat == 'u2':
+        # Values for AMSRU
+        print(f'Setting sat values for: {sat}')
+        if tbset == 'vh37':
+            wtp = [207.2, 131.9]
+            itp = [256.3, 241.2]
+            lnline = [-71.99, 1.20]
+            iceline = [-30.26, 1.0564]
+            lnchk = 1.5
+        elif tbset == 'v1937':
+            wtp = [207.2, 182.4]
+            itp = [256.3, 258.9]
+            lnline = [48.26, 0.8048]
+            iceline = [110.03, 0.5759]
+            lnchk = 1.5
+    else:
+        # Values for DMSP
+        print(f'Setting sat values for: {sat}')
+        if tbset == 'vh37':
+            wtp = [201.916, 132.815]
+            itp = [255.670, 241.713]
+            lnline = [-73.5471, 1.21104]
+            iceline = [-25.9729, 1.04382]
+            lnchk = 1.5
+        elif tbset == 'v1937':
+            wtp = [201.916, 178.771]
+            itp = [255.670, 258.341]
+            lnline = [47.0061, 0.809335]
+            iceline = [112.803, 0.550296]
+            lnchk = 1.5
 
     return {
         'wintrc': wintrc,
@@ -831,6 +866,17 @@ def calc_bt_ice(
     return ic
 
 
+def _get_land_arr(params):
+    land_arr = np.fromfile(
+        (
+            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
+        ).resolve(),
+        dtype=np.int16,
+    ).reshape(448, 304)
+
+    return land_arr
+
+
 if __name__ == '__main__':
     # Set a flag for getting *exactly* the same output file
     # as the Goddard fortran code produces
@@ -854,12 +900,7 @@ if __name__ == '__main__':
             ).resolve()
         )
 
-    land_arr = np.fromfile(
-        (
-            PACKAGE_DIR / '../legacy/SB2_NRT_programs' / params['raw_fns']['land']
-        ).resolve(),
-        dtype=np.int16,
-    ).reshape(448, 304)
+    land_arr = _get_land_arr(params)
 
     tb_mask = tb_data_mask(
         tbs=(

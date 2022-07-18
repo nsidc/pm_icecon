@@ -25,7 +25,19 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f'PYTHONPATH={PROJECT_DIR} pytest {PROJECT_DIR}/cdr_amsr2/tests',
+        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/cdr_amsr2/tests/unit',
+        pty=True,
+    )
+
+
+@task()
+def regression(ctx):
+    """Run regression tests.
+
+    Requires access to data on NFS and should be run on a VM.
+    """
+    print_and_run(
+        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/cdr_amsr2/tests/regression',
         pty=True,
     )
 
@@ -48,6 +60,7 @@ def vulture(ctx):
         typecheck,
         vulture,
         unit,
+        regression,
     ],
     default=True,
 )
