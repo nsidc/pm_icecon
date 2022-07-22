@@ -137,14 +137,20 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             wxlimt = 22.00
     elif sat == 'u2':
         if is_june_through_oct15:
-            raise BootstrapAlgError(
-                'Season June-Oct. 15 params not defined for sat: {sat}'
-            )
+            # Using the "Season 3" values from ret_parameters_amsru2.f
+            wintrc = 82.71
+            wslope = 0.5352
+            wxlimt = 23.34
         else:
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
             # TODO: are these necessary? Can we remove these?
+            # These are used for the 6GHz channel in AMSR2 (only) as an
+            # additional weather filter.  Our plan is *not* to include this
+            # filter so that the weather filter is consitent through the
+            # entire time series, including when using sensors that do not
+            # have the 6v channel.
             wintrc2 = 12.22
             wslope2 = 0.7020
     # TODO: can we create a more specific condition here? A sat of e.g., `foo`
