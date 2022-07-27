@@ -485,7 +485,7 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
         sst_fn = (
             PACKAGE_DIR
             / '../cdr_e2n6.25_ancillary'
-            / f'valid_seaice_{date:%m}.dat'
+            / f'valid_seaice_e2n6.25_{date:%m}.dat'
         ).resolve()
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     else:
@@ -510,6 +510,7 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
 
 
 def spatial_interp(
+    sat,  # TODO: type of 'sat'
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
@@ -532,11 +533,26 @@ def spatial_interp(
 
     count[count == 0] = 1
     replace_vals = fdiv(total, count)
+
     replace_locs = (oceanvals == missval) & (count >= 1)
-    if pole_mask is not None:
+
+    if pole_mask is not None and sat != 'a2l1c':
         replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
+
+    # Now, replace pole if e2n6.25
+    if sat == 'a2l1c':
+        # TODO: This pole hole function needs some work(!)
+        print(f'Setting pole hole for a2l1c')
+
+        iceout_nearpole = iceout[820:860, 820:860]
+
+        is_pole = iceout_nearpole == 0
+
+        iceout_nearpole[is_pole] = 110
+
+        print(f'Replaced {np.sum(np.where(is_pole, 1, 0))} values at pole')
 
     return iceout
 
@@ -1003,8 +1019,6 @@ def bootstrap(
     iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
 
     # *** Do sst cleaning ***
-    print(f'before sst_clean, params:\n{params}')
-    raise SystemExit('here')
     iceout_sst = sst_clean_sb2(
         sat=params.sat,
         iceout=iceout,
@@ -1015,6 +1029,7 @@ def bootstrap(
 
     # *** Do spatial interp ***
     iceout_sst = spatial_interp(
+        params.sat,
         iceout_sst,
         params.missval,
         params.landval,
