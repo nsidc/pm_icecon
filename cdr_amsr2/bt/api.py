@@ -13,8 +13,10 @@ from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 
+### Here, we manually-set the PSN25 land and pole masks
+
 # Ocean has a value of 0, land a value of 1, and coast a value of 2.
-_land_coast_array = np.fromfile(
+_land_coast_array_psn25 = np.fromfile(
     (
         PACKAGE_DIR
         / '../legacy/SB2_NRT_programs'
@@ -25,10 +27,10 @@ _land_coast_array = np.fromfile(
 
 # TODO: land mask currently includes land and coast. Does this make sense? Are
 # we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
-LAND_MASK = _land_coast_array != 0
+LAND_MASK_psn25 = _land_coast_array_psn25 != 0
 
 # values of 1 indicate the pole hole.
-POLE_MASK = np.fromfile(
+POLE_MASK_psn25 = np.fromfile(
     (
         PACKAGE_DIR
         / '../legacy/SB2_NRT_programs'
@@ -36,6 +38,38 @@ POLE_MASK = np.fromfile(
     ).resolve(),
     dtype=np.int16,
 ).reshape(448, 304) == 1
+
+
+### Here, we manually-set the E2N6.25 land and pole masks
+
+# The authoritative mask for the NH EASE2 Arctic subset
+# is a 1680x1680 (centered) subset of the full 2880x2880 EASE2 NH grid
+# These data were derived from the MCD12Q1 land type data set
+# Encoding is
+#    50: Ocean (= water orthogonally connected to the global ocean)
+#   100: Lake (= water that is not connected to the global ocean)
+#   125: Coast (= "Land" that is adjacent to "Ocean"
+#   150: Land ("land type 1" that is not water and not ice)
+#   200: Ice (= land classification type "permanent ice"
+# For the purposes of the Bootstrap algorithm:
+#    50 --> 0  (= "ocean" where sea ice might occur)
+#   all others -> 
+_land_coast_array_e2n625 = np.fromfile(
+    (
+        PACKAGE_DIR
+        / '../cdr_e2n6.25_ancillary'
+        / 'locli_e2n6.25_1680x1680.dat'
+    ).resolve(),
+    dtype=np.uint8,
+).reshape(1680, 1680)
+
+# TODO: land mask currently includes land and coast. Does this make sense? Are
+# we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
+LAND_MASK_e2n625 = _land_coast_array_e2n625 != 50
+
+# values of 1 indicate the pole hole.
+# TODO: For now, let's NOT impose a pole hole on the A2L1C data
+POLE_MASK_e2n625 = np.zeros((1680, 1680), dtype=np.int16)
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
@@ -51,8 +85,8 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
 
     params = BootstrapParams(
         sat='u2',
-        land_mask=LAND_MASK,
-        pole_mask=POLE_MASK,
+        land_mask=LAND_MASK_psn25,
+        pole_mask=POLE_MASK_psn25,
     )
 
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
@@ -87,8 +121,8 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
 
     params = BootstrapParams(
         sat='a2l1c',
-        land_mask=LAND_MASK,
-        pole_mask=POLE_MASK,
+        land_mask=LAND_MASK_e2n625,
+        pole_mask=POLE_MASK_e2n625,
     )
 
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
@@ -129,8 +163,8 @@ def original_f18_example() -> xr.Dataset:
     """
     params = BootstrapParams(
         sat='18',
-        land_mask=LAND_MASK,
-        pole_mask=POLE_MASK,
+        land_mask=LAND_MASK_psn25,
+        pole_mask=POLE_MASK_psn25,
     )
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 
