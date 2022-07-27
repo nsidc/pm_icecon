@@ -65,7 +65,7 @@ def _get_a2l1c_625_data_fields(
             h36=(['x', 'y'], tbs['36h']),
             v36=(['x', 'y'], tbs['36v']),
         ),
-        attrs=dict(description=f'a2l1c tb fields for CDR BT for {date.date()}'),
+        attrs=dict(description=f'a2l1c tb fields for CDR BT for {date}'),
     )
 
     return ds

@@ -9,6 +9,11 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
 
 
+def _datetime_to_date(ctx, param, value: dt.datetime) -> dt.date:
+    """Click callback that takes a `dt.datetime` and returns `dt.date`."""
+    return value.date()
+
+
 # Click definitions for "amsr2" which uses AU25
 @click.command()
 @click.option(
@@ -16,6 +21,7 @@ from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
     '--date',
     required=True,
     type=click.DateTime(formats=('%Y-%m-%d',)),
+    callback=_datetime_to_date,
 )
 @click.option(
     '-h',
@@ -36,7 +42,7 @@ from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
         path_type=Path,
     ),
 )
-def amsr2(date: dt.date, hemisphere: Hemisphere, output_dir: Path):
+def amsr2(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
     """Run the bootstrap algorithm with ASMR2 data.
 
     AMSRU2 brightness temperatures are fetched from AU_SI25.
@@ -62,6 +68,7 @@ def amsr2(date: dt.date, hemisphere: Hemisphere, output_dir: Path):
     '--date',
     required=True,
     type=click.DateTime(formats=('%Y-%m-%d',)),
+    callback=_datetime_to_date,
 )
 @click.option(
     '-h',
@@ -82,7 +89,7 @@ def amsr2(date: dt.date, hemisphere: Hemisphere, output_dir: Path):
         path_type=Path,
     ),
 )
-def a2l1c(date: dt.date, hemisphere: Hemisphere, output_dir: Path):
+def a2l1c(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
     """Run the bootstrap algorithm with 'a2l1c' data.
 
     AMSR brightness temperatures are fetched from 6.25km raw data fields
