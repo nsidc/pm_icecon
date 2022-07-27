@@ -70,7 +70,6 @@ def _get_a2l1c_625_data_fields(
             attrs=dict(
                 description=f'a2l1c tb fields for CDR BT for {date.date()}'),
             )
-    print(f'ds summary:\n\n{ds}')
 
     return ds
 
@@ -102,7 +101,6 @@ def _normalize_a2l1c_625_tbs(
             ] = data_fields[var]
 
     normalized = xr.Dataset(tb_data_mapping)
-    print(f'normalized ds summary:\n\n{normalized}')
 
     return normalized
 
