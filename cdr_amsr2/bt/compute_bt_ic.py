@@ -27,13 +27,6 @@ def f(num):
     return np.float32(num)
 
 
-def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
-    # Read int16 scaled by 10 and return float32 unscaled
-    raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
-
-    return fdiv(raw.astype(np.float32), 10)
-
-
 def tb_data_mask(
     *,
     tbs: Sequence[npt.NDArray[np.float32]],
