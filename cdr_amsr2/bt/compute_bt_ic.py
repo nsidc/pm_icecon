@@ -474,10 +474,11 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
     sst_mask: npt.NDArray[np.uint8 | np.int16]
 
     if sat == 'a2l1c':
+        # NOTE: E2N == EASE2 North
         print('Reading valid ice mask for E2N 6.25km grid')
-        sst_fn = (
-            PACKAGE_DIR / '../cdr_e2n6.25_ancillary' / f'valid_seaice_{date:%m}.dat'
-        ).resolve()
+        sst_fn = Path(
+            f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
+        )
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     else:
         print('Reading valid ice mask for PSN 25km grid')
