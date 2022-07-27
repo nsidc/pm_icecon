@@ -12,6 +12,7 @@ ANCILLARY
 *.json
 *.txt
 out*
+*out/
 
 boot_driver_sb2_?p_nrt
 bin
