@@ -6,8 +6,7 @@ import click
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere
-from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.bt.api import a2l1c_bootstrap
+from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
 
 
 # Click definitions for "amsr2" which uses AU25

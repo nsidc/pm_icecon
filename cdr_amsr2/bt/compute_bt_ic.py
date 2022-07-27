@@ -473,9 +473,7 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
     if sat == 'a2l1c':
         print('Reading valid ice mask for E2N 6.25km grid')
         sst_fn = (
-            PACKAGE_DIR
-            / '../cdr_e2n6.25_ancillary'
-            / f'valid_seaice_{date:%m}.dat'
+            PACKAGE_DIR / '../cdr_e2n6.25_ancillary' / f'valid_seaice_{date:%m}.dat'
         ).resolve()
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     else:

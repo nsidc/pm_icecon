@@ -10,8 +10,8 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
+from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 
 ### Here, we manually-set the PSN25 land and pole masks
 
@@ -30,14 +30,17 @@ _land_coast_array_psn25 = np.fromfile(
 LAND_MASK_psn25 = _land_coast_array_psn25 != 0
 
 # values of 1 indicate the pole hole.
-POLE_MASK_psn25 = np.fromfile(
-    (
-        PACKAGE_DIR
-        / '../legacy/SB2_NRT_programs'
-        / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-    ).resolve(),
-    dtype=np.int16,
-).reshape(448, 304) == 1
+POLE_MASK_psn25 = (
+    np.fromfile(
+        (
+            PACKAGE_DIR
+            / '../legacy/SB2_NRT_programs'
+            / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
+        ).resolve(),
+        dtype=np.int16,
+    ).reshape(448, 304)
+    == 1
+)
 
 
 ### Here, we manually-set the E2N6.25 land and pole masks
@@ -53,12 +56,10 @@ POLE_MASK_psn25 = np.fromfile(
 #   200: Ice (= land classification type "permanent ice"
 # For the purposes of the Bootstrap algorithm:
 #    50 --> 0  (= "ocean" where sea ice might occur)
-#   all others -> 
+#   all others ->
 _land_coast_array_e2n625 = np.fromfile(
     (
-        PACKAGE_DIR
-        / '../cdr_e2n6.25_ancillary'
-        / 'locli_e2n6.25_1680x1680.dat'
+        PACKAGE_DIR / '../cdr_e2n6.25_ancillary' / 'locli_e2n6.25_1680x1680.dat'
     ).resolve(),
     dtype=np.uint8,
 ).reshape(1680, 1680)

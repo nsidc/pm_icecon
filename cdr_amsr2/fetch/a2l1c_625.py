@@ -33,7 +33,6 @@ def _get_a2l1c_625_data_fields(
 
     import numpy as np
 
-
     chans = ('18v', '23v', '36h', '36v')
     dim = 1680
     tim = 'am'
@@ -54,22 +53,20 @@ def _get_a2l1c_625_data_fields(
     for chan in chans:
         fn[chan] = f'{base_dir}/tb_a2im_sir_{chan}_{tim}_e2n6.25_{ymdstr}.dat'
         tbs[chan] = np.divide(
-                np.fromfile(fn[chan], dtype=np.int16).reshape(dim, dim),
-                100.0
-                )
+            np.fromfile(fn[chan], dtype=np.int16).reshape(dim, dim), 100.0
+        )
 
-    x = np.linspace(0, dim-1, dim, dtype=int)
-    y = np.linspace(0, dim-1, dim, dtype=int)
+    x = np.linspace(0, dim - 1, dim, dtype=int)
+    y = np.linspace(0, dim - 1, dim, dtype=int)
     ds = xr.Dataset(
-            data_vars=dict(
-                v18=(['x', 'y'], tbs['18v']),
-                v23=(['x', 'y'], tbs['23v']),
-                h36=(['x', 'y'], tbs['36h']),
-                v36=(['x', 'y'], tbs['36v']),
-            ),
-            attrs=dict(
-                description=f'a2l1c tb fields for CDR BT for {date.date()}'),
-            )
+        data_vars=dict(
+            v18=(['x', 'y'], tbs['18v']),
+            v23=(['x', 'y'], tbs['23v']),
+            h36=(['x', 'y'], tbs['36h']),
+            v36=(['x', 'y'], tbs['36v']),
+        ),
+        attrs=dict(description=f'a2l1c tb fields for CDR BT for {date.date()}'),
+    )
 
     return ds
 
@@ -84,12 +81,10 @@ def _normalize_a2l1c_625_tbs(
 
     Reminder: chans = ('18v', '23v', '36h', '36v')
     """
-    #var_pattern = re.compile(
+    # var_pattern = re.compile(
     #    r'(?P<channel>\d{2})(?P<polarization>h|v)'
-    #)
-    var_pattern = re.compile(
-        r'(?P<polarization>h|v)(?P<channel>\d{2})'
-    )
+    # )
+    var_pattern = re.compile(r'(?P<polarization>h|v)(?P<channel>\d{2})')
 
     tb_data_mapping = {}
     for var in data_fields.keys():
