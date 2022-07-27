@@ -470,6 +470,9 @@ def calc_rad_coeffs_32(v: Variables):
 
 def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
     # implement fortran's sst_clean_sb2() routine
+
+    sst_mask: npt.NDArray[np.uint8 | np.int16]
+
     if sat == 'a2l1c':
         print('Reading valid ice mask for E2N 6.25km grid')
         sst_fn = (
