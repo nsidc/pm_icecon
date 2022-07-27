@@ -178,8 +178,15 @@ def original_f18_example() -> xr.Dataset:
         'v37': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin',
         'v22': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n22v.bin',
     }
+
+    def _read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
+        # Read int16 scaled by 10 and return float32 unscaled
+        raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
+
+        return raw.astype(np.float32) / 10
+
     for tb in ('v19', 'h37', 'v37', 'v22'):
-        otbs[tb] = bt.read_tb_field(
+        otbs[tb] = _read_tb_field(
             (
                 PACKAGE_DIR
                 / '../legacy/SB2_NRT_programs'
