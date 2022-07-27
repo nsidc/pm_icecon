@@ -9,7 +9,7 @@ Documentation about decisions made about the bootstrap and nasateam algorithms.
 The code we received from Goddard for processing AMSR 2 data includes a 6GHz
 vertical channel weather filter.
 
-We have decided NOT to use the 6GHz channel as an additional wather filter for
+We have decided NOT to use the 6GHz channel as an additional weather filter for
 ASMSR 2 data so as to be consistent across the entire timeseries, including when
 using sensors that lack a 6GHz vertical channel.
 
