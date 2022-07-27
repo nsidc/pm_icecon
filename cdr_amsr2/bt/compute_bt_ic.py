@@ -482,14 +482,21 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
     # implement fortran's sst_clean_sb2() routine
     if sat == 'a2l1c':
         print('Reading valid ice mask for E2N 6.25km grid')
+        sst_fn = (
+            PACKAGE_DIR
+            / '../cdr_e2n6.25_ancillary'
+            / f'valid_seaice_{date:%m}.dat'
+        ).resolve()
+        sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     else:
         print('Reading valid ice mask for PSN 25km grid')
         sst_fn = (
             PACKAGE_DIR
-            / '../cdr_e2n6.25_ancillary'
-            / f'valid_seaice_{date:%m}.dat'_sst2_mask_{date:%m}.int'
+            / '../legacy'
+            / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
         ).resolve()
         sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
+        is_high_sst = sst_mask == 24
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
