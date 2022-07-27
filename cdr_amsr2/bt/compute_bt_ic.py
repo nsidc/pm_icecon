@@ -488,6 +488,7 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
             / f'valid_seaice_e2n6.25_{date:%m}.dat'
         ).resolve()
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
+        is_high_sst = sst_mask == 50
     else:
         print('Reading valid ice mask for PSN 25km grid')
         sst_fn = (
@@ -500,7 +501,6 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
-    is_high_sst = sst_mask == 24
     is_not_land_miss_sst = is_not_land & is_not_miss & is_high_sst
 
     ice_sst = iceout.copy()
@@ -630,7 +630,25 @@ def coastal_fix(arr, missval, landval, minic):
         where_k2p1 = np.where(is_k2p1)
         change_locs_k2p1 = tuple([where_k2p1[0] + offp1[1], where_k2p1[1] + offp1[0]])
         # temp[tuple(change_locs_k2p1)] = 0
-        temp[change_locs_k2p1] = 0
+        try:
+            temp[change_locs_k2p1] = 0
+        except IndexError:
+            print(f'Fixing out of bounds error')
+            locs0 = change_locs_k2p1[0]
+            locs1 = change_locs_k2p1[1]
+
+            where_bad_0 = np.where(locs0==1680)
+            where_bad_1 = np.where(locs1==1680)
+
+            new_locs0 = np.delete(locs0, where_bad_0)
+            new_locs1 = np.delete(locs1, where_bad_0)
+
+            change_locs_k2p1 = tuple([new_locs0, new_locs1])
+
+            try:
+                temp[change_locs_k2p1] = 0
+            except IndexError:
+                raise RuntimeError('Could not fix Index Error')
 
     # HERE: temp array has been set
 
