@@ -27,32 +27,6 @@ from cdr_amsr2._types import Hemisphere
 def _get_a2l1c_625_data_fields(
     *, base_dir: Path, date: dt.date, hemisphere: Hemisphere
 ) -> xr.Dataset:
-    """Find a AU_SI25 granule on disk and return the data fields as an xr ds.
-
-    Returns an xr dataset of teh variables contained in the
-    `HDFEOS/GRIDS/{N|S}pPolarGrid25km/Data Fields` group.
-    """
-    if 'amsr2' in str(base_dir):
-        print('Temporarily setting base dir to AMSRU dir')
-        base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/')
-
-    results = tuple(base_dir.glob(f'**/AMSR_U2_L3_SeaIce25km_*_{date:%Y%m%d}.he5'))
-
-    if len(results) != 1:
-        raise FileNotFoundError(
-            f'Expected to find 1 granule for AU_SI25 for {date:%Y-%m-%d}.'
-            f' Found {len(results)}.'
-        )
-
-    granule_fp = results[0]
-    ds = xr.open_dataset(
-        granule_fp,
-        group=f'HDFEOS/GRIDS/{hemisphere[0].upper()}pPolarGrid25km/Data Fields',
-    )
-
-    return ds
-
-    # Below here works for reading in the a2l1c 6.25km raw TB fields
     """Find raw binary files used for 6.25km NH from AMSR2 L1C (NSIDC-0763)
     and return an xf dataset of the variables
     """
@@ -86,12 +60,6 @@ def _get_a2l1c_625_data_fields(
 
     x = np.linspace(0, dim-1, dim, dtype=int)
     y = np.linspace(0, dim-1, dim, dtype=int)
-    #v18 = xr.DataArray(
-    #        data=tbs['18v'],
-    #        name='v18')
-    #v23 = xr.DataArray(
-    #        data=tbs['23v'],
-    #        name='v23')
     ds = xr.Dataset(
             data_vars=dict(
                 v18=(['x', 'y'], tbs['18v']),
@@ -117,19 +85,12 @@ def _normalize_a2l1c_625_tbs(
 
     Reminder: chans = ('18v', '23v', '36h', '36v')
     """
-    """ ignore this for now...
     #var_pattern = re.compile(
     #    r'(?P<channel>\d{2})(?P<polarization>h|v)'
     #)
     var_pattern = re.compile(
         r'(?P<polarization>h|v)(?P<channel>\d{2})'
     )
-    """
-
-    var_pattern = re.compile(
-        r'SI_25km_(N|S)H_(?P<channel>\d{2})(?P<polarization>H|V)_DAY'
-    )
-
 
     tb_data_mapping = {}
     for var in data_fields.keys():
