@@ -140,10 +140,6 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
-    # TODO: can we create a more specific condition here? A sat of e.g., `foo`
-    # would still get params (incorrect) from this. Maybe it makes more sense to
-    # shift this logic to the API (e.g., teh AU_SI25 entrypoint would have the
-    # logic for setting thse parameters and pass them to bootstrap.
     elif sat == 'a2l1c':
         if is_june_through_oct15:
             # Using the "Season 3" values from ret_parameters_amsru2.f
@@ -154,6 +150,10 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
+    # TODO: can we create a more specific condition here? A sat of e.g., `foo`
+    # would still get params (incorrect) from this. Maybe it makes more sense to
+    # shift this logic to the API (e.g., teh AU_SI25 entrypoint would have the
+    # logic for setting thse parameters and pass them to bootstrap.
     else:
         if is_june_through_oct15:
             if sat != '17' and sat != '18':
