@@ -76,6 +76,8 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
         v22 = fadd(fmul(0.98793409, v22), 1.2108198)
     elif sat == 'u2':
         print(f'No TB modifications for sat: {sat}')
+    elif sat == 'a2l1c':
+        print(f'No TB modifications for sat: {sat}')
     else:
         raise UnexpectedSatelliteError(f'No such sat tb xform: {sat}')
 
@@ -157,6 +159,18 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
     # would still get params (incorrect) from this. Maybe it makes more sense to
     # shift this logic to the API (e.g., teh AU_SI25 entrypoint would have the
     # logic for setting thse parameters and pass them to bootstrap.
+    elif sat == 'a2l1c':
+        if is_june_through_oct15:
+            # Using the "Season 3" values from ret_parameters_amsru2.f
+            wintrc = 82.71
+            wslope = 0.5352
+            wxlimt = 23.34
+        else:
+            wintrc = 84.73
+            wslope = 0.5352
+            wxlimt = 18.39
+            wintrc2 = 12.22
+            wslope2 = 0.7020
     else:
         if is_june_through_oct15:
             if sat != '17' and sat != '18':
@@ -176,6 +190,21 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             wxlimt = 14.00
 
     if sat == 'u2':
+        # Values for AMSRU
+        print(f'Setting sat values for: {sat}')
+        if tbset == 'vh37':
+            wtp = [207.2, 131.9]
+            itp = [256.3, 241.2]
+            lnline = [-71.99, 1.20]
+            iceline = [-30.26, 1.0564]
+            lnchk = 1.5
+        elif tbset == 'v1937':
+            wtp = [207.2, 182.4]
+            itp = [256.3, 258.9]
+            lnline = [48.26, 0.8048]
+            iceline = [110.03, 0.5759]
+            lnchk = 1.5
+    if sat == 'a2l1c':
         # Values for AMSRU
         print(f'Setting sat values for: {sat}')
         if tbset == 'vh37':

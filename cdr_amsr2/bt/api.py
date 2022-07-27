@@ -11,6 +11,7 @@ from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
+from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 
 # Ocean has a value of 0, land a value of 1, and coast a value of 2.
 _land_coast_array = np.fromfile(
@@ -27,17 +28,14 @@ _land_coast_array = np.fromfile(
 LAND_MASK = _land_coast_array != 0
 
 # values of 1 indicate the pole hole.
-POLE_MASK = (
-    np.fromfile(
-        (
-            PACKAGE_DIR
-            / '../legacy/SB2_NRT_programs'
-            / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-        ).resolve(),
-        dtype=np.int16,
-    ).reshape(448, 304)
-    == 1
-)
+POLE_MASK = np.fromfile(
+    (
+        PACKAGE_DIR
+        / '../legacy/SB2_NRT_programs'
+        / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
+    ).resolve(),
+    dtype=np.int16,
+).reshape(448, 304) == 1
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
@@ -53,6 +51,42 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
 
     params = BootstrapParams(
         sat='u2',
+        land_mask=LAND_MASK,
+        pole_mask=POLE_MASK,
+    )
+
+    variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
+
+    tbs = {
+        'v19': xr_tbs['v18'].data,
+        'v37': xr_tbs['v36'].data,
+        'h37': xr_tbs['h36'].data,
+        'v22': xr_tbs['v23'].data,
+    }
+
+    conc_ds = bt.bootstrap(
+        tbs=tbs,
+        params=params,
+        variables=variables,
+        date=date,
+    )
+
+    return conc_ds
+
+
+def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
+    """Compute sea ice concentration from L1C 6.25km TBs."""
+    if hemisphere == 'south':
+        raise NotImplementedError('Southern hemisphere is not currently supported.')
+
+    xr_tbs = get_a2l1c_625_tbs(
+        base_dir=Path('/data/amsr2_subsets/'),
+        date=date,
+        hemisphere='north',
+    )
+
+    params = BootstrapParams(
+        sat='a2l1c',
         land_mask=LAND_MASK,
         pole_mask=POLE_MASK,
     )
