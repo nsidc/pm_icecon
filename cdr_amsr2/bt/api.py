@@ -13,7 +13,7 @@ from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
 
-### Here, we manually-set the PSN25 land and pole masks
+# Here, we manually-set the PSN25 land and pole masks
 
 # Ocean has a value of 0, land a value of 1, and coast a value of 2.
 _land_coast_array_psn25 = np.fromfile(
@@ -43,7 +43,7 @@ POLE_MASK_psn25 = (
 )
 
 
-### Here, we manually-set the E2N6.25 land and pole masks
+# Here, we manually-set the E2N6.25 land and pole masks
 
 # The authoritative mask for the NH EASE2 Arctic subset
 # is a 1680x1680 (centered) subset of the full 2880x2880 EASE2 NH grid
