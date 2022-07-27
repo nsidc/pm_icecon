@@ -992,7 +992,6 @@ def bootstrap(
 
     # *** Do sst cleaning ***
     print(f'before sst_clean, params:\n{params}')
-    raise SystemExit('here')
     iceout_sst = sst_clean_sb2(
         sat=params.sat,
         iceout=iceout,

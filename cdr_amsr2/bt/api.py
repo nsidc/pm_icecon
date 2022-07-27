@@ -58,9 +58,9 @@ POLE_MASK_psn25 = (
 #    50 --> 0  (= "ocean" where sea ice might occur)
 #   all others ->
 _land_coast_array_e2n625 = np.fromfile(
-    (
-        PACKAGE_DIR / '../cdr_e2n6.25_ancillary' / 'locli_e2n6.25_1680x1680.dat'
-    ).resolve(),
+    Path(
+        '/share/apps/amsr2-cdr/bootstrap_masks/locli_e2n6.25_1680x1680.dat'
+    ),
     dtype=np.uint8,
 ).reshape(1680, 1680)
 
