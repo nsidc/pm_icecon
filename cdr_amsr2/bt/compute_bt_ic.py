@@ -183,7 +183,7 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             lnline = [48.26, 0.8048]
             iceline = [110.03, 0.5759]
             lnchk = 1.5
-    if sat == 'a2l1c':
+    elif sat == 'a2l1c':
         # Values for AMSRU
         print(f'Setting sat values for: {sat}')
         if tbset == 'vh37':
