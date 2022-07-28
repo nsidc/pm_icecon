@@ -66,10 +66,6 @@ _land_coast_array_e2n625 = np.fromfile(
 # we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
 LAND_MASK_e2n625 = _land_coast_array_e2n625 != 50
 
-# values of 1 indicate the pole hole.
-# TODO: For now, let's NOT impose a pole hole on the A2L1C data
-POLE_MASK_e2n625 = np.zeros((1680, 1680), dtype=np.int16)
-
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
     """Compute sea ice concentration from AU_SI25 TBs."""
@@ -121,7 +117,8 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
     params = BootstrapParams(
         sat='a2l1c',
         land_mask=LAND_MASK_e2n625,
-        pole_mask=POLE_MASK_e2n625,
+        # TODO: For now, let's NOT impose a pole hole on the A2L1C data
+        pole_mask=None,
     )
 
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')

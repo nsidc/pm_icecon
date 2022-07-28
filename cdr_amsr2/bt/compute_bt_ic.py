@@ -526,7 +526,7 @@ def spatial_interp(
 
     replace_locs = (oceanvals == missval) & (count >= 1)
 
-    if pole_mask is not None or sat != 'a2l1c':
+    if pole_mask is not None:
         replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
