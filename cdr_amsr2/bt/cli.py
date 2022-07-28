@@ -9,7 +9,7 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
 
 
-def _datetime_to_date(ctx, param, value: dt.datetime) -> dt.date:
+def _datetime_to_date(_ctx, _param, value: dt.datetime) -> dt.date:
     """Click callback that takes a `dt.datetime` and returns `dt.date`."""
     return value.date()
 
