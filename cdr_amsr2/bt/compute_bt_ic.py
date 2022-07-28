@@ -466,7 +466,11 @@ def calc_rad_coeffs_32(v: Variables):
 
 def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
     # implement fortran's sst_clean_sb2() routine
+
+    sst_mask: npt.NDArray[np.uint8 | np.int16]
+
     if sat == 'a2l1c':
+        # NOTE: E2N == EASE2 North
         print('Reading valid ice mask for E2N 6.25km grid')
         sst_fn = Path(
             f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
@@ -510,6 +514,8 @@ def spatial_interp(
     count = np.zeros_like(oceanvals, dtype=np.int32)
     for joff in range(-1, 2):
         for ioff in range(-1, 2):
+            # TODO: consider using `scipy.ndimage.shift` instead of `np.roll`
+            # here and elsewhere in the code.
             rolled = np.roll(oceanvals, (joff, ioff), axis=(1, 0))
             not_land_nor_miss = (rolled != landval) & (rolled != missval)
             total[not_land_nor_miss] += rolled[not_land_nor_miss]
@@ -520,7 +526,7 @@ def spatial_interp(
 
     replace_locs = (oceanvals == missval) & (count >= 1)
 
-    if pole_mask is not None or sat != 'a2l1c':
+    if pole_mask is not None:
         replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
@@ -528,7 +534,7 @@ def spatial_interp(
     # Now, replace pole if e2n6.25
     if sat == 'a2l1c':
         # TODO: This pole hole function needs some work(!)
-        print(f'Setting pole hole for a2l1c')
+        print('Setting pole hole for a2l1c')
 
         iceout_nearpole = iceout[820:860, 820:860]
 
@@ -617,12 +623,13 @@ def coastal_fix(arr, missval, landval, minic):
         try:
             temp[change_locs_k2p1] = 0
         except IndexError:
-            print(f'Fixing out of bounds error')
+            print('Fixing out of bounds error')
             locs0 = change_locs_k2p1[0]
             locs1 = change_locs_k2p1[1]
 
-            where_bad_0 = np.where(locs0==1680)
-            where_bad_1 = np.where(locs1==1680)
+            where_bad_0 = np.where(locs0 == 1680)
+            # TODO: should we keep this variable around?
+            # where_bad_1 = np.where(locs1 == 1680)
 
             new_locs0 = np.delete(locs0, where_bad_0)
             new_locs1 = np.delete(locs1, where_bad_0)
@@ -1021,6 +1028,7 @@ def bootstrap(
     iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
 
     # *** Do sst cleaning ***
+    print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
         sat=params.sat,
         iceout=iceout,
