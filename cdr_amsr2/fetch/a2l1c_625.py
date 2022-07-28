@@ -56,8 +56,6 @@ def _get_a2l1c_625_data_fields(
             np.fromfile(fn[chan], dtype=np.int16).reshape(dim, dim), 100.0
         )
 
-    x = np.linspace(0, dim - 1, dim, dtype=int)
-    y = np.linspace(0, dim - 1, dim, dtype=int)
     ds = xr.Dataset(
         data_vars=dict(
             v18=(['x', 'y'], tbs['18v']),
