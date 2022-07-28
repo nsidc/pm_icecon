@@ -81,9 +81,6 @@ def _normalize_a2l1c_625_tbs(
 
     Reminder: chans = ('18v', '23v', '36h', '36v')
     """
-    # var_pattern = re.compile(
-    #    r'(?P<channel>\d{2})(?P<polarization>h|v)'
-    # )
     var_pattern = re.compile(r'(?P<polarization>h|v)(?P<channel>\d{2})')
 
     tb_data_mapping = {}
