@@ -177,7 +177,7 @@ def original_f18_example() -> xr.Dataset:
         # Read int16 scaled by 10 and return float32 unscaled
         raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
-        return raw.astype(np.float32) / 10
+        return bt.fdiv(raw.astype(np.float32), 10)
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = _read_tb_field(
