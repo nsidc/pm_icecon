@@ -627,8 +627,9 @@ def coastal_fix(arr, missval, landval, minic):
             locs0 = change_locs_k2p1[0]
             locs1 = change_locs_k2p1[1]
 
-            where_bad_0 = np.where(locs0==1680)
-            where_bad_1 = np.where(locs1==1680)
+            where_bad_0 = np.where(locs0 == 1680)
+            # TODO: should we keep this variable around?
+            # where_bad_1 = np.where(locs1 == 1680)
 
             new_locs0 = np.delete(locs0, where_bad_0)
             new_locs1 = np.delete(locs1, where_bad_0)
