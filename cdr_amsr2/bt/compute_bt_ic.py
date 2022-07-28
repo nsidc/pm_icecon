@@ -27,13 +27,6 @@ def f(num):
     return np.float32(num)
 
 
-def read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
-    # Read int16 scaled by 10 and return float32 unscaled
-    raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
-
-    return fdiv(raw.astype(np.float32), 10)
-
-
 def tb_data_mask(
     *,
     tbs: Sequence[npt.NDArray[np.float32]],
@@ -76,6 +69,8 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
         v22 = fadd(fmul(0.98793409, v22), 1.2108198)
     elif sat == 'u2':
         print(f'No TB modifications for sat: {sat}')
+    elif sat == 'a2l1c':
+        print(f'No TB modifications for sat: {sat}')
     else:
         raise UnexpectedSatelliteError(f'No such sat tb xform: {sat}')
 
@@ -112,7 +107,7 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> ParaVals:
+def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> ParaVals:
     # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
     # Note: instead of '1' or '2', use description of axes tb1 and tb2
@@ -120,39 +115,43 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> Par
     #       So, tbset is 'v1937' or 'vh37'
     # Note: 'sat' is a *string*, not an integer
 
+    is_june_through_oct15 = (date.month >= 6 and date.month <= 9) or (
+        date.month == 10 and date.day <= 15
+    )
+
     # Set wintrc, wslope, wxlimt
     print(f'in ret_para_nsb2(): sat is {sat}')
     if sat == '00':
-        if season == 1:
-            wintrc = 53.4153
-            wslope = 0.661017
-            wxlimt = 22.00
-        else:
+        if is_june_through_oct15:
             wintrc = 60.1667
             wslope = 0.633333
             wxlimt = 24.00
+        else:
+            wintrc = 53.4153
+            wslope = 0.661017
+            wxlimt = 22.00
     elif sat == 'u2':
-        if season == 1:
+        if is_june_through_oct15:
+            # Using the "Season 3" values from ret_parameters_amsru2.f
+            wintrc = 82.71
+            wslope = 0.5352
+            wxlimt = 23.34
+        else:
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
-            # TODO: are these necessary? Can we remove these?
-            wintrc2 = 12.22
-            wslope2 = 0.7020
+    elif sat == 'a2l1c':
+        if is_june_through_oct15:
+            # Using the "Season 3" values from ret_parameters_amsru2.f
+            wintrc = 82.71
+            wslope = 0.5352
+            wxlimt = 23.34
         else:
-            raise BootstrapAlgError(
-                f'season {season} params not defined for sat: {sat}'
-            )
+            wintrc = 84.73
+            wslope = 0.5352
+            wxlimt = 18.39
     else:
-        if season == 1:
-            if sat != '17' and sat != '18':
-                wintrc = 90.3355
-                wslope = 0.501537
-            else:
-                wintrc = 87.6467
-                wslope = 0.517333
-            wxlimt = 14.00
-        else:
+        if is_june_through_oct15:
             if sat != '17' and sat != '18':
                 wintrc = 89.3316
                 wslope = 0.501537
@@ -160,8 +159,31 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, season: int) -> Par
                 wintrc = 89.2000
                 wslope = 0.503750
             wxlimt = 21.00
+        else:
+            if sat != '17' and sat != '18':
+                wintrc = 90.3355
+                wslope = 0.501537
+            else:
+                wintrc = 87.6467
+                wslope = 0.517333
+            wxlimt = 14.00
 
     if sat == 'u2':
+        # Values for AMSRU
+        print(f'Setting sat values for: {sat}')
+        if tbset == 'vh37':
+            wtp = [207.2, 131.9]
+            itp = [256.3, 241.2]
+            lnline = [-71.99, 1.20]
+            iceline = [-30.26, 1.0564]
+            lnchk = 1.5
+        elif tbset == 'v1937':
+            wtp = [207.2, 182.4]
+            itp = [256.3, 258.9]
+            lnline = [48.26, 0.8048]
+            iceline = [110.03, 0.5759]
+            lnchk = 1.5
+    elif sat == 'a2l1c':
         # Values for AMSRU
         print(f'Setting sat values for: {sat}')
         if tbset == 'vh37':
@@ -442,18 +464,31 @@ def calc_rad_coeffs_32(v: Variables):
     return v_out
 
 
-def sst_clean_sb2(*, iceout, missval, landval, date: dt.date):
+def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
     # implement fortran's sst_clean_sb2() routine
-    sst_fn = (
-        PACKAGE_DIR
-        / '../legacy'
-        / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
-    ).resolve()
-    sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
+
+    sst_mask: npt.NDArray[np.uint8 | np.int16]
+
+    if sat == 'a2l1c':
+        # NOTE: E2N == EASE2 North
+        print('Reading valid ice mask for E2N 6.25km grid')
+        sst_fn = Path(
+            f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
+        )
+        sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
+        is_high_sst = sst_mask == 50
+    else:
+        print('Reading valid ice mask for PSN 25km grid')
+        sst_fn = (
+            PACKAGE_DIR
+            / '../legacy'
+            / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
+        ).resolve()
+        sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
+        is_high_sst = sst_mask == 24
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
-    is_high_sst = sst_mask == 24
     is_not_land_miss_sst = is_not_land & is_not_miss & is_high_sst
 
     ice_sst = iceout.copy()
@@ -463,6 +498,7 @@ def sst_clean_sb2(*, iceout, missval, landval, date: dt.date):
 
 
 def spatial_interp(
+    sat,  # TODO: type of 'sat'
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
@@ -478,6 +514,8 @@ def spatial_interp(
     count = np.zeros_like(oceanvals, dtype=np.int32)
     for joff in range(-1, 2):
         for ioff in range(-1, 2):
+            # TODO: consider using `scipy.ndimage.shift` instead of `np.roll`
+            # here and elsewhere in the code.
             rolled = np.roll(oceanvals, (joff, ioff), axis=(1, 0))
             not_land_nor_miss = (rolled != landval) & (rolled != missval)
             total[not_land_nor_miss] += rolled[not_land_nor_miss]
@@ -485,11 +523,26 @@ def spatial_interp(
 
     count[count == 0] = 1
     replace_vals = fdiv(total, count)
+
     replace_locs = (oceanvals == missval) & (count >= 1)
+
     if pole_mask is not None:
         replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
+
+    # Now, replace pole if e2n6.25
+    if sat == 'a2l1c':
+        # TODO: This pole hole function needs some work(!)
+        print('Setting pole hole for a2l1c')
+
+        iceout_nearpole = iceout[820:860, 820:860]
+
+        is_pole = iceout_nearpole == 0
+
+        iceout_nearpole[is_pole] = 110
+
+        print(f'Replaced {np.sum(np.where(is_pole, 1, 0))} values at pole')
 
     return iceout
 
@@ -567,7 +620,26 @@ def coastal_fix(arr, missval, landval, minic):
         where_k2p1 = np.where(is_k2p1)
         change_locs_k2p1 = tuple([where_k2p1[0] + offp1[1], where_k2p1[1] + offp1[0]])
         # temp[tuple(change_locs_k2p1)] = 0
-        temp[change_locs_k2p1] = 0
+        try:
+            temp[change_locs_k2p1] = 0
+        except IndexError:
+            print('Fixing out of bounds error')
+            locs0 = change_locs_k2p1[0]
+            locs1 = change_locs_k2p1[1]
+
+            where_bad_0 = np.where(locs0 == 1680)
+            # TODO: should we keep this variable around?
+            # where_bad_1 = np.where(locs1 == 1680)
+
+            new_locs0 = np.delete(locs0, where_bad_0)
+            new_locs1 = np.delete(locs1, where_bad_0)
+
+            change_locs_k2p1 = tuple([new_locs0, new_locs1])
+
+            try:
+                temp[change_locs_k2p1] = 0
+            except IndexError:
+                raise RuntimeError('Could not fix Index Error')
 
     # HERE: temp array has been set
 
@@ -869,7 +941,7 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, params.season)
+    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date)
     wintrc = para_vals_vh37['wintrc']
     wslope = para_vals_vh37['wslope']
     wxlimt = para_vals_vh37['wxlimt']
@@ -918,7 +990,7 @@ def bootstrap(
 
     variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, params.season)
+    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date)
     ln2 = para_vals_v1937['lnline']
     variables['wtp2'] = para_vals_v1937['wtp']
     variables['itp2'] = para_vals_v1937['itp']
@@ -956,7 +1028,9 @@ def bootstrap(
     iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
 
     # *** Do sst cleaning ***
+    print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
+        sat=params.sat,
         iceout=iceout,
         missval=params.missval,
         landval=params.landval,
@@ -965,6 +1039,7 @@ def bootstrap(
 
     # *** Do spatial interp ***
     iceout_sst = spatial_interp(
+        params.sat,
         iceout_sst,
         params.missval,
         params.landval,

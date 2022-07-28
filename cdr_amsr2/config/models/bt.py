@@ -52,10 +52,6 @@ class BootstrapParams(ConfigBaseModel):
     sat: ValidSatellites
     """String representing satellite."""
 
-    # TODO: rename to 'season'. Can we just extract this from the date?
-    # What does 1 even mean?
-    season: int = 1
-
     # TODO: change to boolean type mask
     land_mask: npt.NDArray[np.bool_]
 
