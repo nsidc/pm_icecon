@@ -5,6 +5,7 @@
 
 # Local exclusions
 ANCILLARY
+*ancillary
 *.bin
 *.dat*
 *.gz

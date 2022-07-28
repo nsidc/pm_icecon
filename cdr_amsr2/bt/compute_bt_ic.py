@@ -150,10 +150,6 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
-    # TODO: can we create a more specific condition here? A sat of e.g., `foo`
-    # would still get params (incorrect) from this. Maybe it makes more sense to
-    # shift this logic to the API (e.g., teh AU_SI25 entrypoint would have the
-    # logic for setting thse parameters and pass them to bootstrap.
     else:
         if is_june_through_oct15:
             if sat != '17' and sat != '18':
@@ -480,6 +476,7 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
             f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
         )
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
+        is_high_sst = sst_mask == 50
     else:
         print('Reading valid ice mask for PSN 25km grid')
         sst_fn = (
@@ -492,7 +489,6 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
-    is_high_sst = sst_mask == 24
     is_not_land_miss_sst = is_not_land & is_not_miss & is_high_sst
 
     ice_sst = iceout.copy()
@@ -502,6 +498,7 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
 
 
 def spatial_interp(
+    sat,  # TODO: type of 'sat'
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
@@ -524,11 +521,26 @@ def spatial_interp(
 
     count[count == 0] = 1
     replace_vals = fdiv(total, count)
+
     replace_locs = (oceanvals == missval) & (count >= 1)
-    if pole_mask is not None:
+
+    if pole_mask is not None or sat != 'a2l1c':
         replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
+
+    # Now, replace pole if e2n6.25
+    if sat == 'a2l1c':
+        # TODO: This pole hole function needs some work(!)
+        print(f'Setting pole hole for a2l1c')
+
+        iceout_nearpole = iceout[820:860, 820:860]
+
+        is_pole = iceout_nearpole == 0
+
+        iceout_nearpole[is_pole] = 110
+
+        print(f'Replaced {np.sum(np.where(is_pole, 1, 0))} values at pole')
 
     return iceout
 
@@ -606,7 +618,25 @@ def coastal_fix(arr, missval, landval, minic):
         where_k2p1 = np.where(is_k2p1)
         change_locs_k2p1 = tuple([where_k2p1[0] + offp1[1], where_k2p1[1] + offp1[0]])
         # temp[tuple(change_locs_k2p1)] = 0
-        temp[change_locs_k2p1] = 0
+        try:
+            temp[change_locs_k2p1] = 0
+        except IndexError:
+            print(f'Fixing out of bounds error')
+            locs0 = change_locs_k2p1[0]
+            locs1 = change_locs_k2p1[1]
+
+            where_bad_0 = np.where(locs0==1680)
+            where_bad_1 = np.where(locs1==1680)
+
+            new_locs0 = np.delete(locs0, where_bad_0)
+            new_locs1 = np.delete(locs1, where_bad_0)
+
+            change_locs_k2p1 = tuple([new_locs0, new_locs1])
+
+            try:
+                temp[change_locs_k2p1] = 0
+            except IndexError:
+                raise RuntimeError('Could not fix Index Error')
 
     # HERE: temp array has been set
 
@@ -1006,6 +1036,7 @@ def bootstrap(
 
     # *** Do spatial interp ***
     iceout_sst = spatial_interp(
+        params.sat,
         iceout_sst,
         params.missval,
         params.landval,
