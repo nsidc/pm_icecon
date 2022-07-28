@@ -514,6 +514,8 @@ def spatial_interp(
     count = np.zeros_like(oceanvals, dtype=np.int32)
     for joff in range(-1, 2):
         for ioff in range(-1, 2):
+            # TODO: consider using `scipy.ndimage.shift` instead of `np.roll`
+            # here and elsewhere in the code.
             rolled = np.roll(oceanvals, (joff, ioff), axis=(1, 0))
             not_land_nor_miss = (rolled != landval) & (rolled != missval)
             total[not_land_nor_miss] += rolled[not_land_nor_miss]
