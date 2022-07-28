@@ -42,7 +42,6 @@ POLE_MASK_psn25 = (
     == 1
 )
 
-
 # Here, we manually-set the E2N6.25 land and pole masks
 
 # The authoritative mask for the NH EASE2 Arctic subset

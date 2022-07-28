@@ -534,7 +534,7 @@ def spatial_interp(
     # Now, replace pole if e2n6.25
     if sat == 'a2l1c':
         # TODO: This pole hole function needs some work(!)
-        print(f'Setting pole hole for a2l1c')
+        print('Setting pole hole for a2l1c')
 
         iceout_nearpole = iceout[820:860, 820:860]
 
@@ -623,7 +623,7 @@ def coastal_fix(arr, missval, landval, minic):
         try:
             temp[change_locs_k2p1] = 0
         except IndexError:
-            print(f'Fixing out of bounds error')
+            print('Fixing out of bounds error')
             locs0 = change_locs_k2p1[0]
             locs1 = change_locs_k2p1[1]
 

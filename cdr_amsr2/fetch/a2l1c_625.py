@@ -19,29 +19,31 @@ import datetime as dt
 import re
 from pathlib import Path
 
+import numpy as np
 import xarray as xr
 
 from cdr_amsr2._types import Hemisphere
 
 
 def _get_a2l1c_625_data_fields(
-    *, base_dir: Path, date: dt.date, hemisphere: Hemisphere
+    *,
+    base_dir: Path,
+    date: dt.date,
+    hemisphere: Hemisphere,
 ) -> xr.Dataset:
-    """Find raw binary files used for 6.25km NH from AMSR2 L1C (NSIDC-0763)
-    and return an xf dataset of the variables
+    """Find raw binary files used for 6.25km NH from AMSR2 L1C (NSIDC-0763).
+
+    Returns an xarray dataset of the variables.
     """
-
-    import numpy as np
-
     chans = ('18v', '23v', '36h', '36v')
     dim = 1680
     tim = 'am'
     ymdstr = date.strftime('%Y%m%d')
-    print(f'Assuming:')
-    print(f'  variables are 6.25km grid,')
-    print(f'  a 1680x1680 subset of E2N')
-    print(f'  time is "am"')
-    print(f'Set:')
+    print('Assuming:')
+    print('  variables are 6.25km grid,')
+    print('  a 1680x1680 subset of E2N')
+    print('  time is "am"')
+    print('Set:')
     print(f'  chans: {chans}')
     print(f'    dim: {dim}')
     print(f'    tim: {tim}')
@@ -88,7 +90,7 @@ def _normalize_a2l1c_625_tbs(
     for var in data_fields.keys():
         print(f'checking xr var: {var}')
         if match := var_pattern.match(var):
-            print(f'  matches!')
+            print('  matches!')
             tb_data_mapping[
                 f"{match.group('polarization').lower()}{match.group('channel')}"
             ] = data_fields[var]
