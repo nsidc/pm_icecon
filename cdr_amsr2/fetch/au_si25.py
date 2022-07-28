@@ -63,7 +63,7 @@ def _normalize_au_si25_tbs(
 
     tb_data_mapping = {}
     for var in data_fields.keys():
-        if match := var_pattern.match(var):
+        if match := var_pattern.match(str(var)):
             tb_data_mapping[
                 f"{match.group('polarization').lower()}{match.group('channel')}"
             ] = data_fields[var]

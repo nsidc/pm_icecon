@@ -86,7 +86,7 @@ def _normalize_a2l1c_625_tbs(
     tb_data_mapping = {}
     for var in data_fields.keys():
         print(f'checking xr var: {var}')
-        if match := var_pattern.match(var):
+        if match := var_pattern.match(str(var)):
             print('  matches!')
             tb_data_mapping[
                 f"{match.group('polarization').lower()}{match.group('channel')}"

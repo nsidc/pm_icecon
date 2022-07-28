@@ -110,7 +110,7 @@ def get_example_output() -> xr.Dataset:
 
 def save_n_conc_image(conc_array: xr.DataArray, filepath: Path) -> None:
     """Create an image representing the N. hemisphere conc field."""
-    conc_array.plot.imshow(
+    conc_array.plot.imshow(  # type: ignore[attr-defined]
         ax=plt.axes((0, 0, 1, 1), projection=N_PROJ),
         colors=COLORS,
         levels=COLORBOUNDS,
@@ -215,8 +215,6 @@ if __name__ == '__main__':
 
     diff = diff.data.flatten()
     diff_excluding_0 = diff[diff != 0]
-
-    breakpoint()
 
     plt.hist(
         diff_excluding_0,
