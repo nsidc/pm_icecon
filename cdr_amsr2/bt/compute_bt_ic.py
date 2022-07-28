@@ -14,6 +14,7 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt._types import ParaVals, Variables
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
@@ -926,6 +927,7 @@ def bootstrap(
     params: BootstrapParams,
     variables: Variables,
     date: dt.date,
+    hemisphere: Hemisphere,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     tb_mask = tb_data_mask(

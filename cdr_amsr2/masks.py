@@ -2,22 +2,10 @@
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import PACKAGE_DIR
-
-# Ocean has a value of 0, land a value of 1, and coast a value of 2.
-_land_coast_array_psn25 = np.fromfile(
-    (
-        PACKAGE_DIR
-        / '../legacy/SB2_NRT_programs'
-        / '../SB2_NRT_programs/ANCILLARY/north_land_25'
-    ).resolve(),
-    dtype=np.int16,
-).reshape(448, 304)
-
-# TODO: land mask currently includes land and coast. Does this make sense? Are
-# we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
-LAND_MASK_psn25 = _land_coast_array_psn25 != 0
 
 # values of 1 indicate the pole hole.
 POLE_MASK_psn25 = (
@@ -31,6 +19,35 @@ POLE_MASK_psn25 = (
     ).reshape(448, 304)
     == 1
 )
+
+
+def get_ps25_land_mask(*, hemisphere: Hemisphere) -> npt.NDArray[np.bool_]:
+    """Get the polar stereo 25km land mask."""
+    # Ocean has a value of 0, land a value of 1, and coast a value of 2.
+    shape = {
+        'north': (448, 304),
+        'south': (332, 316),
+    }[hemisphere]
+    _land_coast_array = np.fromfile(
+        (
+            PACKAGE_DIR
+            / '../legacy/SB2_NRT_programs'
+            / (
+                f'../SB2_NRT_programs/ANCILLARY/{hemisphere}_land_25'
+                # NOTE: According to scotts, the 'r' in the southern hemisphere
+                # filename probably stands for “revised“.
+                f"{'r' if hemisphere == 'south' else ''}"
+            )
+        ).resolve(),
+        dtype=np.int16,
+    ).reshape(shape)
+
+    # TODO: land mask currently includes land and coast. Does this make sense? Are
+    # we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
+    land_mask = _land_coast_array != 0
+
+    return land_mask
+
 
 # The authoritative mask for the NH EASE2 Arctic subset
 # is a 1680x1680 (centered) subset of the full 2880x2880 EASE2 NH grid
