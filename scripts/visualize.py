@@ -142,8 +142,7 @@ def save_conc_image(*, conc_array: xr.DataArray, filepath: Path, hemisphere) -> 
     _clear_plots(plt)
 
 
-def get_au_si25_bt_conc(*, hemisphere: Hemisphere) -> xr.DataArray:
-    date = dt.date(2020, 1, 1)
+def get_au_si25_bt_conc(*, date: dt.date, hemisphere: Hemisphere) -> xr.DataArray:
     ds = au_si25._get_au_si25_data_fields(
         base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
         date=date,
@@ -214,7 +213,8 @@ def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
 
     # Do the same for the bootstrap concentration field that comes with the
     # AU_SI25 data.
-    au_si25_conc = get_au_si25_bt_conc(hemisphere=hemisphere)
+    au_si25_conc = get_au_si25_bt_conc(date=date, hemisphere=hemisphere)
+    _ax = ax[0][1]
     save_conc_image(
         conc_array=au_si25_conc,
         filepath=OUTPUT_DIR / f'bt_{hemisphere[0].upper()}H_{date:%Y%m%d}_AU_SI25.png',
