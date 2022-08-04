@@ -12,7 +12,11 @@ from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
-from cdr_amsr2.masks import LAND_MASK_e2n625, POLE_MASK_psn25, get_ps25_land_mask
+from cdr_amsr2.masks import (
+    get_e2n625_land_mask,
+    get_ps25_land_mask,
+    get_ps25_pole_hole_mask,
+)
 
 
 def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
@@ -27,7 +31,7 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         sat='u2',
         land_mask=get_ps25_land_mask(hemisphere=hemisphere),
         # There's no pole hole in the southern hemisphere.
-        pole_mask=POLE_MASK_psn25 if hemisphere == 'north' else None,
+        pole_mask=get_ps25_pole_hole_mask() if hemisphere == 'north' else None,
     )
 
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
@@ -63,7 +67,7 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
 
     params = BootstrapParams(
         sat='a2l1c',
-        land_mask=LAND_MASK_e2n625,
+        land_mask=get_e2n625_land_mask(),
         # TODO: For now, let's NOT impose a pole hole on the A2L1C data
         pole_mask=None,
     )
@@ -109,7 +113,7 @@ def original_f18_example() -> xr.Dataset:
     params = BootstrapParams(
         sat='18',
         land_mask=get_ps25_land_mask(hemisphere=hemisphere),
-        pole_mask=POLE_MASK_psn25,
+        pole_mask=get_ps25_pole_hole_mask(),
     )
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 
