@@ -14,11 +14,11 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-from cdr_amsr2._types import Hemisphere
+from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.bt._types import ParaVals, Variables
 from cdr_amsr2.config.models.bt import BootstrapParams
-from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
+from cdr_amsr2.masks import get_ps25_valid_ice_mask
 
 THIS_DIR = Path(__file__).parent
 
@@ -465,7 +465,15 @@ def calc_rad_coeffs_32(v: Variables):
     return v_out
 
 
-def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
+def sst_clean_sb2(
+    *,
+    sat: ValidSatellites,
+    iceout,
+    missval,
+    landval,
+    date: dt.date,
+    hemisphere: Hemisphere,
+):
     # implement fortran's sst_clean_sb2() routine
 
     sst_mask: npt.NDArray[np.uint8 | np.int16]
@@ -479,14 +487,8 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
         is_high_sst = sst_mask == 50
     else:
-        print('Reading valid ice mask for PSN 25km grid')
-        sst_fn = (
-            PACKAGE_DIR
-            / '../legacy'
-            / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
-        ).resolve()
-        sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
-        is_high_sst = sst_mask == 24
+        print('Reading valid ice mask for PS {hemisphere} 25km grid')
+        is_high_sst = get_ps25_valid_ice_mask(hemisphere=hemisphere, date=date)
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
@@ -1037,6 +1039,7 @@ def bootstrap(
         missval=params.missval,
         landval=params.landval,
         date=date,
+        hemisphere=hemisphere,
     )
 
     # *** Do spatial interp ***
