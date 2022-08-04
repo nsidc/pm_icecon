@@ -7,6 +7,7 @@ from loguru import logger
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
+from cdr_amsr2.bt.util import standard_output_filename
 
 
 def _datetime_to_date(_ctx, _param, value: dt.datetime) -> dt.date:
@@ -55,7 +56,7 @@ def amsr2(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
         hemisphere=hemisphere,
     )
 
-    output_fn = f'{hemisphere[0].upper()}H_{date:%Y%m%d}_py_NRT_amsr2.nc'
+    output_fn = standard_output_filename(hemisphere=hemisphere, date=date, sat='u2')
     output_path = output_dir / output_fn
     conc_ds.to_netcdf(output_path)
     logger.info(f'Wrote AMSR2 concentration field: {output_path}')
@@ -96,14 +97,14 @@ def a2l1c(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
     derived from nsidc0763 (unpublished) files created from L1C fields
 
     The resulting concentration field is saved to a netcdf file in the given
-    `output_dir` with the form `{N|S}H_{YYYYMMDD}_py_NRT_amsr2.nc`
+    `output_dir`.
     """
     conc_ds = a2l1c_bootstrap(
         date=date,
         hemisphere=hemisphere,
     )
 
-    output_fn = f'{hemisphere[0].upper()}H_{date:%Y%m%d}_py_NRT_a2l1c.nc'
+    output_fn = standard_output_filename(hemisphere=hemisphere, date=date, sat='a2l1c')
     output_path = output_dir / output_fn
     conc_ds.to_netcdf(output_path)
     logger.info(f'Wrote a2l1c concentration field: {output_path}')
