@@ -15,7 +15,6 @@ from matplotlib import pyplot as plt
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.bt.util import standard_output_filename
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch import au_si25
 
