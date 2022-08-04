@@ -8,7 +8,6 @@ visualization code.
 import datetime as dt
 from pathlib import Path
 
-import cartopy.crs as ccrs
 import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
@@ -76,24 +75,6 @@ COLORBOUNDS = [
     120.001,
 ]
 
-N_PROJ = ccrs.Stereographic(
-    central_latitude=90.0,
-    central_longitude=-45.0,
-    false_easting=0.0,
-    false_northing=0.0,
-    true_scale_latitude=70,
-    globe=None,
-)
-
-S_PROJ = ccrs.Stereographic(
-    central_latitude=-90.0,
-    central_longitude=0.0,
-    false_easting=0.0,
-    false_northing=0.0,
-    true_scale_latitude=-70,
-    globe=None,
-)
-
 
 def get_example_output(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
     """Get the example AMSR2 output from our python code.
@@ -117,20 +98,8 @@ def get_example_output(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
     return example_ds
 
 
-def _clear_plots(plt):
-    plt.clf()
-    plt.cla()
-    plt.close()
-
-
 def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
     """Create an image representing the conc field."""
-    # TODO: how to add / change the projection of an axis?
-    # projection = {
-    #     'north': N_PROJ,
-    #     'south': S_PROJ,
-    # }[hemisphere]
-
     conc_array.plot.imshow(  # type: ignore[attr-defined]
         ax=ax,
         colors=COLORS,
