@@ -124,22 +124,21 @@ def _clear_plots(plt):
     plt.close()
 
 
-def save_conc_image(*, conc_array: xr.DataArray, filepath: Path, hemisphere) -> None:
+def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
     """Create an image representing the conc field."""
-    projection = {
-        'north': N_PROJ,
-        'south': S_PROJ,
-    }[hemisphere]
+    # TODO: how to add / change the projection of an axis?
+    # projection = {
+    #     'north': N_PROJ,
+    #     'south': S_PROJ,
+    # }[hemisphere]
+
     conc_array.plot.imshow(  # type: ignore[attr-defined]
-        ax=plt.axes((0, 0, 1, 1), projection=projection),
+        ax=ax,
         colors=COLORS,
         levels=COLORBOUNDS,
         add_colorbar=False,
         add_labels=False,
     )
-    plt.savefig(filepath, bbox_inches='tight', pad_inches=0.05)
-
-    _clear_plots(plt)
 
 
 def get_au_si25_bt_conc(*, date: dt.date, hemisphere: Hemisphere) -> xr.DataArray:
@@ -197,57 +196,51 @@ def _mask_data(data, hemisphere: Hemisphere):
 def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
     # Get and save an image of the example data produced by our python code.
     example_ds = get_example_output(hemisphere=hemisphere, date=date)
+    fig, ax = plt.subplots(nrows=2, ncols=2)
+    _ax = ax[0][0]
+    _ax.title.set_text('Python calculated conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
     save_conc_image(
         conc_array=example_ds.conc,
-        filepath=(
-            OUTPUT_DIR
-            / standard_output_filename(
-                hemisphere=hemisphere,
-                date=date,
-                sat='u2',
-                extension='.png',
-            )
-        ),
         hemisphere=hemisphere,
+        ax=_ax,
     )
 
     # Do the same for the bootstrap concentration field that comes with the
     # AU_SI25 data.
     au_si25_conc = get_au_si25_bt_conc(date=date, hemisphere=hemisphere)
     _ax = ax[0][1]
+    _ax.title.set_text('AU_SI25 provided conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
     save_conc_image(
         conc_array=au_si25_conc,
-        filepath=OUTPUT_DIR / f'bt_{hemisphere[0].upper()}H_{date:%Y%m%d}_AU_SI25.png',
         hemisphere=hemisphere,
+        ax=_ax,
     )
 
     # Do a difference between the two images.
     aui_si25_conc_masked = _mask_data(au_si25_conc, hemisphere)
 
     diff = example_ds.conc - aui_si25_conc_masked
-    _clear_plots(plt)
-    ax = plt.axes((0, 0, 1, 1), projection=N_PROJ)
+    _ax = ax[1][0]
+    _ax.title.set_text('Python minus AU_SI25 conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
     diff.plot.imshow(
-        ax=ax,
+        ax=_ax,
         add_colorbar=True,
-        transform=N_PROJ,
-        # (left, right, bottom, top)
-        extent=[-3850000.000, 3750000.0, -5350000.0, 5850000.000],
-    )
-    ax.coastlines()
-    plt.savefig(
-        OUTPUT_DIR / f'{hemisphere[0].upper()}H_{date:%Y%m%d}_diff_amsr2.png',
-        bbox_inches='tight',
-        pad_inches=0.05,
+        add_labels=False,
     )
 
     # Histogram
-    _clear_plots(plt)
-
     diff = diff.data.flatten()
     diff_excluding_0 = diff[diff != 0]
 
-    plt.hist(
+    _ax = ax[1][1]
+    _ax.title.set_text('Histogram of non-zero differences')
+    _ax.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),
         log=True,
@@ -255,12 +248,14 @@ def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
 
     plt.xticks(list(range(-100, 120, 20)))
 
-    plt.savefig(
-        OUTPUT_DIR / 'NH_20200101_diff_hist_amsr2.png',
+    fig.suptitle(f'{hemisphere[0].upper()}H {date:%Y-%m-%d}')
+    fig.set_size_inches(w=10, h=8)
+    fig.savefig(
+        OUTPUT_DIR / f'{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
         bbox_inches='tight',
         pad_inches=0.05,
     )
 
 
 if __name__ == '__main__':
-    do_comparisons_ausi25(hemisphere='south', date=dt.date(2020, 1, 1))
+    do_comparisons_ausi25(hemisphere='south', date=dt.date(2022, 8, 1))
