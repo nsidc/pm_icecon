@@ -488,7 +488,6 @@ def sst_clean_sb2(
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
         is_high_sst = sst_mask == 50
     else:
-        print(f'Reading valid ice mask for PS {hemisphere} 25km grid')
         is_high_sst = get_ps_valid_ice_mask(
             hemisphere=hemisphere,
             date=date,
