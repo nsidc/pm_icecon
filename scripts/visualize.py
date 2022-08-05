@@ -14,8 +14,8 @@ from matplotlib import pyplot as plt
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.masks import get_ps_valid_ice_mask, get_ps_pole_hole_mask
 from cdr_amsr2.fetch import au_si
+from cdr_amsr2.masks import get_ps_pole_hole_mask, get_ps_valid_ice_mask
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -163,7 +163,9 @@ def _mask_data(data, hemisphere: Hemisphere, resolution: str, date: dt.date):
 def do_comparisons_ausi25(
     *, hemisphere: Hemisphere, date: dt.date, resolution: str
 ) -> None:
-    fig, ax = plt.subplots(nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True})
+    fig, ax = plt.subplots(
+        nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
+    )
 
     # Get the bootstrap concentration field that comes with the
     # AU_SI data.
@@ -193,7 +195,6 @@ def do_comparisons_ausi25(
         hemisphere=hemisphere,
         ax=_ax,
     )
-
 
     # Do a difference between the two images.
     aui_si25_conc_masked = _mask_data(au_si25_conc, hemisphere, resolution, date)
