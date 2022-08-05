@@ -234,5 +234,8 @@ def do_comparisons_ausi25(
 
 
 if __name__ == '__main__':
-    do_comparisons_ausi25(hemisphere='north', date=dt.date(2022, 8, 1), resolution='12')
-    # do_comparisons_ausi25(hemisphere='north', date=dt.date(2022, 5, 4), resolution='25')
+    do_comparisons_ausi25(
+        hemisphere='north',
+        date=dt.date(2022, 8, 1),
+        resolution='12',
+    )
