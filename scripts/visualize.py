@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch import au_si25
+from cdr_amsr2.fetch import au_si
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -110,10 +110,11 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
 
 
 def get_au_si25_bt_conc(*, date: dt.date, hemisphere: Hemisphere) -> xr.DataArray:
-    ds = au_si25._get_au_si25_data_fields(
+    ds = au_si._get_au_si_data_fields(
         base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
         date=date,
         hemisphere=hemisphere,
+        resolution='25',
     )
 
     # flip the image to be 'right-side' up

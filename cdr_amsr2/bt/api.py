@@ -11,7 +11,7 @@ from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
-from cdr_amsr2.fetch.au_si25 import get_au_si25_tbs
+from cdr_amsr2.fetch.au_si import get_au_si25_tbs
 from cdr_amsr2.masks import (
     get_e2n625_land_mask,
     get_ps25_land_mask,
