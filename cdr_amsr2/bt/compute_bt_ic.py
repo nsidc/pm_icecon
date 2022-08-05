@@ -18,7 +18,7 @@ from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.bt._types import ParaVals, Variables
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
-from cdr_amsr2.masks import get_ps25_valid_ice_mask
+from cdr_amsr2.masks import get_ps_valid_ice_mask
 
 THIS_DIR = Path(__file__).parent
 
@@ -473,6 +473,7 @@ def sst_clean_sb2(
     landval,
     date: dt.date,
     hemisphere: Hemisphere,
+    resolution: str,
 ):
     # implement fortran's sst_clean_sb2() routine
 
@@ -488,7 +489,11 @@ def sst_clean_sb2(
         is_high_sst = sst_mask == 50
     else:
         print(f'Reading valid ice mask for PS {hemisphere} 25km grid')
-        is_high_sst = get_ps25_valid_ice_mask(hemisphere=hemisphere, date=date)
+        is_high_sst = get_ps_valid_ice_mask(
+            hemisphere=hemisphere,
+            date=date,
+            resolution=resolution,
+        )
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
@@ -930,6 +935,9 @@ def bootstrap(
     variables: Variables,
     date: dt.date,
     hemisphere: Hemisphere,
+    # TODO: should be grid-independent. We should probably pass in the valid ice
+    # mask like we do for the pole hole and land mask via `params`
+    resolution: str,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     tb_mask = tb_data_mask(
@@ -1040,6 +1048,7 @@ def bootstrap(
         landval=params.landval,
         date=date,
         hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     # *** Do spatial interp ***

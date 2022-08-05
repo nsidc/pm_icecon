@@ -11,27 +11,31 @@ from cdr_amsr2.config import import_cfg_file
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
-from cdr_amsr2.fetch.au_si import get_au_si25_tbs
+from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from cdr_amsr2.masks import (
     get_e2n625_land_mask,
-    get_ps25_land_mask,
-    get_ps25_pole_hole_mask,
+    get_ps_land_mask,
+    get_ps_pole_hole_mask,
 )
 
 
-def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
-    """Compute sea ice concentration from AU_SI25 TBs."""
-    xr_tbs = get_au_si25_tbs(
-        base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
+def amsr2_bootstrap(
+    *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
+) -> xr.Dataset:
+    """Compute sea ice concentration from AU_SI TBs."""
+    xr_tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     params = BootstrapParams(
         sat='u2',
-        land_mask=get_ps25_land_mask(hemisphere=hemisphere),
+        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
         # There's no pole hole in the southern hemisphere.
-        pole_mask=get_ps25_pole_hole_mask() if hemisphere == 'north' else None,
+        pole_mask=get_ps_pole_hole_mask(resolution=resolution)
+        if hemisphere == 'north'
+        else None,
     )
 
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
@@ -49,6 +53,7 @@ def amsr2_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         variables=variables,
         date=date,
         hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     return conc_ds
@@ -87,6 +92,7 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         variables=variables,
         date=date,
         hemisphere=hemisphere,
+        resolution='6.25',
     )
 
     return conc_ds
@@ -112,8 +118,8 @@ def original_f18_example() -> xr.Dataset:
     hemisphere: Hemisphere = 'north'
     params = BootstrapParams(
         sat='18',
-        land_mask=get_ps25_land_mask(hemisphere=hemisphere),
-        pole_mask=get_ps25_pole_hole_mask(),
+        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution='25'),
+        pole_mask=get_ps_pole_hole_mask(resolution='25'),
     )
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 
@@ -148,6 +154,7 @@ def original_f18_example() -> xr.Dataset:
         variables=variables,
         date=dt.date(2018, 2, 17),
         hemisphere=hemisphere,
+        resolution='25',
     )
 
     return conc_ds

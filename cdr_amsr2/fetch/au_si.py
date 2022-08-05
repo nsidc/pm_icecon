@@ -22,7 +22,7 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere
 
-_supported_resolutions = Literal['25', '12']
+AU_SI_RESOLUTIONS = Literal['25', '12']
 
 
 def _get_au_si_data_fields(
@@ -30,7 +30,7 @@ def _get_au_si_data_fields(
     base_dir: Path,
     date: dt.date,
     hemisphere: Hemisphere,
-    resolution: _supported_resolutions,
+    resolution: AU_SI_RESOLUTIONS,
 ) -> xr.Dataset:
     """Find a AU_SI* granule on disk and return the data fields as an xr ds.
 
@@ -62,7 +62,7 @@ def _get_au_si_data_fields(
 
 def _normalize_au_si_tbs(
     data_fields: xr.Dataset,
-    resolution: _supported_resolutions,
+    resolution: AU_SI_RESOLUTIONS,
 ) -> xr.Dataset:
     """Normalize the given AU_SI* Tbs.
 
@@ -72,8 +72,7 @@ def _normalize_au_si_tbs(
     {channel}{polarization} name. E.g., `SI_25km_NH_06H_DAY` becomes `h06`
     """
     var_pattern = re.compile(
-        f'SI_{resolution}km_'
-        r'(N|S)H_(?P<channel>\d{2})(?P<polarization>H|V)_DAY'
+        f'SI_{resolution}km_' r'(N|S)H_(?P<channel>\d{2})(?P<polarization>H|V)_DAY'
     )
 
     tb_data_mapping = {}
@@ -88,30 +87,18 @@ def _normalize_au_si_tbs(
     return normalized
 
 
-def _get_au_si_tbs(
+def get_au_si_tbs(
     *,
-    base_dir: Path,
     date: dt.date,
     hemisphere: Hemisphere,
-    resolution: _supported_resolutions,
+    resolution: AU_SI_RESOLUTIONS,
 ) -> xr.Dataset:
     data_fields = _get_au_si_data_fields(
-        base_dir=base_dir,
+        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
         date=date,
         hemisphere=hemisphere,
         resolution=resolution,
     )
     tb_data = _normalize_au_si_tbs(data_fields, resolution=resolution)
-
-    return tb_data
-
-
-def get_au_si25_tbs(
-    *, base_dir: Path, date: dt.date, hemisphere: Hemisphere
-) -> xr.Dataset:
-    """Return AU_SI25 Tbs for the given date and hemisphere as an xr dataset."""
-    tb_data = _get_au_si_tbs(
-        base_dir=base_dir, date=date, hemisphere=hemisphere, resolution='25'
-    )
 
     return tb_data

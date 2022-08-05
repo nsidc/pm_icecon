@@ -85,6 +85,8 @@ def get_example_output(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
     example_ds = amsr2_bootstrap(
         date=date,
         hemisphere=hemisphere,
+        # TODO: parameterize this.
+        resolution='25',
     )
     # flip the image to be 'right-side' up
     example_ds = example_ds.reindex(y=example_ds.y[::-1], x=example_ds.x)
@@ -218,7 +220,7 @@ def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
     plt.xticks(list(range(-100, 120, 20)))
 
     fig.suptitle(f'{hemisphere[0].upper()}H {date:%Y-%m-%d}')
-    fig.set_size_inches(w=10, h=8)
+    fig.set_size_inches(w=20, h=16)
     fig.savefig(
         OUTPUT_DIR / f'{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
         bbox_inches='tight',

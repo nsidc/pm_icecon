@@ -10,10 +10,11 @@ def standard_output_filename(
     hemisphere: Hemisphere,
     date: dt.date,
     sat: ValidSatellites,
+    resolution: str,
     extension: str = '.nc',
 ) -> str:
     """Return a string representing the standard filename for bootstrap."""
     assert (
         extension[0] == '.'
     ), f'extension must contain `.`. Did you mean ".{extension}"?'
-    return f'bt_{hemisphere[0].upper()}H_{date:%Y%m%d}_{sat}{extension}'
+    return f'bt_{hemisphere[0].upper()}H_{date:%Y%m%d}_{sat}_{resolution}{extension}'

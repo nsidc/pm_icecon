@@ -28,6 +28,7 @@ def test_bt_amsr2_regression():
         actual_ds = amsr2_bootstrap(
             date=date,
             hemisphere='north',
+            resolution='25',
         )
 
         assert_equal(
