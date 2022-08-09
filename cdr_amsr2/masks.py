@@ -163,8 +163,6 @@ def get_ps_valid_ice_mask(
                 f'bt_validmask_psn12.5km_{date:%m}.dat'
             )
 
-            # The valid ice array has values of 0, 4, 24, and 32. It looks like values
-            # of 4 represent areas of valid ice.
             sst_mask = np.fromfile(mask_fn, dtype=np.int16).reshape(896, 608)
     else:
         if resolution == '12':
