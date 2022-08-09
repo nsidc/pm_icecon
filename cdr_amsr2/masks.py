@@ -7,10 +7,11 @@ import numpy.typing as npt
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 
 
 # TODO: accept `Hemisphere` arg and return None if South?
-def get_ps_pole_hole_mask(*, resolution: str) -> npt.NDArray[np.bool_]:
+def get_ps_pole_hole_mask(*, resolution: AU_SI_RESOLUTIONS) -> npt.NDArray[np.bool_]:
     # values of 1 indicate the pole hole.
     if resolution == '25':
         pole_mask_psn = (
@@ -61,7 +62,7 @@ def _get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.in
 def get_ps_land_mask(
     *,
     hemisphere: Hemisphere,
-    resolution: str,
+    resolution: AU_SI_RESOLUTIONS,
     # TODO: eliminate `date` as a kwarg. We only need this to get the correct
     # validice/land/coast map for 12.5km southern hemisphere. This is because
     # there is one file for each month. The land mask/coast mask should be the
@@ -144,7 +145,7 @@ def get_ps_valid_ice_mask(
     *,
     hemisphere: Hemisphere,
     date: dt.date,
-    resolution: str,
+    resolution: AU_SI_RESOLUTIONS,
 ) -> npt.NDArray[np.bool_]:
     """Read and return the polar stereo valid ice mask."""
     print(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')

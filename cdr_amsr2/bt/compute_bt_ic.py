@@ -491,7 +491,7 @@ def sst_clean_sb2(
         is_high_sst = get_ps_valid_ice_mask(
             hemisphere=hemisphere,
             date=date,
-            resolution=resolution,
+            resolution=resolution,  # type: ignore[arg-type]
         )
 
     is_not_land = iceout != landval

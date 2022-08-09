@@ -77,7 +77,7 @@ COLORBOUNDS = [
 
 
 def get_example_output(
-    *, hemisphere: Hemisphere, date: dt.date, resolution: str
+    *, hemisphere: Hemisphere, date: dt.date, resolution: au_si.AU_SI_RESOLUTIONS
 ) -> xr.Dataset:
     """Get the example AMSR2 output from our python code.
 
@@ -114,7 +114,10 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
 
 
 def get_au_si25_bt_conc(
-    *, date: dt.date, hemisphere: Hemisphere, resolution: str
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> xr.DataArray:
     ds = au_si._get_au_si_data_fields(
         # TODO: DRY out base dir defualt. No need to pass this around...
@@ -135,7 +138,9 @@ def get_au_si25_bt_conc(
     return bt_conc
 
 
-def _mask_data(data, hemisphere: Hemisphere, resolution: str, date: dt.date):
+def _mask_data(
+    data, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS, date: dt.date
+):
     aui_si25_conc_masked = data.where(data != 110, 0)
 
     # Mask out invalid ice (the AU_SI products have conc values in lakes. We
@@ -160,8 +165,11 @@ def _mask_data(data, hemisphere: Hemisphere, resolution: str, date: dt.date):
     return aui_si25_conc_masked
 
 
-def do_comparisons_ausi25(
-    *, hemisphere: Hemisphere, date: dt.date, resolution: str
+def do_comparisons_au_si(
+    *,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> None:
     fig, ax = plt.subplots(
         nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
