@@ -31,7 +31,9 @@ def amsr2_bootstrap(
 
     params = BootstrapParams(
         sat='u2',
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+        land_mask=get_ps_land_mask(
+            hemisphere=hemisphere, resolution=resolution, date=date
+        ),
         # There's no pole hole in the southern hemisphere.
         pole_mask=get_ps_pole_hole_mask(resolution=resolution)
         if hemisphere == 'north'
@@ -118,7 +120,9 @@ def original_f18_example() -> xr.Dataset:
     hemisphere: Hemisphere = 'north'
     params = BootstrapParams(
         sat='18',
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution='25'),
+        land_mask=get_ps_land_mask(
+            hemisphere=hemisphere, resolution='25', date=dt.date(2018, 2, 17)
+        ),
         pole_mask=get_ps_pole_hole_mask(resolution='25'),
     )
     variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')

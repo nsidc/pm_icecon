@@ -41,8 +41,32 @@ def get_ps_pole_hole_mask(*, resolution: str) -> npt.NDArray[np.bool_]:
     return pole_mask_psn
 
 
+def _get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.int16]:
+    """Get the polar stereo south 12.5km valid ice/land/coast array.
+
+    4 unique values:
+        * 0 == land
+        * 4 == valid ice
+        * 24 == invalid ice
+        * 32 == coast.
+    """
+    fn = Path(
+        '/share/apps/amsr2-cdr/bootstrap_masks' f'/bt_valid_pss12.5_int16_{date:%m}.dat'
+    )
+    validice_land_coast = np.fromfile(fn, dtype=np.int16).reshape(664, 632)
+
+    return validice_land_coast
+
+
 def get_ps_land_mask(
-    *, hemisphere: Hemisphere, resolution: str
+    *,
+    hemisphere: Hemisphere,
+    resolution: str,
+    # TODO: eliminate `date` as a kwarg. We only need this to get the correct
+    # validice/land/coast map for 12.5km southern hemisphere. This is because
+    # there is one file for each month. The land mask/coast mask should be the
+    # same for every month. Maybe we can just pass `dt.date.today()`?
+    date: dt.date,
 ) -> npt.NDArray[np.bool_]:
     """Get the polar stereo 25km land mask."""
     # Ocean has a value of 0, land a value of 1, and coast a value of 2.
@@ -65,23 +89,24 @@ def get_ps_land_mask(
             dtype=np.int16,
         ).reshape(shape)
 
+        land_mask = _land_coast_array != 0
+
         # TODO: land mask currently includes land and coast. Does this make sense? Are
         # we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
     elif resolution == '12':
         if hemisphere == 'south':
-            raise NotImplementedError(
-                f'No SH land masks for PS {resolution} available.'
-            )
+            _land_coast_array = _get_pss_12_validice_land_coast_array(date=date)
+            land_mask = np.logical_or(_land_coast_array == 0, _land_coast_array == 32)
+        else:
+            _land_coast_array = np.fromfile(
+                Path(
+                    '/share/apps/amsr2-cdr/cdr_testdata/btequiv_psn12.5/'
+                    'bt_landequiv_psn12.5km.dat'
+                ),
+                dtype=np.int16,
+            ).reshape(896, 608)
 
-        _land_coast_array = np.fromfile(
-            Path(
-                '/share/apps/amsr2-cdr/cdr_testdata/btequiv_psn12.5/'
-                'bt_landequiv_psn12.5km.dat'
-            ),
-            dtype=np.int16,
-        ).reshape(896, 608)
-
-    land_mask = _land_coast_array != 0
+            land_mask = _land_coast_array != 0
 
     return land_mask
 
@@ -141,16 +166,16 @@ def get_ps_valid_ice_mask(
             # of 4 represent areas of valid ice.
             sst_mask = np.fromfile(mask_fn, dtype=np.int16).reshape(896, 608)
     else:
-        if resolution != '25':
-            raise NotImplementedError(
-                'We have not yet created a SH PS 25 valid ice mask.'
+        if resolution == '12':
+            # values of 24 indicate invalid ice.
+            sst_mask = _get_pss_12_validice_land_coast_array(date=date)
+        elif resolution == '25':
+            sst_fn = Path(
+                '/share/apps/amsr2-cdr'
+                '/cdr_testdata/bt_goddard_ANCILLARY'
+                f'/SH_{date:%m}_SST_avhrr_threshold_{date:%m}_fixd.int'
             )
-        sst_fn = Path(
-            '/share/apps/amsr2-cdr'
-            '/cdr_testdata/bt_goddard_ANCILLARY'
-            f'/SH_{date:%m}_SST_avhrr_threshold_{date:%m}_fixd.int'
-        )
-        sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(332, 316)
+            sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(332, 316)
 
     is_high_sst = sst_mask == 24
 
