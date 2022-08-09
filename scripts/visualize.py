@@ -87,7 +87,6 @@ def get_example_output(
     example_ds = amsr2_bootstrap(
         date=date,
         hemisphere=hemisphere,
-        # TODO: parameterize this.
         resolution=resolution,  # type: ignore[arg-type]
     )
     # flip the image to be 'right-side' up
