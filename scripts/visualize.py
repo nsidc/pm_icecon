@@ -14,8 +14,8 @@ from matplotlib import pyplot as plt
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch import au_si25
+from cdr_amsr2.fetch import au_si
+from cdr_amsr2.masks import get_ps_pole_hole_mask, get_ps_valid_ice_mask
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -76,7 +76,9 @@ COLORBOUNDS = [
 ]
 
 
-def get_example_output(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
+def get_example_output(
+    *, hemisphere: Hemisphere, date: dt.date, resolution: au_si.AU_SI_RESOLUTIONS
+) -> xr.Dataset:
     """Get the example AMSR2 output from our python code.
 
     * Flip the data so that North is 'up'.
@@ -85,6 +87,7 @@ def get_example_output(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
     example_ds = amsr2_bootstrap(
         date=date,
         hemisphere=hemisphere,
+        resolution=resolution,  # type: ignore[arg-type]
     )
     # flip the image to be 'right-side' up
     example_ds = example_ds.reindex(y=example_ds.y[::-1], x=example_ds.x)
@@ -109,63 +112,88 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
     )
 
 
-def get_au_si25_bt_conc(*, date: dt.date, hemisphere: Hemisphere) -> xr.DataArray:
-    ds = au_si25._get_au_si25_data_fields(
-        base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
+def get_au_si25_bt_conc(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+) -> xr.DataArray:
+    ds = au_si._get_au_si_data_fields(
+        # TODO: DRY out base dir defualt. No need to pass this around...
+        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
         date=date,
         hemisphere=hemisphere,
+        resolution=resolution,  # type: ignore[arg-type]
     )
 
     # flip the image to be 'right-side' up
     ds = ds.reindex(YDim=ds.YDim[::-1], XDim=ds.XDim)
     ds = ds.rename({'YDim': 'y', 'XDim': 'x'})
 
-    nt_conc = getattr(ds, f'SI_25km_{hemisphere[0].upper()}H_ICECON_DAY')
-    diff = getattr(ds, f'SI_25km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
+    nt_conc = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICECON_DAY')
+    diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
     bt_conc = nt_conc + diff
 
     return bt_conc
 
 
-def _get_valid_icemask():
-    ds = xr.open_dataset(
-        '/projects/DATASETS/nsidc0622_valid_seaice_masks'
-        '/NIC_valid_ice_mask.N25km.01.1972-2007.nc'
-    )
-
-    return ds
-
-
-def _mask_data(data, hemisphere: Hemisphere):
+def _mask_data(
+    data, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS, date: dt.date
+):
     aui_si25_conc_masked = data.where(data != 110, 0)
 
+    # Mask out invalid ice (the AU_SI products have conc values in lakes. We
+    # don't include those in our valid ice masks.
+    # TODO: better to exclude lakes explicitly via the land mask?
+    valid_icemask = get_ps_valid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,
+    )
+    aui_si25_conc_masked = aui_si25_conc_masked.where(
+        ~valid_icemask,
+        0,
+    )
+
     if hemisphere == 'north':
-        # Mask out lakes (value of 4)
-        valid_icemask = _get_valid_icemask()
-        aui_si25_conc_masked = aui_si25_conc_masked.where(
-            valid_icemask.valid_ice_flag.data != 4,
-            0,
-        )
 
         # mask out pole hole
-        pole_hole_path = (
-            PACKAGE_DIR
-            / '../legacy/SB2_NRT_programs'
-            / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-        ).resolve()
-        holemask = (
-            np.fromfile(pole_hole_path, dtype=np.int16).reshape(448, 304).astype(bool)
-        )
+        holemask = get_ps_pole_hole_mask(resolution=resolution)
         aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
 
     return aui_si25_conc_masked
 
 
-def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
-    # Get and save an image of the example data produced by our python code.
-    example_ds = get_example_output(hemisphere=hemisphere, date=date)
-    fig, ax = plt.subplots(nrows=2, ncols=2)
+def do_comparisons_au_si(
+    *,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+) -> None:
+    fig, ax = plt.subplots(
+        nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
+    )
+
+    # Get the bootstrap concentration field that comes with the
+    # AU_SI data.
     _ax = ax[0][0]
+    au_si25_conc = get_au_si25_bt_conc(
+        date=date, hemisphere=hemisphere, resolution=resolution
+    )
+    _ax.title.set_text(f'AU_SI{resolution} provided conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
+    save_conc_image(
+        conc_array=au_si25_conc,
+        hemisphere=hemisphere,
+        ax=_ax,
+    )
+
+    # Get the example data produced by our python code.
+    example_ds = get_example_output(
+        hemisphere=hemisphere, date=date, resolution=resolution
+    )
+    _ax = ax[0][1]
     _ax.title.set_text('Python calculated conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
@@ -175,25 +203,12 @@ def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
         ax=_ax,
     )
 
-    # Do the same for the bootstrap concentration field that comes with the
-    # AU_SI25 data.
-    au_si25_conc = get_au_si25_bt_conc(date=date, hemisphere=hemisphere)
-    _ax = ax[0][1]
-    _ax.title.set_text('AU_SI25 provided conc')
-    _ax.set_xticks([])
-    _ax.set_yticks([])
-    save_conc_image(
-        conc_array=au_si25_conc,
-        hemisphere=hemisphere,
-        ax=_ax,
-    )
-
     # Do a difference between the two images.
-    aui_si25_conc_masked = _mask_data(au_si25_conc, hemisphere)
+    aui_si25_conc_masked = _mask_data(au_si25_conc, hemisphere, resolution, date)
 
     diff = example_ds.conc - aui_si25_conc_masked
     _ax = ax[1][0]
-    _ax.title.set_text('Python minus AU_SI25 conc')
+    _ax.title.set_text(f'Python minus AU_SI{resolution} conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     diff.plot.imshow(
@@ -216,14 +231,18 @@ def do_comparisons_ausi25(*, hemisphere: Hemisphere, date: dt.date) -> None:
 
     plt.xticks(list(range(-100, 120, 20)))
 
-    fig.suptitle(f'{hemisphere[0].upper()}H {date:%Y-%m-%d}')
-    fig.set_size_inches(w=10, h=8)
+    fig.suptitle(f'AU_SI{resolution} {hemisphere[0].upper()}H {date:%Y-%m-%d}')
+    fig.set_size_inches(w=20, h=16)
     fig.savefig(
-        OUTPUT_DIR / f'{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
+        OUTPUT_DIR / f'{resolution}km_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
         bbox_inches='tight',
         pad_inches=0.05,
     )
 
 
 if __name__ == '__main__':
-    do_comparisons_ausi25(hemisphere='south', date=dt.date(2022, 8, 1))
+    do_comparisons_ausi25(
+        hemisphere='north',
+        date=dt.date(2022, 8, 1),
+        resolution='12',
+    )

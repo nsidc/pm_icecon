@@ -8,6 +8,7 @@ from loguru import logger
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import a2l1c_bootstrap, amsr2_bootstrap
 from cdr_amsr2.bt.util import standard_output_filename
+from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 
 
 def _datetime_to_date(_ctx, _param, value: dt.datetime) -> dt.date:
@@ -43,7 +44,19 @@ def _datetime_to_date(_ctx, _param, value: dt.datetime) -> dt.date:
         path_type=Path,
     ),
 )
-def amsr2(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
+@click.option(
+    '-r',
+    '--resolution',
+    required=True,
+    type=click.Choice(get_args(AU_SI_RESOLUTIONS)),
+)
+def amsr2(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    output_dir: Path,
+    resolution: AU_SI_RESOLUTIONS,
+):
     """Run the bootstrap algorithm with ASMR2 data.
 
     AMSRU2 brightness temperatures are fetched from AU_SI25.
@@ -54,9 +67,12 @@ def amsr2(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
     conc_ds = amsr2_bootstrap(
         date=date,
         hemisphere=hemisphere,
+        resolution=resolution,
     )
 
-    output_fn = standard_output_filename(hemisphere=hemisphere, date=date, sat='u2')
+    output_fn = standard_output_filename(
+        hemisphere=hemisphere, date=date, sat='u2', resolution=f'{resolution}km'
+    )
     output_path = output_dir / output_fn
     conc_ds.to_netcdf(output_path)
     logger.info(f'Wrote AMSR2 concentration field: {output_path}')
@@ -104,7 +120,9 @@ def a2l1c(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
         hemisphere=hemisphere,
     )
 
-    output_fn = standard_output_filename(hemisphere=hemisphere, date=date, sat='a2l1c')
+    output_fn = standard_output_filename(
+        hemisphere=hemisphere, date=date, sat='a2l1c', resolution='6.25km'
+    )
     output_path = output_dir / output_fn
     conc_ds.to_netcdf(output_path)
     logger.info(f'Wrote a2l1c concentration field: {output_path}')
