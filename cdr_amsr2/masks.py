@@ -63,11 +63,6 @@ def get_ps_land_mask(
     *,
     hemisphere: Hemisphere,
     resolution: AU_SI_RESOLUTIONS,
-    # TODO: eliminate `date` as a kwarg. We only need this to get the correct
-    # validice/land/coast map for 12.5km southern hemisphere. This is because
-    # there is one file for each month. The land mask/coast mask should be the
-    # same for every month. Maybe we can just pass `dt.date.today()`?
-    date: dt.date,
 ) -> npt.NDArray[np.bool_]:
     """Get the polar stereo 25km land mask."""
     # Ocean has a value of 0, land a value of 1, and coast a value of 2.
@@ -96,7 +91,11 @@ def get_ps_land_mask(
         # we ever going to need to coast values? Maybe rename to `LAND_COAST_MASK`?
     elif resolution == '12':
         if hemisphere == 'south':
-            _land_coast_array = _get_pss_12_validice_land_coast_array(date=date)
+            # Any date is OK. The land mask is the same for all of the pss 12
+            # validice/land masks
+            _land_coast_array = _get_pss_12_validice_land_coast_array(
+                date=dt.date.today()
+            )
             land_mask = np.logical_or(_land_coast_array == 0, _land_coast_array == 32)
         else:
             _land_coast_array = np.fromfile(
