@@ -108,20 +108,12 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> ParaVals:
-    # TODO: what does this do and why?
-    # reproduce effect of ret_para_nsb2()
-    # Note: instead of '1' or '2', use description of axes tb1 and tb2
-    #       to identify the TB set whose parameters are being set
-    #       So, tbset is 'v1937' or 'vh37'
-    # Note: 'sat' is a *string*, not an integer
-
+def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):
     is_june_through_oct15 = (date.month >= 6 and date.month <= 9) or (
         date.month == 10 and date.day <= 15
     )
 
     # Set wintrc, wslope, wxlimt
-    print(f'in ret_para_nsb2(): sat is {sat}')
     if sat == '00':
         if is_june_through_oct15:
             wintrc = 60.1667
@@ -132,15 +124,23 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             wslope = 0.661017
             wxlimt = 22.00
     elif sat == 'u2':
-        if is_june_through_oct15:
-            # Using the "Season 3" values from ret_parameters_amsru2.f
-            wintrc = 82.71
-            wslope = 0.5352
-            wxlimt = 23.34
+        # TODO: do we need to implement the seasons 2 and 3 values for AMSR?
+        if hemisphere == 'north':
+            if is_june_through_oct15:
+                # Using the "Season 3" values from ret_parameters_amsru2.f
+                wintrc = 82.71
+                wslope = 0.5352
+                wxlimt = 23.34
+            else:
+                wintrc = 84.73
+                wslope = 0.5352
+                wxlimt = 18.39
         else:
-            wintrc = 84.73
-            wslope = 0.5352
-            wxlimt = 18.39
+            # southern hemisphere has no seasonality
+            wintrc = 85.13
+            wslope = 0.5379
+            wxlimt = 18.596
+
     elif sat == 'a2l1c':
         if is_june_through_oct15:
             # Using the "Season 3" values from ret_parameters_amsru2.f
@@ -169,21 +169,59 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
                 wslope = 0.517333
             wxlimt = 14.00
 
+    return {
+        'wintrc': wintrc,
+        'wslope': wslope,
+        'wxlimt': wxlimt,
+    }
+
+
+def ret_para_nsb2(
+    tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date, hemisphere: Hemisphere
+) -> ParaVals:
+    # TODO: what does this do and why?
+    # reproduce effect of ret_para_nsb2()
+    # Note: instead of '1' or '2', use description of axes tb1 and tb2
+    #       to identify the TB set whose parameters are being set
+    #       So, tbset is 'v1937' or 'vh37'
+    # Note: 'sat' is a *string*, not an integer
+
+    if hemisphere == 'south' and sat != 'u2':
+        raise NotImplementedError('Southern hemisphere is only implemented for AMSR2')
+
+    print(f'in ret_para_nsb2(): sat is {sat}')
+    season_params = _get_params_for_season(sat=sat, date=date, hemisphere=hemisphere)
+
     if sat == 'u2':
         # Values for AMSRU
         print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [207.2, 131.9]
-            itp = [256.3, 241.2]
-            lnline = [-71.99, 1.20]
-            iceline = [-30.26, 1.0564]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [207.2, 182.4]
-            itp = [256.3, 258.9]
-            lnline = [48.26, 0.8048]
-            iceline = [110.03, 0.5759]
-            lnchk = 1.5
+        if hemisphere == 'north':
+            if tbset == 'vh37':
+                wtp = [207.2, 131.9]
+                itp = [256.3, 241.2]
+                lnline = [-71.99, 1.20]
+                iceline = [-30.26, 1.0564]
+                lnchk = 1.5
+            elif tbset == 'v1937':
+                wtp = [207.2, 182.4]
+                itp = [256.3, 258.9]
+                lnline = [48.26, 0.8048]
+                iceline = [110.03, 0.5759]
+                lnchk = 1.5
+        else:
+            if tbset == 'vh37':
+                wtp = [207.6, 131.9]
+                itp = [259.4, 247.3]
+                lnline = [-90.62, 1.2759]
+                iceline = [-38.31, 1.0969]
+                lnchk = 1.5
+            elif tbset == 'v1937':
+                wtp = [207.6, 182.7]
+                itp = [259.4, 261.6]
+                lnline = [62.89, 0.7618]
+                iceline = [114.26, 0.5817]
+                lnchk = 1.5
+
     elif sat == 'a2l1c':
         # Values for AMSRU
         print(f'Setting sat values for: {sat}')
@@ -216,9 +254,7 @@ def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> P
             lnchk = 1.5
 
     return {
-        'wintrc': wintrc,
-        'wslope': wslope,
-        'wxlimt': wxlimt,
+        **season_params,  # type: ignore
         'wtp': wtp,
         'itp': itp,
         'lnline': lnline,
@@ -952,7 +988,7 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date)
+    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date, hemisphere)
     wintrc = para_vals_vh37['wintrc']
     wslope = para_vals_vh37['wslope']
     wxlimt = para_vals_vh37['wxlimt']
@@ -1001,7 +1037,7 @@ def bootstrap(
 
     variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date)
+    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
     ln2 = para_vals_v1937['lnline']
     variables['wtp2'] = para_vals_v1937['wtp']
     variables['itp2'] = para_vals_v1937['itp']
