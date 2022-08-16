@@ -8,11 +8,12 @@ and computes:
 import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Optional, Sequence
+from typing import Literal, Optional, Sequence, get_args
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
+from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.bt._types import ParaVals, Variables
@@ -151,7 +152,11 @@ def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):
             wintrc = 84.73
             wslope = 0.5352
             wxlimt = 18.39
-    else:
+    elif sat in get_args(ValidSatellites):
+        logger.warning(
+            f'Using default seasonal values for {sat}. '
+            'You may want to consider defining satellite-specific parameters!'
+        )
         if is_june_through_oct15:
             if sat != '17' and sat != '18':
                 wintrc = 89.3316
@@ -168,6 +173,8 @@ def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):
                 wintrc = 87.6467
                 wslope = 0.517333
             wxlimt = 14.00
+    else:
+        raise NotImplementedError(f'No params defined for {sat}')
 
     return {
         'wintrc': wintrc,
