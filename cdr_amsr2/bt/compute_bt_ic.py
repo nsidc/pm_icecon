@@ -974,7 +974,6 @@ def bootstrap(
     *,
     tbs: dict[str, npt.NDArray],
     params: BootstrapParams,
-    variables: Variables,
     date: dt.date,
     hemisphere: Hemisphere,
     # TODO: should be grid-independent. We should probably pass in the valid ice
@@ -982,6 +981,7 @@ def bootstrap(
     resolution: str,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
+    variables = {}
     tb_mask = tb_data_mask(
         tbs=(
             tbs['v37'],
