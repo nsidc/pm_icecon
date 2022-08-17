@@ -1046,7 +1046,7 @@ def bootstrap(
     if (wtp[1] - 10) < wtp37h < (wtp[1] + 10):
         wtp[1] = wtp37h
 
-    calc_vh37 = ret_linfit_32(
+    vh37 = ret_linfit_32(
         params.land_mask,
         tb_mask,
         tbs['v37'],
@@ -1056,7 +1056,6 @@ def bootstrap(
         params.add1,
         water_arr,
     )
-    vh37 = calc_vh37
 
     adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
 
@@ -1074,7 +1073,7 @@ def bootstrap(
         wtp2[1] = wtp19v
 
     # Try the ret_para... values for v1937
-    calc_v1937 = ret_linfit_32(
+    v1937 = ret_linfit_32(
         params.land_mask,
         tb_mask,
         tbs['v37'],
@@ -1087,7 +1086,6 @@ def bootstrap(
         iceline=vh37,
         adoff=adoff,
     )
-    v1937 = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
     rad_coeffs = calc_rad_coeffs_32(
