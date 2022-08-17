@@ -464,22 +464,20 @@ def ret_water_ssmi(
 
 
 def calc_rad_coeffs_32(
-        *,
-        itp,
-        wtp,
-        vh37,
-        itp2,
-        wtp2,
-        v1937,
+    *,
+    itp,
+    wtp,
+    vh37,
+    itp2,
+    wtp2,
+    v1937,
 ):
     # Compute radlsp, radoff, radlen vars
     radslp1 = fdiv(
         fsub(f(itp[1]), f(wtp[1])),
         fsub(f(itp[0]), f(wtp[0])),
     )
-    radoff1 = fsub(
-        f(wtp[1]), fmul(f(wtp[0]), f(radslp1))
-    )
+    radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
     xint = fdiv(
         fsub(f(radoff1), f(vh37[0])),
         fsub(f(vh37[1]), f(radslp1)),
@@ -496,9 +494,7 @@ def calc_rad_coeffs_32(
         fsub(f(itp2[1]), f(wtp2[1])),
         fsub(f(itp2[0]), f(wtp2[0])),
     )
-    radoff2 = fsub(
-        f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2))
-    )
+    radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
     xint = fdiv(
         fsub(f(radoff2), f(v1937[0])),
         fsub(f(v1937[1]), f(radslp2)),
@@ -940,9 +936,7 @@ def calc_bt_ice(
     is_check1 = tbs['h37'] > vh37chk
     is_h37_lt_rc1 = tbs['h37'] < (radslp1 * tbs['v37'] + radoff1)
 
-    iclen1 = np.sqrt(
-        np.square(tbs['v37'] - wtp[0]) + np.square(tbs['h37'] - wtp[1])
-    )
+    iclen1 = np.sqrt(np.square(tbs['v37'] - wtp[0]) + np.square(tbs['h37'] - wtp[1]))
     is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1 = ret_ic_32(
         tbs['v37'],
@@ -961,9 +955,7 @@ def calc_bt_ice(
     # Compute radchk2
     is_v19_lt_rc2 = tbs['v19'] < (radslp2 * tbs['v37'] + radoff2)
 
-    iclen2 = np.sqrt(
-        np.square(tbs['v37'] - wtp2[0]) + np.square(tbs['v19'] - wtp2[1])
-    )
+    iclen2 = np.sqrt(np.square(tbs['v37'] - wtp2[0]) + np.square(tbs['v19'] - wtp2[1]))
     is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2 = ret_ic_32(
         tbs['v37'],
