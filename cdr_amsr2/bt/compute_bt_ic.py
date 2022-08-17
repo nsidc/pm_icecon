@@ -911,7 +911,9 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.
 
 def calc_bt_ice(
     *,
-    p: BootstrapParams,
+    missval,
+    landval,
+    maxic,
     vh37,
     adoff,
     radslp1,
@@ -945,8 +947,8 @@ def calc_bt_ice(
         wtp[1],
         vh37[0],
         vh37[1],
-        p.missval,
-        p.maxic,
+        missval,
+        maxic,
     )
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
     is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
@@ -964,8 +966,8 @@ def calc_bt_ice(
         wtp2[1],
         v1937[0],
         v1937[1],
-        p.missval,
-        p.maxic,
+        missval,
+        maxic,
     )
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
@@ -974,13 +976,13 @@ def calc_bt_ice(
     ic = icpix1
     ic[~is_check1] = icpix2[~is_check1]
 
-    is_ic_is_missval = ic == p.missval
-    ic[is_ic_is_missval] = p.missval
+    is_ic_is_missval = ic == missval
+    ic[is_ic_is_missval] = missval
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_arr == 1] = 0.0
-    ic[tb_mask] = p.missval
-    ic[land_mask] = p.landval
+    ic[tb_mask] = missval
+    ic[land_mask] = landval
 
     return ic
 
@@ -1099,7 +1101,9 @@ def bootstrap(
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(
-        p=params,
+        missval=params.missval,
+        landval=params.landval,
+        maxic=params.maxic,
         vh37=vh37,
         adoff=adoff,
         radslp1=rad_coeffs['radslp1'],
