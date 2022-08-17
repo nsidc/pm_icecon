@@ -914,8 +914,19 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.
 
 
 def calc_bt_ice(
+    *,
     p: BootstrapParams,
-    v: Variables,
+    vh37,
+    adoff,
+    radslp1,
+    radoff1,
+    radlen1,
+    radslp2,
+    radoff2,
+    radlen2,
+    v1937,
+    wtp,
+    wtp2,
     tbs,
     land_mask: npt.NDArray[np.bool_],
     water_arr,
@@ -923,51 +934,50 @@ def calc_bt_ice(
 ):
 
     # main calc_bt_ice() block
-    vh37chk = v['vh37'][0] - v['adoff'] + v['vh37'][1] * tbs['v37']
+    vh37chk = vh37[0] - adoff + vh37[1] * tbs['v37']
 
     # Compute radchk1
     is_check1 = tbs['h37'] > vh37chk
-    is_h37_lt_rc1 = tbs['h37'] < (v['radslp1'] * tbs['v37'] + v['radoff1'])
+    is_h37_lt_rc1 = tbs['h37'] < (radslp1 * tbs['v37'] + radoff1)
 
     iclen1 = np.sqrt(
-        np.square(tbs['v37'] - v['wtp'][0]) + np.square(tbs['h37'] - v['wtp'][1])
+        np.square(tbs['v37'] - wtp[0]) + np.square(tbs['h37'] - wtp[1])
     )
-    is_iclen1_gt_radlen1 = iclen1 > v['radlen1']
+    is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1 = ret_ic_32(
         tbs['v37'],
         tbs['h37'],
-        v['wtp'][0],
-        v['wtp'][1],
-        v['vh37'][0],
-        v['vh37'][1],
+        wtp[0],
+        wtp[1],
+        vh37[0],
+        vh37[1],
         p.missval,
         p.maxic,
     )
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
-    # icpix1[is_h37_lt_rc1 & (iclen1 <= v['radlen1'])]
-    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > v['radlen1'])
-    icpix1[is_condition1] = iclen1[is_condition1] / v['radlen1']
+    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
+    icpix1[is_condition1] = iclen1[is_condition1] / radlen1
 
     # Compute radchk2
-    is_v19_lt_rc2 = tbs['v19'] < (v['radslp2'] * tbs['v37'] + v['radoff2'])
+    is_v19_lt_rc2 = tbs['v19'] < (radslp2 * tbs['v37'] + radoff2)
 
     iclen2 = np.sqrt(
-        np.square(tbs['v37'] - v['wtp2'][0]) + np.square(tbs['v19'] - v['wtp2'][1])
+        np.square(tbs['v37'] - wtp2[0]) + np.square(tbs['v19'] - wtp2[1])
     )
-    is_iclen2_gt_radlen2 = iclen2 > v['radlen2']
+    is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2 = ret_ic_32(
         tbs['v37'],
         tbs['v19'],
-        v['wtp2'][0],
-        v['wtp2'][1],
-        v['v1937'][0],
-        v['v1937'][1],
+        wtp2[0],
+        wtp2[1],
+        v1937[0],
+        v1937[1],
         p.missval,
         p.maxic,
     )
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
-    icpix2[is_condition2] = iclen2[is_condition2] / v['radlen2']
+    icpix2[is_condition2] = iclen2[is_condition2] / radlen2
 
     ic = icpix1
     ic[~is_check1] = icpix2[~is_check1]
@@ -1100,7 +1110,24 @@ def bootstrap(
     variables = {**variables, **rad_coeffs}
 
     # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
+    iceout = calc_bt_ice(
+        p=params,
+        vh37=variables['vh37'],
+        adoff=variables['adoff'],
+        radslp1=variables['radslp1'],
+        radoff1=variables['radoff1'],
+        radlen1=variables['radlen1'],
+        radslp2=variables['radslp2'],
+        radoff2=variables['radoff2'],
+        radlen2=variables['radlen2'],
+        wtp=variables['wtp'],
+        wtp2=variables['wtp2'],
+        v1937=variables['v1937'],
+        tbs=tbs,
+        land_mask=params.land_mask,
+        water_arr=water_arr,
+        tb_mask=tb_mask,
+    )
 
     # *** Do sst cleaning ***
     print(f'before sst_clean, params:\n{params}')
