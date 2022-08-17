@@ -463,49 +463,62 @@ def ret_water_ssmi(
     return water
 
 
-def calc_rad_coeffs_32(v: Variables):
+def calc_rad_coeffs_32(
+        *,
+        itp,
+        wtp,
+        vh37,
+        itp2,
+        wtp2,
+        v1937,
+):
     # Compute radlsp, radoff, radlen vars
-    v_out = v.copy()
-
-    v_out['radslp1'] = fdiv(
-        fsub(f(v_out['itp'][1]), f(v_out['wtp'][1])),
-        fsub(f(v_out['itp'][0]), f(v_out['wtp'][0])),
+    radslp1 = fdiv(
+        fsub(f(itp[1]), f(wtp[1])),
+        fsub(f(itp[0]), f(wtp[0])),
     )
-    v_out['radoff1'] = fsub(
-        f(v_out['wtp'][1]), fmul(f(v_out['wtp'][0]), f(v_out['radslp1']))
+    radoff1 = fsub(
+        f(wtp[1]), fmul(f(wtp[0]), f(radslp1))
     )
     xint = fdiv(
-        fsub(f(v_out['radoff1']), f(v_out['vh37'][0])),
-        fsub(f(v_out['vh37'][1]), f(v_out['radslp1'])),
+        fsub(f(radoff1), f(vh37[0])),
+        fsub(f(vh37[1]), f(radslp1)),
     )
-    yint = fadd(fmul(v_out['vh37'][1], f(xint)), f(v_out['vh37'][0]))
-    v_out['radlen1'] = fsqt(
+    yint = fadd(fmul(vh37[1], f(xint)), f(vh37[0]))
+    radlen1 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(v_out['wtp'][0]))),
-            fsqr(fsub(f(yint), f(v_out['wtp'][1]))),
+            fsqr(fsub(f(xint), f(wtp[0]))),
+            fsqr(fsub(f(yint), f(wtp[1]))),
         )
     )
 
-    v_out['radslp2'] = fdiv(
-        fsub(f(v_out['itp2'][1]), f(v_out['wtp2'][1])),
-        fsub(f(v_out['itp2'][0]), f(v_out['wtp2'][0])),
+    radslp2 = fdiv(
+        fsub(f(itp2[1]), f(wtp2[1])),
+        fsub(f(itp2[0]), f(wtp2[0])),
     )
-    v_out['radoff2'] = fsub(
-        f(v_out['wtp2'][1]), fmul(f(v_out['wtp2'][0]), f(v_out['radslp2']))
+    radoff2 = fsub(
+        f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2))
     )
     xint = fdiv(
-        fsub(f(v_out['radoff2']), f(v_out['v1937'][0])),
-        fsub(f(v_out['v1937'][1]), f(v_out['radslp2'])),
+        fsub(f(radoff2), f(v1937[0])),
+        fsub(f(v1937[1]), f(radslp2)),
     )
-    yint = fadd(fmul(f(v_out['v1937'][1]), f(xint)), f(v_out['v1937'][0]))
-    v_out['radlen2'] = fsqt(
+    yint = fadd(fmul(f(v1937[1]), f(xint)), f(v1937[0]))
+    radlen2 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(v_out['wtp2'][0]))),
-            fsqr(fsub(f(yint), f(v_out['wtp2'][1]))),
+            fsqr(fsub(f(xint), f(wtp2[0]))),
+            fsqr(fsub(f(yint), f(wtp2[1]))),
         )
     )
 
-    return v_out
+    return {
+        'radslp1': radslp1,
+        'radoff1': radoff1,
+        'radlen1': radlen1,
+        'radslp2': radslp2,
+        'radoff2': radoff2,
+        'radlen2': radlen2,
+    }
 
 
 def sst_clean_sb2(
@@ -1076,7 +1089,15 @@ def bootstrap(
     variables['v1937'] = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
-    variables = calc_rad_coeffs_32(variables)
+    rad_coeffs = calc_rad_coeffs_32(
+        itp=variables['itp'],
+        wtp=variables['wtp'],
+        vh37=variables['vh37'],
+        itp2=variables['itp2'],
+        wtp2=variables['wtp2'],
+        v1937=variables['v1937'],
+    )
+    variables = {**variables, **rad_coeffs}
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
