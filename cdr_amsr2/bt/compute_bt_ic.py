@@ -916,20 +916,32 @@ def calc_bt_ice(
     maxic,
     vh37,
     adoff,
-    radslp1,
-    radoff1,
-    radlen1,
-    radslp2,
-    radoff2,
-    radlen2,
     v1937,
     wtp,
     wtp2,
+    itp,
+    itp2,
     tbs,
     land_mask: npt.NDArray[np.bool_],
     water_arr,
     tb_mask: npt.NDArray[np.bool_],
 ):
+
+    # ## LINES calculating radslp1 ... to radlen2 ###
+    rad_coeffs = calc_rad_coeffs_32(
+        itp=itp,
+        wtp=wtp,
+        vh37=vh37,
+        itp2=itp2,
+        wtp2=wtp2,
+        v1937=v1937,
+    )
+    radslp1 = rad_coeffs['radslp1']
+    radoff1 = rad_coeffs['radoff1']
+    radlen1 = rad_coeffs['radlen1']
+    radslp2 = rad_coeffs['radslp2']
+    radoff2 = rad_coeffs['radoff2']
+    radlen2 = rad_coeffs['radlen2']
 
     # main calc_bt_ice() block
     vh37chk = vh37[0] - adoff + vh37[1] * tbs['v37']
@@ -1087,16 +1099,6 @@ def bootstrap(
         adoff=adoff,
     )
 
-    # ## LINES calculating radslp1 ... to radlen2 ###
-    rad_coeffs = calc_rad_coeffs_32(
-        itp=itp,
-        wtp=wtp,
-        vh37=vh37,
-        itp2=itp2,
-        wtp2=wtp2,
-        v1937=v1937,
-    )
-
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(
         missval=params.missval,
@@ -1104,12 +1106,8 @@ def bootstrap(
         maxic=params.maxic,
         vh37=vh37,
         adoff=adoff,
-        radslp1=rad_coeffs['radslp1'],
-        radoff1=rad_coeffs['radoff1'],
-        radlen1=rad_coeffs['radlen1'],
-        radslp2=rad_coeffs['radslp2'],
-        radoff2=rad_coeffs['radoff2'],
-        radlen2=rad_coeffs['radlen2'],
+        itp=itp,
+        itp2=itp2,
         wtp=wtp,
         wtp2=wtp2,
         v1937=v1937,
