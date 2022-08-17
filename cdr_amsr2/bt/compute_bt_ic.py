@@ -16,7 +16,7 @@ import xarray as xr
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
-from cdr_amsr2.bt._types import ParaVals, Variables
+from cdr_amsr2.bt._types import ParaVals
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 from cdr_amsr2.masks import get_ps_valid_ice_mask
@@ -1099,19 +1099,18 @@ def bootstrap(
         wtp2=variables['wtp2'],
         v1937=variables['v1937'],
     )
-    variables = {**variables, **rad_coeffs}
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(
         p=params,
         vh37=variables['vh37'],
         adoff=variables['adoff'],
-        radslp1=variables['radslp1'],
-        radoff1=variables['radoff1'],
-        radlen1=variables['radlen1'],
-        radslp2=variables['radslp2'],
-        radoff2=variables['radoff2'],
-        radlen2=variables['radlen2'],
+        radslp1=rad_coeffs['radslp1'],
+        radoff1=rad_coeffs['radoff1'],
+        radlen1=rad_coeffs['radlen1'],
+        radslp2=rad_coeffs['radslp2'],
+        radoff2=rad_coeffs['radoff2'],
+        radlen2=rad_coeffs['radlen2'],
         wtp=variables['wtp'],
         wtp2=variables['wtp2'],
         v1937=variables['v1937'],
