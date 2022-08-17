@@ -996,7 +996,6 @@ def bootstrap(
     resolution: str,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
-    variables = {}
     tb_mask = tb_data_mask(
         tbs=(
             tbs['v37'],
@@ -1016,8 +1015,8 @@ def bootstrap(
     wxlimt = para_vals_vh37['wxlimt']
     ln1 = para_vals_vh37['lnline']
     lnchk = para_vals_vh37['lnchk']
-    variables['wtp'] = para_vals_vh37['wtp']
-    variables['itp'] = para_vals_vh37['itp']
+    wtp = para_vals_vh37['wtp']
+    itp = para_vals_vh37['itp']
 
     water_arr = ret_water_ssmi(
         tbs['v37'],
@@ -1033,17 +1032,17 @@ def bootstrap(
     )
 
     # Set wtp, which is tp37v and tp37h
-    variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
-    variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
+    wtp37v = ret_wtp_32(water_arr, tbs['v37'])
+    wtp37h = ret_wtp_32(water_arr, tbs['h37'])
 
     # assert these keys are not None so the typechecker does not complain.
-    assert variables['wtp37v'] is not None
-    assert variables['wtp37h'] is not None
+    assert wtp37v is not None
+    assert wtp37h is not None
 
-    if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
-        variables['wtp'][0] = variables['wtp37v']
-    if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
-        variables['wtp'][1] = variables['wtp37h']
+    if (wtp[0] - 10) < wtp37v < (wtp[0] + 10):
+        wtp[0] = wtp37v
+    if (wtp[1] - 10) < wtp37h < (wtp[1] + 10):
+        wtp[1] = wtp37h
 
     calc_vh37 = ret_linfit_32(
         params.land_mask,
@@ -1055,24 +1054,22 @@ def bootstrap(
         params.add1,
         water_arr,
     )
-    variables['vh37'] = calc_vh37
+    vh37 = calc_vh37
 
-    variables['adoff'] = ret_adj_adoff(wtp=variables['wtp'], vh37=variables['vh37'])
+    adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
 
     para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
     ln2 = para_vals_v1937['lnline']
-    variables['wtp2'] = para_vals_v1937['wtp']
-    variables['itp2'] = para_vals_v1937['itp']
-    variables['v1937'] = para_vals_v1937['iceline']
+    wtp2 = para_vals_v1937['wtp']
+    itp2 = para_vals_v1937['itp']
+    v1937 = para_vals_v1937['iceline']
 
-    variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
+    wtp19v = ret_wtp_32(water_arr, tbs['v19'])
 
-    assert variables['wtp19v'] is not None
-
-    if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
-        variables['wtp2'][0] = variables['wtp37v']
-    if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
-        variables['wtp2'][1] = variables['wtp19v']
+    if (wtp2[0] - 10) < wtp37v < (wtp2[0] + 10):
+        wtp2[0] = wtp37v
+    if (wtp2[1] - 10) < wtp19v < (wtp2[1] + 10):
+        wtp2[1] = wtp19v
 
     # Try the ret_para... values for v1937
     calc_v1937 = ret_linfit_32(
@@ -1085,35 +1082,35 @@ def bootstrap(
         params.add2,
         water_arr,
         tba=tbs['h37'],
-        iceline=variables['vh37'],
-        adoff=variables['adoff'],
+        iceline=vh37,
+        adoff=adoff,
     )
-    variables['v1937'] = calc_v1937
+    v1937 = calc_v1937
 
     # ## LINES calculating radslp1 ... to radlen2 ###
     rad_coeffs = calc_rad_coeffs_32(
-        itp=variables['itp'],
-        wtp=variables['wtp'],
-        vh37=variables['vh37'],
-        itp2=variables['itp2'],
-        wtp2=variables['wtp2'],
-        v1937=variables['v1937'],
+        itp=itp,
+        wtp=wtp,
+        vh37=vh37,
+        itp2=itp2,
+        wtp2=wtp2,
+        v1937=v1937,
     )
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(
         p=params,
-        vh37=variables['vh37'],
-        adoff=variables['adoff'],
+        vh37=vh37,
+        adoff=adoff,
         radslp1=rad_coeffs['radslp1'],
         radoff1=rad_coeffs['radoff1'],
         radlen1=rad_coeffs['radlen1'],
         radslp2=rad_coeffs['radslp2'],
         radoff2=rad_coeffs['radoff2'],
         radlen2=rad_coeffs['radlen2'],
-        wtp=variables['wtp'],
-        wtp2=variables['wtp2'],
-        v1937=variables['v1937'],
+        wtp=wtp,
+        wtp2=wtp2,
+        v1937=v1937,
         tbs=tbs,
         land_mask=params.land_mask,
         water_arr=water_arr,
