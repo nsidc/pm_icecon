@@ -84,7 +84,7 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     }
 
 
-def ret_adj_adoff(wtp, vh37, perc=0.92):
+def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is two water tie points
     # vh37 is offset and slope
@@ -1042,7 +1042,7 @@ def bootstrap(
     )
     variables['vh37'] = calc_vh37
 
-    variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
+    variables['adoff'] = ret_adj_adoff(wtp=variables['wtp'], vh37=variables['vh37'])
 
     para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
     ln2 = para_vals_v1937['lnline']
