@@ -5,6 +5,7 @@ and computes:
     iceout
 """
 
+import copy
 import datetime as dt
 from functools import reduce
 from pathlib import Path
@@ -270,7 +271,10 @@ def ret_para_nsb2(
     }
 
 
-def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) -> float:
+def ret_wtp_32(
+    water_arr: npt.NDArray[np.int16],
+    tb: npt.NDArray[np.float32],
+) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
     # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
@@ -304,6 +308,40 @@ def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) ->
     wtp = f(ival) * 0.25
 
     return wtp
+
+
+def get_water_tiepoints(
+    *, water_arr, tb_v37, tb_h37, tb_v19, wtp1_default, wtp2_default
+):
+    def _within_plusminus_10(target_value, value) -> bool:
+        return (target_value - 10) < value < (target_value + 10)
+
+    # Get wtp1
+    wtp1 = copy.copy(wtp1_default)
+
+    wtp37v = ret_wtp_32(water_arr, tb_v37)
+    wtp37h = ret_wtp_32(water_arr, tb_h37)
+
+    # If the calculated wtps are within the bounds of the default (+/- 10), use
+    # the calculated value.
+    if _within_plusminus_10(wtp1_default[0], wtp37v):
+        wtp1[0] = wtp37v
+    if _within_plusminus_10(wtp1_default[1], wtp37h):
+        wtp1[1] = wtp37h
+
+    # get wtp2
+    wtp2 = copy.copy(wtp2_default)
+
+    wtp19v = ret_wtp_32(water_arr, tb_v19)
+
+    # If the calculated wtps are within the bounds of the default (+/- 10), use
+    # the calculated value.
+    if (wtp2_default[0] - 10) < wtp37v < (wtp2_default[0] + 10):
+        wtp2[0] = wtp37v
+    if (wtp2_default[1] - 10) < wtp19v < (wtp2_default[1] + 10):
+        wtp2[1] = wtp19v
+
+    return wtp1, wtp2
 
 
 def linfit_32(xvals, yvals):
@@ -1029,7 +1067,7 @@ def bootstrap(
     wxlimt = para_vals_vh37['wxlimt']
     ln1 = para_vals_vh37['lnline']
     lnchk = para_vals_vh37['lnchk']
-    wtp = para_vals_vh37['wtp']
+    wtp1_default = para_vals_vh37['wtp']
     itp = para_vals_vh37['itp']
 
     water_arr = ret_water_ssmi(
@@ -1045,19 +1083,6 @@ def bootstrap(
         ln1,
     )
 
-    # Set wtp, which is tp37v and tp37h
-    wtp37v = ret_wtp_32(water_arr, tbs['v37'])
-    wtp37h = ret_wtp_32(water_arr, tbs['h37'])
-
-    # assert these keys are not None so the typechecker does not complain.
-    assert wtp37v is not None
-    assert wtp37h is not None
-
-    if (wtp[0] - 10) < wtp37v < (wtp[0] + 10):
-        wtp[0] = wtp37v
-    if (wtp[1] - 10) < wtp37h < (wtp[1] + 10):
-        wtp[1] = wtp37h
-
     vh37 = ret_linfit_32(
         params.land_mask,
         tb_mask,
@@ -1069,20 +1094,22 @@ def bootstrap(
         water_arr,
     )
 
-    adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
-
     para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
     ln2 = para_vals_v1937['lnline']
-    wtp2 = para_vals_v1937['wtp']
+    wtp2_default = para_vals_v1937['wtp']
     itp2 = para_vals_v1937['itp']
     v1937 = para_vals_v1937['iceline']
 
-    wtp19v = ret_wtp_32(water_arr, tbs['v19'])
+    wtp, wtp2 = get_water_tiepoints(
+        water_arr=water_arr,
+        tb_v37=tbs['v37'],
+        tb_h37=tbs['h37'],
+        tb_v19=tbs['v19'],
+        wtp1_default=wtp1_default,
+        wtp2_default=wtp2_default,
+    )
 
-    if (wtp2[0] - 10) < wtp37v < (wtp2[0] + 10):
-        wtp2[0] = wtp37v
-    if (wtp2[1] - 10) < wtp19v < (wtp2[1] + 10):
-        wtp2[1] = wtp19v
+    adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
 
     # Try the ret_para... values for v1937
     v1937 = ret_linfit_32(
