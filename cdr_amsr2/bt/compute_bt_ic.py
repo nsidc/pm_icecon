@@ -272,11 +272,10 @@ def ret_para_nsb2(
 
 
 def ret_wtp_32(
-    water_arr: npt.NDArray[np.int16],
+    water_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
-    # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
     # Note: this *really* should be done with np.percentile()
 
@@ -284,7 +283,7 @@ def ret_wtp_32(
 
     # Compute quarter-Kelvin histograms
     histo, _ = np.histogram(
-        tb[water_arr == 1],
+        tb[water_mask],
         bins=1200,
         range=(0, 300),
     )
@@ -311,7 +310,7 @@ def ret_wtp_32(
 
 
 def get_water_tiepoints(
-    *, water_arr, tb_v37, tb_h37, tb_v19, wtp1_default, wtp2_default
+    *, water_mask, tb_v37, tb_h37, tb_v19, wtp1_default, wtp2_default
 ):
     def _within_plusminus_10(target_value, value) -> bool:
         return (target_value - 10) < value < (target_value + 10)
@@ -319,8 +318,8 @@ def get_water_tiepoints(
     # Get wtp1
     wtp1 = copy.copy(wtp1_default)
 
-    wtp37v = ret_wtp_32(water_arr, tb_v37)
-    wtp37h = ret_wtp_32(water_arr, tb_h37)
+    wtp37v = ret_wtp_32(water_mask, tb_v37)
+    wtp37h = ret_wtp_32(water_mask, tb_h37)
 
     # If the calculated wtps are within the bounds of the default (+/- 10), use
     # the calculated value.
@@ -332,7 +331,7 @@ def get_water_tiepoints(
     # get wtp2
     wtp2 = copy.copy(wtp2_default)
 
-    wtp19v = ret_wtp_32(water_arr, tb_v19)
+    wtp19v = ret_wtp_32(water_mask, tb_v19)
 
     # If the calculated wtps are within the bounds of the default (+/- 10), use
     # the calculated value.
@@ -375,7 +374,7 @@ def ret_linfit_32(
     lnline,
     lnchk,
     add,
-    water,
+    water_mask,
     tba=None,
     iceline=None,
     adoff=None,
@@ -392,9 +391,7 @@ def ret_linfit_32(
 
     is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
 
-    is_water0 = water == 0
-
-    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & is_water0
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
     icnt = np.sum(np.where(is_valid, 1, 0))
 
@@ -472,6 +469,8 @@ def fsqt(a: npt.ArrayLike):
     return np.sqrt(a, dtype=np.float32)
 
 
+# TODO: change the name of this function. Or, do we need different conditions
+# for non SSMI data?
 def ret_water_ssmi(
     v37,
     h37,
@@ -483,7 +482,7 @@ def ret_water_ssmi(
     wintrc,
     wxlimt,
     ln1,
-) -> npt.NDArray[np.int16]:
+) -> npt.NDArray[np.bool_]:
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
@@ -491,14 +490,12 @@ def ret_water_ssmi(
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
+    # TODO: where does this 230.0 value come from? Should it be configuratble?
     is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
 
     is_water = not_land_or_masked & is_cond1 & is_cond2
 
-    water = np.zeros_like(land_mask, dtype=np.int16)
-    water[is_water] = 1
-
-    return water
+    return is_water
 
 
 def calc_rad_coeffs_32(
@@ -961,7 +958,7 @@ def calc_bt_ice(
     itp2,
     tbs,
     land_mask: npt.NDArray[np.bool_],
-    water_arr,
+    water_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
 ):
 
@@ -1030,7 +1027,7 @@ def calc_bt_ice(
     ic[is_ic_is_missval] = missval
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
-    ic[water_arr == 1] = 0.0
+    ic[water_mask] = 0.0
     ic[tb_mask] = missval
     ic[land_mask] = landval
 
@@ -1070,7 +1067,7 @@ def bootstrap(
     wtp1_default = para_vals_vh37['wtp']
     itp = para_vals_vh37['itp']
 
-    water_arr = ret_water_ssmi(
+    water_mask = ret_water_ssmi(
         tbs['v37'],
         tbs['h37'],
         tbs['v22'],
@@ -1091,7 +1088,7 @@ def bootstrap(
         ln1,
         lnchk,
         params.add1,
-        water_arr,
+        water_mask,
     )
 
     para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
@@ -1101,7 +1098,7 @@ def bootstrap(
     v1937 = para_vals_v1937['iceline']
 
     wtp, wtp2 = get_water_tiepoints(
-        water_arr=water_arr,
+        water_mask=water_mask,
         tb_v37=tbs['v37'],
         tb_h37=tbs['h37'],
         tb_v19=tbs['v19'],
@@ -1120,7 +1117,7 @@ def bootstrap(
         ln2,
         lnchk,
         params.add2,
-        water_arr,
+        water_mask,
         tba=tbs['h37'],
         iceline=vh37,
         adoff=adoff,
@@ -1140,7 +1137,7 @@ def bootstrap(
         v1937=v1937,
         tbs=tbs,
         land_mask=params.land_mask,
-        water_arr=water_arr,
+        water_mask=water_mask,
         tb_mask=tb_mask,
     )
 
