@@ -138,9 +138,15 @@ def _get_wx_params(
             season.start_day if season.start_day else 1,
         )
         # We allow seasons to wrap around the end of the year.
-        season_end_year = date.year if season.end_month >= season.start_month else date.year + 1
+        season_end_year = (
+            date.year if season.end_month >= season.start_month else date.year + 1
+        )
         # Default to the end of the month.
-        season_end_day = season.end_day if season.end_day else calendar.monthrange(season_end_year, season.end_month)[1]
+        season_end_day = (
+            season.end_day
+            if season.end_day
+            else calendar.monthrange(season_end_year, season.end_month)[1]
+        )
         season_end_date = dt.date(
             season_end_year,
             season.end_month,
@@ -148,7 +154,6 @@ def _get_wx_params(
         )
 
         #################################################################################################################
-
 
         # TODO: This needs to be fixed!
         target_after_start = season.start_month <= target_month <= season.end_month
