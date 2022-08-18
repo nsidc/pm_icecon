@@ -5,6 +5,7 @@ and computes:
     iceout
 """
 
+import calendar
 import copy
 import datetime as dt
 from functools import reduce
@@ -18,7 +19,11 @@ from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.bt._types import ParaVals
-from cdr_amsr2.config.models.bt import BootstrapParams
+from cdr_amsr2.config.models.bt import (
+    BootstrapParams,
+    WeatherFilterParams,
+    WeatherFilterParamsForSeason,
+)
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 from cdr_amsr2.masks import get_ps_valid_ice_mask
 
@@ -108,6 +113,107 @@ def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
     adoff = off - new_off
 
     return adoff
+
+
+def _get_wx_params(
+    *,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+) -> WeatherFilterParams:
+    target_month = date.month
+    target_day = date.day
+
+    # TODO: can this be moved into the model validation?
+    sorted_seasons = sorted(
+        weather_filter_seasons,
+        key=lambda season: (season.start_month, season.start_day),
+    )
+
+    previous_season = None
+    for idx, season in enumerate(sorted_seasons):
+        season_start_date = dt.date(
+            date.year,
+            season.start_month,
+            # Default to the beginning of the month.
+            season.start_day if season.start_day else 1,
+        )
+        # We allow seasons to wrap around the end of the year.
+        season_end_year = date.year if season.end_month >= season.start_month else date.year + 1
+        # Default to the end of the month.
+        season_end_day = season.end_day if season.end_day else calendar.monthrange(season_end_year, season.end_month)[1]
+        season_end_date = dt.date(
+            season_end_year,
+            season.end_month,
+            season_end_day,
+        )
+
+        #################################################################################################################
+
+
+        # TODO: This needs to be fixed!
+        target_after_start = season.start_month <= target_month <= season.end_month
+        target_before_end = season.start_day <= target_day <= season.end_day
+        if target_after_start and target_before_end:
+            # Return the params.
+            return season.weather_filter_params
+
+        if not target_before_end:
+            previous_season = season
+            try:
+                next_season = sorted_seasons[idx + 1]
+            # TODO: this is actually wrong. We may need to go back to the
+            # beginning for the 'next' season. Might just need to assert that
+            # the prev and next are not the same (seasons of len 1)
+            except KeyError:
+                raise RuntimeError(
+                    f'The provided date ({date}) is after the last provided season ({season})'
+                )
+
+            logger.info(
+                f'No season parameters defined for {date}. Interpolating between seasons {previous_season} and {next_season}'
+            )
+
+            # Do interpolation on params and return them!
+            end_of_previous_season = dt.date(
+                date.year,
+                previous_season.end_month,
+                previous_season.end_day,
+            )
+            beginning_of_next_season = dt.date(
+                date.year,
+                next_season.start_month,
+                next_season.start_day,
+            )
+            days_in_transition_season = (
+                begining_of_next_season - end_of_previous_season
+            ).days
+            target_days_util_next_season = begining_of_next_season - date
+            target_fraction_to_next_season = (
+                target_days_util_next_season / days_in_transition_season
+            )
+
+            def _linear_interpolation(
+                target_fraction_to_next_season, previous_season, next_season, attr
+            ) -> float:
+                next_season_value = getattr(next_season, attr)
+                previous_season_value = getattr(previous_season, attr)
+
+                return (
+                    target_fraction_to_next_season
+                    * (next_season_value - previous_season_value)
+                ) + previous_season_value
+
+            return WeatherFilterParams(
+                **{
+                    key: _linear_interpolation(
+                        target_fraction_to_next_season, previous_season, next_season
+                    )
+                    for key in ('wintrc', 'wslope', 'wxlimt')
+                }
+            )
+
+    # TODO: necessary? Better error at least.
+    raise RuntimeError('Unexpected situation. What?')
 
 
 def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):
