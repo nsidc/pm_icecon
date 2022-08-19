@@ -159,19 +159,40 @@ def _get_wx_params(
                 start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
                 end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
             )
+            periods_next_year = pd.period_range(
+                start=pd.Period(year=date.year + 1, month=month, day=start_day, freq='D'),
+                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
+            )
+            all_periods = [p for p in periods] + [p for p in periods_next_year]
 
+            # TODO: try pulling this out to the top-level and then setting on each loop.
             dfs.append(
                 pd.DataFrame(
                     data={
-                        key: [getattr(season.weather_filter_params, key)] * len(periods)
+                        key: [getattr(season.weather_filter_params, key)] * len(all_periods)
                         for key in ('wintrc', 'wslope', 'wxlimt')
                     },
-                    index=periods,
+                    index=all_periods,
                 )
             )
 
-    breakpoint()
-    ...
+    full = pd.DataFrame(
+        index=pd.period_range(
+            start=pd.Period(year=date.year, month=1, day=1, freq='D'),
+            end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
+        )
+    )
+
+    joined = full.join(pd.concat(dfs))
+    interpolated = joined.interpolate()
+    # TODO: check if date is in frame b4 this point so we can skip
+    # interpolation.
+    return WeatherFilterParams(
+        **{
+            key: interpolated.loc[pd.Period(date, freq='D')][key]
+            for key in ('wintrc', 'wslope', 'wxlimt')
+        }
+    )
 
 
 def _get_wx_params_old(
