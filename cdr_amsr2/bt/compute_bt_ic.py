@@ -14,6 +14,7 @@ from typing import Literal, Optional, Sequence, get_args
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import xarray as xr
 from loguru import logger
 
@@ -115,7 +116,65 @@ def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
     return adoff
 
 
+def _months_in_season(season: WeatherFilterParamsForSeason) -> list[int]:
+    if season.start_month <= season.end_month:
+        return list(range(season.start_month, season.end_month + 1))
+
+    # The season spans
+    season.start_month
+
+
 def _get_wx_params(
+    *,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+) -> WeatherFilterParams:
+    dfs = []
+    for season in weather_filter_seasons:
+
+        if season.start_month > season.end_month:
+            # E.g., start_month=11 and end_month=4:
+            # season_months=[11, 12, 1, 2, 3, 4].
+            season_months = list(range(season.start_month, 12 + 1)) + list(
+                range(1, season.end_month + 1)
+            )
+
+        else:
+            season_months = list(range(season.start_month, season.end_month + 1))
+
+        for idx, month in enumerate(season_months):
+            # Default to the start of the month. If we're at the beginning of
+            # the season, then optionally use `season.start_day`.
+            start_day = 1
+            if idx == 0:
+                start_day = season.start_day if season.start_day else start_day
+
+            # Default to the end of the month. If we're looking at the end of
+            # the season, then optionally use `season.end_day`.
+            end_day = calendar.monthrange(date.year, month)[1]
+            if idx == len(season_months):
+                end_day = season.end_day if season.end_day else end_day
+
+            periods = pd.period_range(
+                start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
+                end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
+            )
+
+            dfs.append(
+                pd.DataFrame(
+                    data={
+                        key: [getattr(season.weather_filter_params, key)] * len(periods)
+                        for key in ('wintrc', 'wslope', 'wxlimt')
+                    },
+                    index=periods,
+                )
+            )
+
+    breakpoint()
+    ...
+
+
+def _get_wx_params_old(
     *,
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
@@ -124,6 +183,8 @@ def _get_wx_params(
     target_day = date.day
 
     # TODO: can this be moved into the model validation?
+    # we may actually want to do this differently. start_month might be 11 and
+    # end month might be 4.
     sorted_seasons = sorted(
         weather_filter_seasons,
         key=lambda season: (season.start_month, season.start_day),
@@ -131,94 +192,83 @@ def _get_wx_params(
 
     previous_season = None
     for idx, season in enumerate(sorted_seasons):
-        season_start_date = dt.date(
-            date.year,
-            season.start_month,
-            # Default to the beginning of the month.
-            season.start_day if season.start_day else 1,
-        )
         # We allow seasons to wrap around the end of the year.
-        season_end_year = (
-            date.year if season.end_month >= season.start_month else date.year + 1
-        )
-        # Default to the end of the month.
-        season_end_day = (
-            season.end_day
-            if season.end_day
-            else calendar.monthrange(season_end_year, season.end_month)[1]
-        )
-        season_end_date = dt.date(
-            season_end_year,
-            season.end_month,
-            season_end_day,
-        )
+        # TODO: this does not make sense lol. This would prevent e.g., the 1st
+        # of Jan from ever being used bc the year is different from the target
+        # year.
 
-        #################################################################################################################
+        # for a situation like the one we have for amsr2, for the first/winter
+        # season we need to determine if the target month falls in the range 11
+        # - 4. Or [11, 12, 1, 2, 3, 4], all for the target year.
 
-        # TODO: This needs to be fixed!
-        target_after_start = season.start_month <= target_month <= season.end_month
-        target_before_end = season.start_day <= target_day <= season.end_day
-        if target_after_start and target_before_end:
-            # Return the params.
-            return season.weather_filter_params
+        # The start month is e.g., 11 and the end month is e.g., 4, so we want
+        # months [11, 12, 1, 2, 3, 4]
+        if season.start_month > season.end_month:
+            season_months = list(range(season.start_month, 12 + 1)) + list(
+                range(1, season.end_month + 1)
+            )
+        else:
+            season_months = list(range(season.start_month, season.end_month + 1))
 
-        if not target_before_end:
-            previous_season = season
-            try:
-                next_season = sorted_seasons[idx + 1]
-            # TODO: this is actually wrong. We may need to go back to the
-            # beginning for the 'next' season. Might just need to assert that
-            # the prev and next are not the same (seasons of len 1)
-            except KeyError:
-                raise RuntimeError(
-                    f'The provided date ({date}) is after the last provided season ({season})'
+        if date.month in season_months:
+            if not (
+                (
+                    date.month == season_months[0]
+                    and season.start_day
+                    and date.day >= season.start_day
                 )
+                or (
+                    date.month == season_months[-1]
+                    and season.end_day
+                    and date.day <= season.end_day
+                )
+            ):
+                # date is not in this season.
+                previous_season = season
+                continue
 
-            logger.info(
-                f'No season parameters defined for {date}. Interpolating between seasons {previous_season} and {next_season}'
+            return season.weather_filter_params
+    # Assuming the seasons are ordered, then if we hit this case (no return before loop end) then the next element is the 'next' season.
+    if idx == len(sorted_seasons):
+        next_season = sorted_seasons[0]
+    else:
+        next_season = sorted_seasons[idx + 1]
+
+    # Do interpolation on params and return them!
+    end_of_previous_season = dt.date(
+        date.year,
+        previous_season.end_month,
+        previous_season.end_day,
+    )
+    beginning_of_next_season = dt.date(
+        date.year,
+        next_season.start_month,
+        next_season.start_day,
+    )
+    days_in_transition_season = (beginning_of_next_season - end_of_previous_season).days
+    target_days_util_next_season = beginning_of_next_season - date
+    target_fraction_to_next_season = (
+        target_days_util_next_season / days_in_transition_season
+    )
+
+    def _linear_interpolation(
+        target_fraction_to_next_season, previous_season, next_season, attr
+    ) -> float:
+        next_season_value = getattr(next_season, attr)
+        previous_season_value = getattr(previous_season, attr)
+
+        return (
+            target_fraction_to_next_season * (next_season_value - previous_season_value)
+        ) + previous_season_value
+
+    return WeatherFilterParams(
+        **{
+            key: _linear_interpolation(
+                target_fraction_to_next_season, previous_season, next_season
             )
-
-            # Do interpolation on params and return them!
-            end_of_previous_season = dt.date(
-                date.year,
-                previous_season.end_month,
-                previous_season.end_day,
-            )
-            beginning_of_next_season = dt.date(
-                date.year,
-                next_season.start_month,
-                next_season.start_day,
-            )
-            days_in_transition_season = (
-                begining_of_next_season - end_of_previous_season
-            ).days
-            target_days_util_next_season = begining_of_next_season - date
-            target_fraction_to_next_season = (
-                target_days_util_next_season / days_in_transition_season
-            )
-
-            def _linear_interpolation(
-                target_fraction_to_next_season, previous_season, next_season, attr
-            ) -> float:
-                next_season_value = getattr(next_season, attr)
-                previous_season_value = getattr(previous_season, attr)
-
-                return (
-                    target_fraction_to_next_season
-                    * (next_season_value - previous_season_value)
-                ) + previous_season_value
-
-            return WeatherFilterParams(
-                **{
-                    key: _linear_interpolation(
-                        target_fraction_to_next_season, previous_season, next_season
-                    )
-                    for key in ('wintrc', 'wslope', 'wxlimt')
-                }
-            )
-
-    # TODO: necessary? Better error at least.
-    raise RuntimeError('Unexpected situation. What?')
+            for key in ('wintrc', 'wslope', 'wxlimt')
+        }
+    )
 
 
 def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):

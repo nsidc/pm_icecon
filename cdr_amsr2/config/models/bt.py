@@ -89,8 +89,8 @@ class WeatherFilterParamsForSeason(ConfigBaseModel):
 
     # TODO: validators (day must be between 1-31, month must be between 1-12)
     # start and end days are optional to account for months w/ varying end day
-    start_month: int | None = None
-    start_day: int
+    start_month: int
+    start_day: int | None = None
     end_month: int
     end_day: int | None = None
 
