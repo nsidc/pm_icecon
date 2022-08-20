@@ -1,0 +1,40 @@
+s19h:
+ slope mean:   1.06611      std:   0.02318
+ intrc mean: -10.69276      std:   2.91413
+
+    f17 tp s19h ow: 113.4
+    am2 tp s19h ow: 110.20
+
+    f17 tp s19h fy: 237.8
+    am2 tp s19h fy: 242.83
+
+    f17 tp s19h my: 211.9
+    am2 tp s19h my: 215.22
+
+
+s19v:
+ slope mean:   0.99695      std:   0.02401
+ intrc mean:   6.45446      std:   4.45725
+
+    f17 tp s19v ow: 184.9
+    am2 tp s19v ow: 190.79
+
+    f17 tp s19v fy: 253.1
+    am2 tp s19v fy: 258.78
+
+    f17 tp s19v my: 244.0
+    am2 tp s19v my: 249.71
+
+
+s37v:
+ slope mean:   0.94554      std:   0.03139
+ intrc mean:  16.07972      std:   6.56499
+
+    f17 tp s37v ow: 207.1
+    am2 tp s37v ow: 211.90
+
+    f17 tp s37v fy: 246.6
+    am2 tp s37v fy: 249.25
+
+    f17 tp s37v my: 212.6
+    am2 tp s37v my: 217.10
