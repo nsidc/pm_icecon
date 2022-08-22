@@ -116,14 +116,6 @@ def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
     return adoff
 
 
-def _months_in_season(season: WeatherFilterParamsForSeason) -> list[int]:
-    if season.start_month <= season.end_month:
-        return list(range(season.start_month, season.end_month + 1))
-
-    # The season spans
-    season.start_month
-
-
 def _get_wx_params(
     *,
     date: dt.date,
@@ -193,9 +185,7 @@ def _get_wx_params(
                 ),
                 end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
             )
-            all_periods = [p for p in periods_this_year] + [
-                p for p in periods_next_year
-            ]
+            all_periods = list(periods_this_year) + list(periods_next_year)
 
             monthly_dfs.append(
                 pd.DataFrame(
