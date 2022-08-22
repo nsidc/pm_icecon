@@ -9,7 +9,7 @@ import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
-from cdr_amsr2.bt.params.f17f18 import F17_F18_NORTH_PARAMS
+from cdr_amsr2.bt.params.dmsp import F17_F18_NORTH_PARAMS
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs

@@ -1,4 +1,7 @@
-"""Parameters for f17 and f18 satellites."""
+"""Parameters for DMSP satellites.
+
+Defense Meteorological Satellite Program. E.g, f17, f18.
+"""
 from cdr_amsr2.config.models.bt import (
     ParaNSB2,
     WeatherFilterParams,

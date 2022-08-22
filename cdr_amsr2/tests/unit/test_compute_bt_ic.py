@@ -3,7 +3,7 @@ import datetime as dt
 from cdr_amsr2.bt.compute_bt_ic import _get_wx_params
 from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS
-from cdr_amsr2.bt.params.f17f18 import F17_F18_NORTH_PARAMS
+from cdr_amsr2.bt.params.dmsp import F17_F18_NORTH_PARAMS
 from cdr_amsr2.bt.params.others import OTHER_NORTH_PARAMS
 from cdr_amsr2.bt.params.smmr import SMMR_NORTH_PARAMS
 from cdr_amsr2.config.models.bt import WeatherFilterParams
