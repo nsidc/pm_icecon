@@ -7,6 +7,54 @@ from cdr_amsr2._types import ValidSatellites
 from cdr_amsr2.config.models.base_model import ConfigBaseModel
 
 
+class WeatherFilterParams(ConfigBaseModel):
+    wintrc: float
+    """Water intercept."""
+
+    wslope: float
+    """Water slope."""
+
+    wxlimt: float
+    """Weather filter limit."""
+
+
+# Maybe call "SeasonalWeatherFilterParams"
+class WeatherFilterParamsForSeason(ConfigBaseModel):
+    """Weather filter parameters for a given 'season'.
+
+    Start and end day/months define the 'season'.
+
+    Parameters used by `ret_water_ssmi` to flag pixels as open water.
+
+    TODO: consider a `name` attribute that defaults to a string repr of the date
+    range but could be overriden with e.g., 'winter'.
+    """
+
+    # TODO: validators (day must be between 1-31, month must be between 1-12)
+    # start and end days are optional to account for months w/ varying end day
+    start_month: int
+    start_day: int | None = None
+    end_month: int
+    end_day: int | None = None
+
+    weather_filter_params: WeatherFilterParams
+
+
+class ParaNSB2(ConfigBaseModel):
+    """Model for parameters returned by ret_para_nsb2."""
+
+    # TODO: validators:
+    #   * No overlap between seasons
+    #   * If only 1 season, date range should be full range. Otherwise at least
+    #     two?
+    weather_filter_seasons: list[WeatherFilterParamsForSeason]
+    """List of seasons with associated weather filter parameters.
+
+    Note: if a season is not defined for a given date, the bootstrap code will
+    linearly interpolate paramter values based on adjacent seasons.
+    """
+
+
 class BootstrapParams(ConfigBaseModel):
     # TODO: what do these values represent? Are they likely to change from 0 and
     # -2?
@@ -62,50 +110,4 @@ class BootstrapParams(ConfigBaseModel):
     # case.
     pole_mask: Optional[npt.NDArray[np.bool_]] = None
 
-
-class WeatherFilterParams(ConfigBaseModel):
-    wintrc: float
-    """Water intercept."""
-
-    wslope: float
-    """Water slope."""
-
-    wxlimt: float
-    """Weather filter limit."""
-
-
-# Maybe call "SeasonalWeatherFilterParams"
-class WeatherFilterParamsForSeason(ConfigBaseModel):
-    """Weather filter parameters for a given 'season'.
-
-    Start and end day/months define the 'season'.
-
-    Parameters used by `ret_water_ssmi` to flag pixels as open water.
-
-    TODO: consider a `name` attribute that defaults to a string repr of the date
-    range but could be overriden with e.g., 'winter'.
-    """
-
-    # TODO: validators (day must be between 1-31, month must be between 1-12)
-    # start and end days are optional to account for months w/ varying end day
-    start_month: int
-    start_day: int | None = None
-    end_month: int
-    end_day: int | None = None
-
-    weather_filter_params: WeatherFilterParams
-
-
-class ParaNSB2(ConfigBaseModel):
-    """Model for parameters returned by ret_para_nsb2."""
-
-    # TODO: validators:
-    #   * No overlap between seasons
-    #   * If only 1 season, date range should be full range. Otherwise at least
-    #     two?
-    weather_filter_seasons: list[WeatherFilterParamsForSeason]
-    """List of seasons with associated weather filter parameters.
-
-    Note: if a season is not defined for a given date, the bootstrap code will
-    linearly interpolate paramter values based on adjacent seasons.
-    """
+    nsb2_params: ParaNSB2

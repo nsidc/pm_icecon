@@ -10,18 +10,18 @@ import copy
 import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Optional, Sequence, get_args
+from typing import Literal, Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import xarray as xr
-from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.bt._types import ParaVals
 from cdr_amsr2.config.models.bt import (
     BootstrapParams,
+    ParaNSB2,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
@@ -152,17 +152,17 @@ def _get_wx_params(
         else:
             season_months = list(range(season.start_month, season.end_month + 1))
 
-        for idx, month in enumerate(season_months):
+        for month in season_months:
             # Default to the start of the month. If we're at the beginning of
             # the season, then optionally use `season.start_day`.
             start_day = 1
-            if idx == 0:
+            if month == season.start_month:
                 start_day = season.start_day if season.start_day else start_day
 
             # Default to the end of the month. If we're looking at the end of
             # the season, then optionally use `season.end_day`.
             end_day = calendar.monthrange(date.year, month)[1]
-            if idx == len(season_months):
+            if month == season.end_month:
                 end_day = season.end_day if season.end_day else end_day
 
             periods_this_year = pd.period_range(
@@ -217,82 +217,12 @@ def _get_wx_params(
     )
 
 
-def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):
-    is_june_through_oct15 = (date.month >= 6 and date.month <= 9) or (
-        date.month == 10 and date.day <= 15
-    )
-
-    # Set wintrc, wslope, wxlimt
-    if sat == '00':
-        if is_june_through_oct15:
-            wintrc = 60.1667
-            wslope = 0.633333
-            wxlimt = 24.00
-        else:
-            wintrc = 53.4153
-            wslope = 0.661017
-            wxlimt = 22.00
-    elif sat == 'u2':
-        # TODO: do we need to implement the seasons 2 and 3 values for AMSR?
-        if hemisphere == 'north':
-            if is_june_through_oct15:
-                # Using the "Season 3" values from ret_parameters_amsru2.f
-                wintrc = 82.71
-                wslope = 0.5352
-                wxlimt = 23.34
-            else:
-                wintrc = 84.73
-                wslope = 0.5352
-                wxlimt = 18.39
-        else:
-            # southern hemisphere has no seasonality
-            wintrc = 85.13
-            wslope = 0.5379
-            wxlimt = 18.596
-
-    elif sat == 'a2l1c':
-        if is_june_through_oct15:
-            # Using the "Season 3" values from ret_parameters_amsru2.f
-            wintrc = 82.71
-            wslope = 0.5352
-            wxlimt = 23.34
-        else:
-            wintrc = 84.73
-            wslope = 0.5352
-            wxlimt = 18.39
-    elif sat in get_args(ValidSatellites):
-        logger.warning(
-            f'Using default seasonal values for {sat}. '
-            'You may want to consider defining satellite-specific parameters!'
-        )
-        if is_june_through_oct15:
-            if sat != '17' and sat != '18':
-                wintrc = 89.3316
-                wslope = 0.501537
-            else:
-                wintrc = 89.2000
-                wslope = 0.503750
-            wxlimt = 21.00
-        else:
-            if sat != '17' and sat != '18':
-                wintrc = 90.3355
-                wslope = 0.501537
-            else:
-                wintrc = 87.6467
-                wslope = 0.517333
-            wxlimt = 14.00
-    else:
-        raise NotImplementedError(f'No params defined for {sat}')
-
-    return {
-        'wintrc': wintrc,
-        'wslope': wslope,
-        'wxlimt': wxlimt,
-    }
-
-
 def ret_para_nsb2(
-    tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date, hemisphere: Hemisphere
+    tbset: Literal['vh37', 'v1937'],
+    sat: str,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    nsb2_params: ParaNSB2,
 ) -> ParaVals:
     # TODO: what does this do and why?
     # reproduce effect of ret_para_nsb2()
@@ -305,7 +235,10 @@ def ret_para_nsb2(
         raise NotImplementedError('Southern hemisphere is only implemented for AMSR2')
 
     print(f'in ret_para_nsb2(): sat is {sat}')
-    season_params = _get_params_for_season(sat=sat, date=date, hemisphere=hemisphere)
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=nsb2_params.weather_filter_seasons,
+    )
 
     if sat == 'u2':
         # Values for AMSRU
@@ -369,7 +302,7 @@ def ret_para_nsb2(
             lnchk = 1.5
 
     return {
-        **season_params,  # type: ignore
+        **dict(season_params),  # type: ignore
         'wtp': wtp,
         'itp': itp,
         'lnline': lnline,
@@ -1165,7 +1098,9 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date, hemisphere)
+    para_vals_vh37 = ret_para_nsb2(
+        'vh37', params.sat, date, hemisphere, nsb2_params=params.nsb2_params
+    )
     wintrc = para_vals_vh37['wintrc']
     wslope = para_vals_vh37['wslope']
     wxlimt = para_vals_vh37['wxlimt']
@@ -1198,7 +1133,9 @@ def bootstrap(
         water_mask,
     )
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
+    para_vals_v1937 = ret_para_nsb2(
+        'v1937', params.sat, date, hemisphere, nsb2_params=params.nsb2_params
+    )
     ln2 = para_vals_v1937['lnline']
     wtp2_default = para_vals_v1937['wtp']
     itp2 = para_vals_v1937['itp']

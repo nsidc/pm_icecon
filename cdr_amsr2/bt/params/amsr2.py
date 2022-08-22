@@ -31,3 +31,18 @@ AMSR2_NORTH_PARAMS = ParaNSB2(
         # (first in this list) season.
     ]
 )
+
+AMSR2_SOUTH_PARAMS = ParaNSB2(
+    weather_filter_seasons=[
+        # Just one season for the S. hemisphere.
+        WeatherFilterParamsForSeason(
+            start_month=1,
+            end_month=12,
+            weather_filter_params=WeatherFilterParams(
+                wintrc=85.13,
+                wslope=0.5379,
+                wxlimt=18.596,
+            ),
+        ),
+    ]
+)
