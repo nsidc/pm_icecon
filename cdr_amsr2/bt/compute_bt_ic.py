@@ -129,7 +129,25 @@ def _get_wx_params(
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> WeatherFilterParams:
-    dfs = []
+    """Return weather filter params for a given date.
+
+    Given a list of `WeatherFilterParamsForSeason` and a date, return the
+    correct weather filter params.
+
+    If a date occurs between seasons, use linear interpolation to determine
+    weather filter params from the adjacent seasons.
+
+    TODO: simplify this code! Originally, I thought it would be straightforward
+    to simply create a period_range from a season start day/month and season
+    end day/month. However, seasons can span the end of the year (e.g., November
+    through April).
+
+    This code uses pandas dataframes to build up a list of dates with given
+    parameters for each season. Each season has its parameters duplicated for
+    all days in the season for the year given by `date` and year + 1. This
+    allows pandas to do linear interpolation that occurs 'across' a year.
+    """
+    monthly_dfs = []
     for season in weather_filter_seasons:
 
         if season.start_month > season.end_month:
@@ -155,138 +173,55 @@ def _get_wx_params(
             if idx == len(season_months):
                 end_day = season.end_day if season.end_day else end_day
 
-            periods = pd.period_range(
+            periods_this_year = pd.period_range(
                 start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
                 end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
             )
+
+            # if the date we are interested in is in this month of the season,
+            # return the weather filter params.
+            if pd.Period(date, freq='D') in periods_this_year:
+                return season.weather_filter_params
+
+            # Get the same periods for the following year. and include those in
+            # the dataframe we are building. This ensures that a date that
+            # occurs between seasons that span a year gets correctly
+            # interpolated.
             periods_next_year = pd.period_range(
-                start=pd.Period(year=date.year + 1, month=month, day=start_day, freq='D'),
+                start=pd.Period(
+                    year=date.year + 1, month=month, day=start_day, freq='D'
+                ),
                 end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
             )
-            all_periods = [p for p in periods] + [p for p in periods_next_year]
+            all_periods = [p for p in periods_this_year] + [
+                p for p in periods_next_year
+            ]
 
-            # TODO: try pulling this out to the top-level and then setting on each loop.
-            dfs.append(
+            monthly_dfs.append(
                 pd.DataFrame(
                     data={
-                        key: [getattr(season.weather_filter_params, key)] * len(all_periods)
+                        key: [getattr(season.weather_filter_params, key)]
+                        * len(all_periods)
                         for key in ('wintrc', 'wslope', 'wxlimt')
                     },
                     index=all_periods,
                 )
             )
 
-    full = pd.DataFrame(
+    # Create a df with a period index that includes an entry for every day so
+    # that we can `loc` the date we are interested in.
+    df_with_daily_index = pd.DataFrame(
         index=pd.period_range(
             start=pd.Period(year=date.year, month=1, day=1, freq='D'),
             end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
         )
     )
-
-    joined = full.join(pd.concat(dfs))
+    joined = df_with_daily_index.join(pd.concat(monthly_dfs))
     interpolated = joined.interpolate()
-    # TODO: check if date is in frame b4 this point so we can skip
-    # interpolation.
+
     return WeatherFilterParams(
         **{
             key: interpolated.loc[pd.Period(date, freq='D')][key]
-            for key in ('wintrc', 'wslope', 'wxlimt')
-        }
-    )
-
-
-def _get_wx_params_old(
-    *,
-    date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],
-) -> WeatherFilterParams:
-    target_month = date.month
-    target_day = date.day
-
-    # TODO: can this be moved into the model validation?
-    # we may actually want to do this differently. start_month might be 11 and
-    # end month might be 4.
-    sorted_seasons = sorted(
-        weather_filter_seasons,
-        key=lambda season: (season.start_month, season.start_day),
-    )
-
-    previous_season = None
-    for idx, season in enumerate(sorted_seasons):
-        # We allow seasons to wrap around the end of the year.
-        # TODO: this does not make sense lol. This would prevent e.g., the 1st
-        # of Jan from ever being used bc the year is different from the target
-        # year.
-
-        # for a situation like the one we have for amsr2, for the first/winter
-        # season we need to determine if the target month falls in the range 11
-        # - 4. Or [11, 12, 1, 2, 3, 4], all for the target year.
-
-        # The start month is e.g., 11 and the end month is e.g., 4, so we want
-        # months [11, 12, 1, 2, 3, 4]
-        if season.start_month > season.end_month:
-            season_months = list(range(season.start_month, 12 + 1)) + list(
-                range(1, season.end_month + 1)
-            )
-        else:
-            season_months = list(range(season.start_month, season.end_month + 1))
-
-        if date.month in season_months:
-            if not (
-                (
-                    date.month == season_months[0]
-                    and season.start_day
-                    and date.day >= season.start_day
-                )
-                or (
-                    date.month == season_months[-1]
-                    and season.end_day
-                    and date.day <= season.end_day
-                )
-            ):
-                # date is not in this season.
-                previous_season = season
-                continue
-
-            return season.weather_filter_params
-    # Assuming the seasons are ordered, then if we hit this case (no return before loop end) then the next element is the 'next' season.
-    if idx == len(sorted_seasons):
-        next_season = sorted_seasons[0]
-    else:
-        next_season = sorted_seasons[idx + 1]
-
-    # Do interpolation on params and return them!
-    end_of_previous_season = dt.date(
-        date.year,
-        previous_season.end_month,
-        previous_season.end_day,
-    )
-    beginning_of_next_season = dt.date(
-        date.year,
-        next_season.start_month,
-        next_season.start_day,
-    )
-    days_in_transition_season = (beginning_of_next_season - end_of_previous_season).days
-    target_days_util_next_season = beginning_of_next_season - date
-    target_fraction_to_next_season = (
-        target_days_util_next_season / days_in_transition_season
-    )
-
-    def _linear_interpolation(
-        target_fraction_to_next_season, previous_season, next_season, attr
-    ) -> float:
-        next_season_value = getattr(next_season, attr)
-        previous_season_value = getattr(previous_season, attr)
-
-        return (
-            target_fraction_to_next_season * (next_season_value - previous_season_value)
-        ) + previous_season_value
-
-    return WeatherFilterParams(
-        **{
-            key: _linear_interpolation(
-                target_fraction_to_next_season, previous_season, next_season
-            )
             for key in ('wintrc', 'wslope', 'wxlimt')
         }
     )
