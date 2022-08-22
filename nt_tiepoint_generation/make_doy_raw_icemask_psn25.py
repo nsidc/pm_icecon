@@ -4,13 +4,14 @@ make_doy_icemask_raw_psn25.py
 Create a valid ice mask from BT data
 """
 
-import os
 import datetime as dt
+import os
+
 import numpy as np
 
-
-outdir='./bt_doymasks_raw'
+outdir = './bt_doymasks_raw'
 os.makedirs(outdir, exist_ok=True)
+
 
 def get_sat(d):
     if (d >= dt.date(1995, 5, 10)) and (d <= dt.date(2007, 12, 31)):

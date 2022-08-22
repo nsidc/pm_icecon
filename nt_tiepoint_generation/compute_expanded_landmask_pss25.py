@@ -8,7 +8,6 @@ then mask out an additional 3 grid cells from land
 import numpy as np
 from scipy.signal import convolve2d
 
-
 xdim = 316
 ydim = 332
 
@@ -19,22 +18,22 @@ if 'loili' in ifn:
 smask_init[smask_init != 0] = 1  # this is for "landmask" file
 
 kernel = np.array(
-    [[0, 0, 1, 1, 1, 0, 0],
-     [0, 1, 1, 1, 1, 1, 0],
-     [1, 1, 1, 1, 1, 1, 1],
-     [1, 1, 1, 1, 1, 1, 1],
-     [1, 1, 1, 1, 1, 1, 1],
-     [0, 1, 1, 1, 1, 1, 0],
-     [0, 0, 1, 1, 1, 0, 0]]
+    [
+        [0, 0, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 1, 1, 0, 0],
+    ]
 )
 
 print(f'Expanding landmask with kernel:\n{kernel}')
 
-smask_convolved = convolve2d(
-    smask_init,
-    kernel,
-    mode='same',
-    boundary='symm').astype(np.uint8)
+smask_convolved = convolve2d(smask_init, kernel, mode='same', boundary='symm').astype(
+    np.uint8
+)
 
 smask_exp = np.zeros((ydim, xdim), dtype=np.uint8)
 smask_exp[smask_convolved != 0] = 100

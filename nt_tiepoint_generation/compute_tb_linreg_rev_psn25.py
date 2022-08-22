@@ -5,13 +5,14 @@ Compute linear regressions for day(s) with F17 and AMSR2 data
 this version uses amsr2 as X and F17 as Y
 """
 
+import datetime as dt
+
 # import os
 import sys
+
 import numpy as np
 from h5py import File
-import datetime as dt
 from sklearn.linear_model import LinearRegression
-
 
 f17_to_au = {
     'n19h': '18H_DAY',
@@ -19,7 +20,6 @@ f17_to_au = {
     'n22v': '23V_DAY',
     'n37h': '36H_DAY',
     'n37v': '36V_DAY',
-
     's19h': '18H_DAY',
     's19v': '18V_DAY',
     's22v': '23V_DAY',
@@ -33,14 +33,14 @@ def xwm(m='exiting in xwm()'):
 
 
 def compute_linreg(
-        oldsat,
-        newsat,
-        d,
-        fn_landmask='./psn25_expanded_landmask.dat',
-        fn_old_='/data/nsidc0001_f17_2021/tb_f17_{ymd}_v6_{chan}.bin',
-        fn_new_='/data/ausi25//AMSR_U2_L3_SeaIce25km_B04_{ymd}.he5',
-        fn_valid_='./bt_doymasks_{hem}/bt_doymask_n_{doy:03d}.dat',
-        hem='nh',
+    oldsat,
+    newsat,
+    d,
+    fn_landmask='./psn25_expanded_landmask.dat',
+    fn_old_='/data/nsidc0001_f17_2021/tb_f17_{ymd}_v6_{chan}.bin',
+    fn_new_='/data/ausi25//AMSR_U2_L3_SeaIce25km_B04_{ymd}.he5',
+    fn_valid_='./bt_doymasks_{hem}/bt_doymask_n_{doy:03d}.dat',
+    hem='nh',
 ):
 
     # Compute linear regression for tbs for newsat from oldsat
@@ -79,15 +79,14 @@ def compute_linreg(
     doy = int(d.strftime('%j'))
 
     # landmask is 0 where ocean, 30-32
-    landmask = np.fromfile(
-        fn_landmask, dtype=np.uint8).reshape(ydim, xdim)
+    landmask = np.fromfile(fn_landmask, dtype=np.uint8).reshape(ydim, xdim)
 
     # Valid files have value 100 where ice was historically found
-    valid = np.fromfile(fn_valid_.format(hem=hem,
-                        doy=doy), dtype=np.uint8).reshape(ydim, xdim)
+    valid = np.fromfile(fn_valid_.format(hem=hem, doy=doy), dtype=np.uint8).reshape(
+        ydim, xdim
+    )
 
-    is_valid_mask = (landmask == 0) & \
-                    (valid != 0)
+    is_valid_mask = (landmask == 0) & (valid != 0)
 
     h = hem[0]
 
@@ -99,18 +98,19 @@ def compute_linreg(
     for chan in chan_list:
         fn_old = fn_old_.format(ymd=ymd, chan=chan)  # .bin
         tb_old = np.divide(
-            np.fromfile(fn_old, dtype=np.int16).reshape(ydim, xdim),
-            10.0)
-
-        tb_new = np.divide(
-                np.array(ds_new['HDFEOS']['GRIDS'][f'{H}pPolarGrid25km']['Data Fields'][f'SI_25km_{HEM}_{f17_to_au[chan]}']),  # noqa
-                10.0
+            np.fromfile(fn_old, dtype=np.int16).reshape(ydim, xdim), 10.0
         )
 
-        is_valid = \
-            is_valid_mask & \
-            (tb_old > 50) & \
-            (tb_new > 50)
+        tb_new = np.divide(
+            np.array(
+                ds_new['HDFEOS']['GRIDS'][f'{H}pPolarGrid25km']['Data Fields'][
+                    f'SI_25km_{HEM}_{f17_to_au[chan]}'
+                ]
+            ),  # noqa
+            10.0,
+        )
+
+        is_valid = is_valid_mask & (tb_old > 50) & (tb_new > 50)
 
         lr = LinearRegression()
         # lr.fit(tb_old[is_valid].reshape(-1, 1), tb_new[is_valid])

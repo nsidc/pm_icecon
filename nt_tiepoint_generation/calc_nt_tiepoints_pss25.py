@@ -11,6 +11,7 @@ F17 tiepoint values are from:
 
 import os
 import sys
+
 import pandas as pd
 
 # From seaice_goddard.f
@@ -55,15 +56,15 @@ if '_nh' in ifn:
     tp_am2_n19h_ow = tp_f17_n19h_ow * df["n19h_m"].mean() + df["n19h_b"].mean()
     tp_am2_n19h_fy = tp_f17_n19h_fy * df["n19h_m"].mean() + df["n19h_b"].mean()
     tp_am2_n19h_my = tp_f17_n19h_my * df["n19h_m"].mean() + df["n19h_b"].mean()
-    
+
     tp_am2_n19v_ow = tp_f17_n19v_ow * df["n19v_m"].mean() + df["n19v_b"].mean()
     tp_am2_n19v_fy = tp_f17_n19v_fy * df["n19v_m"].mean() + df["n19v_b"].mean()
     tp_am2_n19v_my = tp_f17_n19v_my * df["n19v_m"].mean() + df["n19v_b"].mean()
-    
+
     tp_am2_n37v_ow = tp_f17_n37v_ow * df["n37v_m"].mean() + df["n37v_b"].mean()
     tp_am2_n37v_fy = tp_f17_n37v_fy * df["n37v_m"].mean() + df["n37v_b"].mean()
     tp_am2_n37v_my = tp_f17_n37v_my * df["n37v_m"].mean() + df["n37v_b"].mean()
-    
+
     print('n19h:')
     print(f' slope mean: {df["n19h_m"].mean():9.5f}', end='')
     print(f'      std: {df["n19h_m"].std():9.5f}')
@@ -114,15 +115,15 @@ elif '_sh' in ifn:
     tp_am2_s19h_ow = tp_f17_s19h_ow * df["s19h_m"].mean() + df["s19h_b"].mean()
     tp_am2_s19h_fy = tp_f17_s19h_fy * df["s19h_m"].mean() + df["s19h_b"].mean()
     tp_am2_s19h_my = tp_f17_s19h_my * df["s19h_m"].mean() + df["s19h_b"].mean()
-    
+
     tp_am2_s19v_ow = tp_f17_s19v_ow * df["s19v_m"].mean() + df["s19v_b"].mean()
     tp_am2_s19v_fy = tp_f17_s19v_fy * df["s19v_m"].mean() + df["s19v_b"].mean()
     tp_am2_s19v_my = tp_f17_s19v_my * df["s19v_m"].mean() + df["s19v_b"].mean()
-    
+
     tp_am2_s37v_ow = tp_f17_s37v_ow * df["s37v_m"].mean() + df["s37v_b"].mean()
     tp_am2_s37v_fy = tp_f17_s37v_fy * df["s37v_m"].mean() + df["s37v_b"].mean()
     tp_am2_s37v_my = tp_f17_s37v_my * df["s37v_m"].mean() + df["s37v_b"].mean()
-    
+
     print('s19h:')
     print(f' slope mean: {df["s19h_m"].mean():9.5f}', end='')
     print(f'      std: {df["s19h_m"].std():9.5f}')
