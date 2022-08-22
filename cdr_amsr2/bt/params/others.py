@@ -9,13 +9,9 @@ TODO: look back over the Goddard code to see which sats these params are
 actually used for.
 """
 from cdr_amsr2.bt.params.dmsp import DMSP_v1937_params, DMSP_vh37_params
-from cdr_amsr2.config.models.bt import (
-    ParaNSB2,
-    WeatherFilterParams,
-    WeatherFilterParamsForSeason,
-)
+from cdr_amsr2.config.models.bt import WeatherFilterParams, WeatherFilterParamsForSeason
 
-OTHER_NORTH_PARAMS = ParaNSB2(  # noqa
+OTHER_NORTH_PARAMS = dict(  # noqa
     vh37_params=DMSP_vh37_params,
     v1937_params=DMSP_v1937_params,
     weather_filter_seasons=[

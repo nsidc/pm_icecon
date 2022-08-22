@@ -20,7 +20,9 @@ def test__get_wx_params_in_between_seasons():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=AMSR2_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual
@@ -37,7 +39,9 @@ def test__get_wx_params_wrap_around_seasons():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=AMSR2_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual
@@ -52,7 +56,9 @@ def test__get_wx_params_for_provided_season():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=AMSR2_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual
@@ -67,7 +73,9 @@ def test__get_wx_params_for_smmr():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=SMMR_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            SMMR_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual
@@ -82,7 +90,9 @@ def test__get_wx_params_for_a2l1c():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=A2L1C_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            A2L1C_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual
@@ -97,7 +107,9 @@ def test__get_wx_params_for_f17f18():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=F17_F18_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            F17_F18_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual
@@ -112,7 +124,9 @@ def test__get_wx_params_for_other():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=OTHER_NORTH_PARAMS.weather_filter_seasons,
+        weather_filter_seasons=(
+            OTHER_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+        ),
     )
 
     assert expected == actual

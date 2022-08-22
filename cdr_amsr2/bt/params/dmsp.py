@@ -3,7 +3,6 @@
 Defense Meteorological Satellite Program. E.g, f17, f18.
 """
 from cdr_amsr2.config.models.bt import (
-    ParaNSB2,
     TbSetParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
@@ -22,7 +21,7 @@ DMSP_v1937_params = TbSetParams(
     iceline=[112.803, 0.550296],
 )
 
-F17_F18_NORTH_PARAMS = ParaNSB2(
+F17_F18_NORTH_PARAMS = dict(
     vh37_params=DMSP_vh37_params,
     v1937_params=DMSP_v1937_params,
     weather_filter_seasons=[

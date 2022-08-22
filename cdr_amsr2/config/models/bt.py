@@ -69,24 +69,6 @@ class TbSetParams(ConfigBaseModel):
     lnchk: float = 1.5
 
 
-class ParaNSB2(ConfigBaseModel):
-    """Model for parameters returned by ret_para_nsb2."""
-
-    # TODO: validators:
-    #   * No overlap between seasons
-    #   * If only 1 season, date range should be full range. Otherwise at least
-    #     two?
-    weather_filter_seasons: list[WeatherFilterParamsForSeason]
-    """List of seasons with associated weather filter parameters.
-
-    Note: if a season is not defined for a given date, the bootstrap code will
-    linearly interpolate paramter values based on adjacent seasons.
-    """
-
-    vh37_params: TbSetParams
-    v1937_params: TbSetParams
-
-
 class BootstrapParams(ConfigBaseModel):
     # TODO: what do these values represent? Are they likely to change from 0 and
     # -2?
@@ -131,4 +113,16 @@ class BootstrapParams(ConfigBaseModel):
     # case.
     pole_mask: Optional[npt.NDArray[np.bool_]] = None
 
-    nsb2_params: ParaNSB2
+    # TODO: validators:
+    #   * No overlap between seasons
+    #   * If only 1 season, date range should be full range. Otherwise at least
+    #     two?
+    weather_filter_seasons: list[WeatherFilterParamsForSeason]
+    """List of seasons with associated weather filter parameters.
+
+    Note: if a season is not defined for a given date, the bootstrap code will
+    linearly interpolate paramter values based on adjacent seasons.
+    """
+
+    vh37_params: TbSetParams
+    v1937_params: TbSetParams

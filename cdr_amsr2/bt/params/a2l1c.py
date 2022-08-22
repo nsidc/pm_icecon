@@ -1,11 +1,10 @@
 from cdr_amsr2.config.models.bt import (
-    ParaNSB2,
     TbSetParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
 
-A2L1C_NORTH_PARAMS = ParaNSB2(
+A2L1C_NORTH_PARAMS = dict(
     vh37_params=TbSetParams(
         water_tie_point=[207.2, 131.9],
         ice_tie_point=[256.3, 241.2],

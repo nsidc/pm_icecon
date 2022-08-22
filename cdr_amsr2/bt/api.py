@@ -40,9 +40,7 @@ def amsr2_bootstrap(
             if hemisphere == 'north'
             else None
         ),
-        nsb2_params=(
-            AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS
-        ),
+        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
     )
 
     tbs = {
@@ -79,7 +77,7 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         land_mask=get_e2n625_land_mask(),
         # TODO: For now, let's NOT impose a pole hole on the A2L1C data
         pole_mask=None,
-        nsb2_params=A2L1C_NORTH_PARAMS,
+        **A2L1C_NORTH_PARAMS,
     )
 
     tbs = {
@@ -122,7 +120,7 @@ def original_f18_example() -> xr.Dataset:
         sat='18',
         land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution='25'),
         pole_mask=get_ps_pole_hole_mask(resolution='25'),
-        nsb2_params=F17_F18_NORTH_PARAMS,
+        **F17_F18_NORTH_PARAMS,
     )
 
     otbs: dict[str, npt.NDArray[np.float32]] = {}

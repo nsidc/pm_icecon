@@ -1,12 +1,8 @@
 """Params for SMMR (`sat='00'`)."""
 from cdr_amsr2.bt.params.dmsp import DMSP_v1937_params, DMSP_vh37_params
-from cdr_amsr2.config.models.bt import (
-    ParaNSB2,
-    WeatherFilterParams,
-    WeatherFilterParamsForSeason,
-)
+from cdr_amsr2.config.models.bt import WeatherFilterParams, WeatherFilterParamsForSeason
 
-SMMR_NORTH_PARAMS = ParaNSB2(
+SMMR_NORTH_PARAMS = dict(
     # TODO: should we be using these 'DMSP' param values for SMMR? This is how
     # the code in `ret_para_nsb2` used to work.
     vh37_params=DMSP_vh37_params,
