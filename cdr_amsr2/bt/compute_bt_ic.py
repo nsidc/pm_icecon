@@ -114,107 +114,6 @@ def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
     return adoff
 
 
-def _get_wx_params(
-    *,
-    date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],
-) -> WeatherFilterParams:
-    """Return weather filter params for a given date.
-
-    Given a list of `WeatherFilterParamsForSeason` and a date, return the
-    correct weather filter params.
-
-    If a date occurs between seasons, use linear interpolation to determine
-    weather filter params from the adjacent seasons.
-
-    TODO: simplify this code! Originally, I thought it would be straightforward
-    to simply create a period_range from a season start day/month and season
-    end day/month. However, seasons can span the end of the year (e.g., November
-    through April).
-
-    This code uses pandas dataframes to build up a list of dates with given
-    parameters for each season. Each season has its parameters duplicated for
-    all days in the season for the year given by `date` and year + 1. This
-    allows pandas to do linear interpolation that occurs 'across' a year.
-    """
-    monthly_dfs = []
-    for season in weather_filter_seasons:
-
-        if season.start_month > season.end_month:
-            # E.g., start_month=11 and end_month=4:
-            # season_months=[11, 12, 1, 2, 3, 4].
-            season_months = list(range(season.start_month, 12 + 1)) + list(
-                range(1, season.end_month + 1)
-            )
-
-        else:
-            season_months = list(range(season.start_month, season.end_month + 1))
-
-        for month in season_months:
-            # Default to the start of the month. If we're at the beginning of
-            # the season, then optionally use `season.start_day`.
-            start_day = 1
-            if month == season.start_month:
-                start_day = season.start_day if season.start_day else start_day
-
-            # Default to the end of the month. If we're looking at the end of
-            # the season, then optionally use `season.end_day`.
-            end_day = calendar.monthrange(date.year, month)[1]
-            if month == season.end_month:
-                end_day = season.end_day if season.end_day else end_day
-
-            periods_this_year = pd.period_range(
-                start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
-                end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
-            )
-
-            # if the date we are interested in is in this month of the season,
-            # return the weather filter params.
-            if pd.Period(date, freq='D') in periods_this_year:
-                return season.weather_filter_params
-
-            # Get the same periods for the following year. and include those in
-            # the dataframe we are building. This ensures that a date that
-            # occurs between seasons that span a year gets correctly
-            # interpolated.
-            periods_next_year = pd.period_range(
-                start=pd.Period(
-                    year=date.year + 1, month=month, day=start_day, freq='D'
-                ),
-                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
-            )
-            all_periods = list(periods_this_year) + list(periods_next_year)
-
-            monthly_dfs.append(
-                pd.DataFrame(
-                    data={
-                        key: [getattr(season.weather_filter_params, key)]
-                        * len(all_periods)
-                        for key in ('wintrc', 'wslope', 'wxlimt')
-                    },
-                    index=all_periods,
-                )
-            )
-
-    # Create a df with a period index that includes an entry for every day so
-    # that we can `loc` the date we are interested in.
-    df_with_daily_index = pd.DataFrame(
-        index=pd.period_range(
-            start=pd.Period(year=date.year, month=1, day=1, freq='D'),
-            end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
-        )
-    )
-    joined = df_with_daily_index.join(pd.concat(monthly_dfs))
-    interpolated = joined.interpolate()
-
-    return WeatherFilterParams(
-        **{
-            key: interpolated.loc[pd.Period(date, freq='D')][key]
-            for key in ('wintrc', 'wslope', 'wxlimt')
-        }
-    )
-
-
 def ret_wtp_32(
     water_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
@@ -413,20 +312,129 @@ def fsqt(a: npt.ArrayLike):
     return np.sqrt(a, dtype=np.float32)
 
 
+def _get_wx_params(
+    *,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+) -> WeatherFilterParams:
+    """Return weather filter params for a given date.
+
+    Given a list of `WeatherFilterParamsForSeason` and a date, return the
+    correct weather filter params.
+
+    If a date occurs between seasons, use linear interpolation to determine
+    weather filter params from the adjacent seasons.
+
+    TODO: simplify this code! Originally, I thought it would be straightforward
+    to simply create a period_range from a season start day/month and season
+    end day/month. However, seasons can span the end of the year (e.g., November
+    through April).
+
+    This code uses pandas dataframes to build up a list of dates with given
+    parameters for each season. Each season has its parameters duplicated for
+    all days in the season for the year given by `date` and year + 1. This
+    allows pandas to do linear interpolation that occurs 'across' a year.
+    """
+    monthly_dfs = []
+    for season in weather_filter_seasons:
+
+        if season.start_month > season.end_month:
+            # E.g., start_month=11 and end_month=4:
+            # season_months=[11, 12, 1, 2, 3, 4].
+            season_months = list(range(season.start_month, 12 + 1)) + list(
+                range(1, season.end_month + 1)
+            )
+
+        else:
+            season_months = list(range(season.start_month, season.end_month + 1))
+
+        for month in season_months:
+            # Default to the start of the month. If we're at the beginning of
+            # the season, then optionally use `season.start_day`.
+            start_day = 1
+            if month == season.start_month:
+                start_day = season.start_day if season.start_day else start_day
+
+            # Default to the end of the month. If we're looking at the end of
+            # the season, then optionally use `season.end_day`.
+            end_day = calendar.monthrange(date.year, month)[1]
+            if month == season.end_month:
+                end_day = season.end_day if season.end_day else end_day
+
+            periods_this_year = pd.period_range(
+                start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
+                end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
+            )
+
+            # if the date we are interested in is in this month of the season,
+            # return the weather filter params.
+            if pd.Period(date, freq='D') in periods_this_year:
+                return season.weather_filter_params
+
+            # Get the same periods for the following year. and include those in
+            # the dataframe we are building. This ensures that a date that
+            # occurs between seasons that span a year gets correctly
+            # interpolated.
+            periods_next_year = pd.period_range(
+                start=pd.Period(
+                    year=date.year + 1, month=month, day=start_day, freq='D'
+                ),
+                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
+            )
+            all_periods = list(periods_this_year) + list(periods_next_year)
+
+            monthly_dfs.append(
+                pd.DataFrame(
+                    data={
+                        key: [getattr(season.weather_filter_params, key)]
+                        * len(all_periods)
+                        for key in ('wintrc', 'wslope', 'wxlimt')
+                    },
+                    index=all_periods,
+                )
+            )
+
+    # Create a df with a period index that includes an entry for every day so
+    # that we can `loc` the date we are interested in.
+    df_with_daily_index = pd.DataFrame(
+        index=pd.period_range(
+            start=pd.Period(year=date.year, month=1, day=1, freq='D'),
+            end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
+        )
+    )
+    joined = df_with_daily_index.join(pd.concat(monthly_dfs))
+    interpolated = joined.interpolate()
+
+    return WeatherFilterParams(
+        **{
+            key: interpolated.loc[pd.Period(date, freq='D')][key]
+            for key in ('wintrc', 'wslope', 'wxlimt')
+        }
+    )
+
+
 # TODO: change the name of this function. Or, do we need different conditions
 # for non SSMI data?
 def ret_water_ssmi(
+    *,
     v37,
     h37,
     v22,
     v19,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    wslope,
-    wintrc,
-    wxlimt,
     ln1,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> npt.NDArray[np.bool_]:
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=weather_filter_seasons,
+    )
+    wintrc = season_params.wintrc
+    wslope = season_params.wslope
+    wxlimt = season_params.wxlimt
+
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
@@ -1002,25 +1010,16 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    season_params = _get_wx_params(
+    water_mask = ret_water_ssmi(
+        v37=tbs['v37'],
+        h37=tbs['h37'],
+        v22=tbs['v22'],
+        v19=tbs['v19'],
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        ln1=params.nsb2_params.vh37_params.lnline,
         date=date,
         weather_filter_seasons=params.nsb2_params.weather_filter_seasons,
-    )
-    wintrc = season_params.wintrc
-    wslope = season_params.wslope
-    wxlimt = season_params.wxlimt
-
-    water_mask = ret_water_ssmi(
-        tbs['v37'],
-        tbs['h37'],
-        tbs['v22'],
-        tbs['v19'],
-        params.land_mask,
-        tb_mask,
-        wslope,
-        wintrc,
-        wxlimt,
-        params.nsb2_params.vh37_params.lnline,
     )
 
     vh37 = ret_linfit_32(
