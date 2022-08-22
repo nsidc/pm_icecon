@@ -40,6 +40,35 @@ class WeatherFilterParamsForSeason(ConfigBaseModel):
     weather_filter_params: WeatherFilterParams
 
 
+class TbSetParams(ConfigBaseModel):
+    """Model for parameters related to a set of 2 Tbs.
+
+    Bootstrap code currently expects one of two sets of Tbs: vh37 or v1937.
+    """
+
+    # TODO: validate len 2. Maybe consider a 'tiepoint' model?
+    water_tie_point: list[float]
+    """Starting or 'default' water tie point (wtp) for this Tb set.
+
+    A new wtp is calculated and used if the calculated wtp is within +/- 10 of
+    the given wtp.
+    """
+
+    ice_tie_point: list[float]
+    """Starting or 'default' ice tie point (itp) for this Tb set.
+
+    A new itp is calculated and used if the calculated wtp is within +/- 10 of
+    the given itp.
+    """
+
+    lnline: list[float]
+    # TODO: is `iceline` needed? It is NOT currently used in the code.
+    iceline: list[float]
+    # TODO: does `lnchk` need to be set per tb set? Or is this a higher-level
+    # param? Currently just the `lnchk` from the `vh37` params gets used.
+    lnchk: float = 1.5
+
+
 class ParaNSB2(ConfigBaseModel):
     """Model for parameters returned by ret_para_nsb2."""
 
@@ -53,6 +82,9 @@ class ParaNSB2(ConfigBaseModel):
     Note: if a season is not defined for a given date, the bootstrap code will
     linearly interpolate paramter values based on adjacent seasons.
     """
+
+    vh37_params: TbSetParams
+    v1937_params: TbSetParams
 
 
 class BootstrapParams(ConfigBaseModel):
@@ -73,10 +105,6 @@ class BootstrapParams(ConfigBaseModel):
     # TODO: do we want these values as params? they get overwritten by `ret_para_nsb2`
     # ln1: list[float]  # len 2
     # ln2: list[float]  # len 2
-
-    # TODO: in the code, this is actually given by `ret_para_nsb2`. Should we
-    # let it be overridden? What does this represent/do?
-    # lnchk: float = 1.5
 
     # TODO: what do these represent?
     minic: float = 10.0

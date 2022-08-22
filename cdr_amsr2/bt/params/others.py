@@ -8,6 +8,7 @@ should be used for.
 TODO: look back over the Goddard code to see which sats these params are
 actually used for.
 """
+from cdr_amsr2.bt.params.dmsp import DMSP_v1937_params, DMSP_vh37_params
 from cdr_amsr2.config.models.bt import (
     ParaNSB2,
     WeatherFilterParams,
@@ -15,6 +16,8 @@ from cdr_amsr2.config.models.bt import (
 )
 
 OTHER_NORTH_PARAMS = ParaNSB2(  # noqa
+    vh37_params=DMSP_vh37_params,
+    v1937_params=DMSP_v1937_params,
     weather_filter_seasons=[
         # June through October 15
         WeatherFilterParamsForSeason(
@@ -38,5 +41,5 @@ OTHER_NORTH_PARAMS = ParaNSB2(  # noqa
                 wxlimt=14.0,
             ),
         ),
-    ]
+    ],
 )

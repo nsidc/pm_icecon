@@ -1,10 +1,23 @@
 from cdr_amsr2.config.models.bt import (
     ParaNSB2,
+    TbSetParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
 
 AMSR2_NORTH_PARAMS = ParaNSB2(
+    vh37_params=TbSetParams(
+        water_tie_point=[207.2, 131.9],
+        ice_tie_point=[256.3, 241.2],
+        lnline=[-71.99, 1.20],
+        iceline=[-30.26, 1.0564],
+    ),
+    v1937_params=TbSetParams(
+        water_tie_point=[207.2, 182.4],
+        ice_tie_point=[256.3, 258.9],
+        lnline=[48.26, 0.8048],
+        iceline=[110.03, 0.5759],
+    ),
     weather_filter_seasons=[
         # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
         WeatherFilterParamsForSeason(
@@ -29,10 +42,22 @@ AMSR2_NORTH_PARAMS = ParaNSB2(
         ),
         # October (`seas=4`) will get interpolated from the previous and next
         # (first in this list) season.
-    ]
+    ],
 )
 
 AMSR2_SOUTH_PARAMS = ParaNSB2(
+    vh37_params=TbSetParams(
+        water_tie_point=[207.6, 131.9],
+        ice_tie_point=[259.4, 247.3],
+        lnline=[-90.62, 1.2759],
+        iceline=[-38.31, 1.0969],
+    ),
+    v1937_params=TbSetParams(
+        water_tie_point=[207.6, 182.7],
+        ice_tie_point=[259.4, 261.6],
+        lnline=[62.89, 0.7618],
+        iceline=[114.26, 0.5817],
+    ),
     weather_filter_seasons=[
         # Just one season for the S. hemisphere.
         WeatherFilterParamsForSeason(
@@ -44,5 +69,5 @@ AMSR2_SOUTH_PARAMS = ParaNSB2(
                 wxlimt=18.596,
             ),
         ),
-    ]
+    ],
 )

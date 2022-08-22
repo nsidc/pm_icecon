@@ -10,7 +10,7 @@ import copy
 import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -18,10 +18,8 @@ import pandas as pd
 import xarray as xr
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
-from cdr_amsr2.bt._types import ParaVals
 from cdr_amsr2.config.models.bt import (
     BootstrapParams,
-    ParaNSB2,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
@@ -215,100 +213,6 @@ def _get_wx_params(
             for key in ('wintrc', 'wslope', 'wxlimt')
         }
     )
-
-
-def ret_para_nsb2(
-    tbset: Literal['vh37', 'v1937'],
-    sat: str,
-    date: dt.date,
-    hemisphere: Hemisphere,
-    nsb2_params: ParaNSB2,
-) -> ParaVals:
-    # TODO: what does this do and why?
-    # reproduce effect of ret_para_nsb2()
-    # Note: instead of '1' or '2', use description of axes tb1 and tb2
-    #       to identify the TB set whose parameters are being set
-    #       So, tbset is 'v1937' or 'vh37'
-    # Note: 'sat' is a *string*, not an integer
-
-    if hemisphere == 'south' and sat != 'u2':
-        raise NotImplementedError('Southern hemisphere is only implemented for AMSR2')
-
-    print(f'in ret_para_nsb2(): sat is {sat}')
-    season_params = _get_wx_params(
-        date=date,
-        weather_filter_seasons=nsb2_params.weather_filter_seasons,
-    )
-
-    if sat == 'u2':
-        # Values for AMSRU
-        print(f'Setting sat values for: {sat}')
-        if hemisphere == 'north':
-            if tbset == 'vh37':
-                wtp = [207.2, 131.9]
-                itp = [256.3, 241.2]
-                lnline = [-71.99, 1.20]
-                iceline = [-30.26, 1.0564]
-                lnchk = 1.5
-            elif tbset == 'v1937':
-                wtp = [207.2, 182.4]
-                itp = [256.3, 258.9]
-                lnline = [48.26, 0.8048]
-                iceline = [110.03, 0.5759]
-                lnchk = 1.5
-        else:
-            if tbset == 'vh37':
-                wtp = [207.6, 131.9]
-                itp = [259.4, 247.3]
-                lnline = [-90.62, 1.2759]
-                iceline = [-38.31, 1.0969]
-                lnchk = 1.5
-            elif tbset == 'v1937':
-                wtp = [207.6, 182.7]
-                itp = [259.4, 261.6]
-                lnline = [62.89, 0.7618]
-                iceline = [114.26, 0.5817]
-                lnchk = 1.5
-
-    elif sat == 'a2l1c':
-        # Values for AMSRU
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [207.2, 131.9]
-            itp = [256.3, 241.2]
-            lnline = [-71.99, 1.20]
-            iceline = [-30.26, 1.0564]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [207.2, 182.4]
-            itp = [256.3, 258.9]
-            lnline = [48.26, 0.8048]
-            iceline = [110.03, 0.5759]
-            lnchk = 1.5
-    else:
-        # Values for DMSP
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [201.916, 132.815]
-            itp = [255.670, 241.713]
-            lnline = [-73.5471, 1.21104]
-            iceline = [-25.9729, 1.04382]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [201.916, 178.771]
-            itp = [255.670, 258.341]
-            lnline = [47.0061, 0.809335]
-            iceline = [112.803, 0.550296]
-            lnchk = 1.5
-
-    return {
-        **dict(season_params),  # type: ignore
-        'wtp': wtp,
-        'itp': itp,
-        'lnline': lnline,
-        'iceline': iceline,
-        'lnchk': lnchk,
-    }
 
 
 def ret_wtp_32(
@@ -1098,16 +1002,17 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2(
-        'vh37', params.sat, date, hemisphere, nsb2_params=params.nsb2_params
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=params.nsb2_params.weather_filter_seasons,
     )
-    wintrc = para_vals_vh37['wintrc']
-    wslope = para_vals_vh37['wslope']
-    wxlimt = para_vals_vh37['wxlimt']
-    ln1 = para_vals_vh37['lnline']
-    lnchk = para_vals_vh37['lnchk']
-    wtp1_default = para_vals_vh37['wtp']
-    itp = para_vals_vh37['itp']
+    wintrc = season_params.wintrc
+    wslope = season_params.wslope
+    wxlimt = season_params.wxlimt
+    ln1 = params.nsb2_params.vh37_params.lnline
+    lnchk = params.nsb2_params.vh37_params.lnchk
+    wtp1_default = params.nsb2_params.vh37_params.water_tie_point
+    itp = params.nsb2_params.vh37_params.ice_tie_point
 
     water_mask = ret_water_ssmi(
         tbs['v37'],
@@ -1133,13 +1038,9 @@ def bootstrap(
         water_mask,
     )
 
-    para_vals_v1937 = ret_para_nsb2(
-        'v1937', params.sat, date, hemisphere, nsb2_params=params.nsb2_params
-    )
-    ln2 = para_vals_v1937['lnline']
-    wtp2_default = para_vals_v1937['wtp']
-    itp2 = para_vals_v1937['itp']
-    v1937 = para_vals_v1937['iceline']
+    ln2 = params.nsb2_params.v1937_params.lnline
+    wtp2_default = params.nsb2_params.v1937_params.water_tie_point
+    itp2 = params.nsb2_params.v1937_params.ice_tie_point
 
     wtp, wtp2 = get_water_tiepoints(
         water_mask=water_mask,
