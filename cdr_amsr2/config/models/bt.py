@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 
 from cdr_amsr2._types import ValidSatellites
+from cdr_amsr2.bt._types import Tiepoint
 from cdr_amsr2.config.models.base_model import ConfigBaseModel
 
 
@@ -46,24 +47,23 @@ class TbSetParams(ConfigBaseModel):
     Bootstrap code currently expects one of two sets of Tbs: vh37 or v1937.
     """
 
-    # TODO: validate len 2. Maybe consider a 'tiepoint' model?
-    water_tie_point: list[float]
+    water_tie_point: Tiepoint
     """Starting or 'default' water tie point (wtp) for this Tb set.
 
     A new wtp is calculated and used if the calculated wtp is within +/- 10 of
     the given wtp.
     """
 
-    ice_tie_point: list[float]
+    ice_tie_point: Tiepoint
     """Starting or 'default' ice tie point (itp) for this Tb set.
 
     A new itp is calculated and used if the calculated wtp is within +/- 10 of
     the given itp.
     """
 
-    lnline: list[float]
+    lnline: tuple[float, float]
     # TODO: is `iceline` needed? It is NOT currently used in the code.
-    iceline: list[float]
+    iceline: tuple[float, float]
     # TODO: does `lnchk` need to be set per tb set? Or is this a higher-level
     # param? Currently just the `lnchk` from the `vh37` params gets used.
     lnchk: float = 1.5
@@ -98,13 +98,6 @@ class BootstrapParams(ConfigBaseModel):
     """Flag value for cells representing land."""
     missval: float = 110.0
     """Flag value for cells representing missing data."""
-
-    # TODO: what do these values represent?
-    # TODO: enforce length of list w/ pydantic validator.
-    # TODO: tuple?
-    # TODO: do we want these values as params? they get overwritten by `ret_para_nsb2`
-    # ln1: list[float]  # len 2
-    # ln2: list[float]  # len 2
 
     # TODO: what do these represent?
     minic: float = 10.0

@@ -18,6 +18,7 @@ import pandas as pd
 import xarray as xr
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2.bt._types import Tiepoint
 from cdr_amsr2.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -89,7 +90,7 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     }
 
 
-def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
+def ret_adj_adoff(*, wtp: Tiepoint, vh37: list[float], perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is two water tie points
     # vh37 is offset and slope
@@ -153,13 +154,19 @@ def ret_wtp_32(
 
 
 def get_water_tiepoints(
-    *, water_mask, tb_v37, tb_h37, tb_v19, wtp1_default, wtp2_default
-):
+    *,
+    water_mask,
+    tb_v37,
+    tb_h37,
+    tb_v19,
+    wtp1_default: Tiepoint,
+    wtp2_default: Tiepoint,
+) -> tuple[Tiepoint, Tiepoint]:
     def _within_plusminus_10(target_value, value) -> bool:
         return (target_value - 10) < value < (target_value + 10)
 
     # Get wtp1
-    wtp1 = copy.copy(wtp1_default)
+    wtp1 = list(copy.copy(wtp1_default))
 
     wtp37v = ret_wtp_32(water_mask, tb_v37)
     wtp37h = ret_wtp_32(water_mask, tb_h37)
@@ -172,7 +179,7 @@ def get_water_tiepoints(
         wtp1[1] = wtp37h
 
     # get wtp2
-    wtp2 = copy.copy(wtp2_default)
+    wtp2 = list(copy.copy(wtp2_default))
 
     wtp19v = ret_wtp_32(water_mask, tb_v19)
 
@@ -183,7 +190,12 @@ def get_water_tiepoints(
     if (wtp2_default[1] - 10) < wtp19v < (wtp2_default[1] + 10):
         wtp2[1] = wtp19v
 
-    return wtp1, wtp2
+    water_tiepoints: tuple[Tiepoint, Tiepoint] = (  # type: ignore[assignment]
+        tuple(wtp1),
+        tuple(wtp2),
+    )
+
+    return water_tiepoints
 
 
 def linfit_32(xvals, yvals):

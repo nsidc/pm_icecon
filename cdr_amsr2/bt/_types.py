@@ -1,5 +1,7 @@
 from typing import TypedDict
 
+Tiepoint = tuple[float, float]
+
 
 class RawFns(TypedDict):
     # maps strings to strings representing filepaths.
