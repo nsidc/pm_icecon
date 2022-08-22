@@ -25,7 +25,19 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f'pytest {PROJECT_DIR}/bt_py/test.py',
+        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/cdr_amsr2/tests/unit',
+        pty=True,
+    )
+
+
+@task()
+def regression(ctx):
+    """Run regression tests.
+
+    Requires access to data on NFS and should be run on a VM.
+    """
+    print_and_run(
+        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/cdr_amsr2/tests/regression',
         pty=True,
     )
 
@@ -34,9 +46,16 @@ def unit(ctx):
 def vulture(ctx):
     """Use `vulture` to detect dead code."""
     print_and_run(
-        f'vulture'
-        f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/bt_py/_types.py'
-        f' {PROJECT_DIR}',
+        (
+            'vulture'
+            f' --exclude {PROJECT_DIR}/tasks'
+            # ignore `_types.py` because vulture doesn't understand typed dicts.
+            f',{PROJECT_DIR}/cdr_amsr2/bt/_types.py'
+            # ignore `base_model.py` because vulture flags config options as
+            # unused variables/class.
+            f',{PROJECT_DIR}/cdr_amsr2/config/models/base_model.py'
+            f' {PROJECT_DIR}'
+        ),
         pty=True,
     )
 
@@ -47,6 +66,24 @@ def vulture(ctx):
         typecheck,
         vulture,
         unit,
+    ],
+)
+def ci(ctx):
+    """Run tests in CircleCI.
+
+    Excludes regression tests that require access to data on NSIDC-specific
+    infrastructure.
+    """
+    ...
+
+
+@task(
+    pre=[
+        lint,
+        typecheck,
+        vulture,
+        unit,
+        regression,
     ],
     default=True,
 )

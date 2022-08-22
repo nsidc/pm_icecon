@@ -5,6 +5,7 @@
 
 # Local exclusions
 ANCILLARY
+*ancillary
 *.bin
 *.dat*
 *.gz
@@ -12,6 +13,7 @@ ANCILLARY
 *.json
 *.txt
 out*
+*out/
 
 boot_driver_sb2_?p_nrt
 bin

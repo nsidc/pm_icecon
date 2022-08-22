@@ -1,9 +1,0 @@
-{
-  "raw_fns": {
-    "h19": "/share/apps/amsr2-cdr/cdr_testdata/nt_goddard_input_tbs/tb_f17_20180101_v4_n19h.bin",
-    "v19": "/share/apps/amsr2-cdr/cdr_testdata/nt_goddard_input_tbs/tb_f17_20180101_v4_n19v.bin",
-    "v22": "/share/apps/amsr2-cdr/cdr_testdata/nt_goddard_input_tbs/tb_f17_20180101_v4_n22v.bin",
-    "h37": "/share/apps/amsr2-cdr/cdr_testdata/nt_goddard_input_tbs/tb_f17_20180101_v4_n37h.bin",
-    "v37": "/share/apps/amsr2-cdr/cdr_testdata/nt_goddard_input_tbs/tb_f17_20180101_v4_n37v.bin"
-  }
-}

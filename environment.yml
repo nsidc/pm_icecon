@@ -15,10 +15,20 @@ dependencies:
   - flake8-docstrings ~=1.6
   - invoke ~=1.7
   - isort ~=5.10
-  - mypy ~=0.950
+  - mypy ~=0.961
   - pytest ~=7.1
   - vulture ~=2.4
+  # debugging/development tools
+  - ipython
+  - ipdb
 
   # Runtime dependencies
   - python ~=3.10.4
   - numpy ~=1.22.3
+  - h5py ~=3.6
+  - xarray ~=2022.3
+  - netCDF4 ~=1.5.8
+  - cartopy ~=0.20
+  - click ~=8.1
+  - loguru ~=0.6
+  - pydantic ~=1.9
