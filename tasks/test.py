@@ -6,7 +6,9 @@ from .util import PROJECT_DIR, print_and_run
 @task(aliases=['flake8'])
 def lint(ctx):
     """Run flake8 linting."""
-    print_and_run(f'flake8 {PROJECT_DIR}')
+    print_and_run(
+        f'flake8 --exclude {PROJECT_DIR}/nt_tiepoint_generation {PROJECT_DIR}'
+    )
 
 
 @task(aliases=['mypy'])
@@ -14,7 +16,10 @@ def typecheck(ctx):
     """Run mypy typechecking."""
     mypy_cfg_path = PROJECT_DIR / '.mypy.ini'
     print_and_run(
-        f'mypy --config-file={mypy_cfg_path} {PROJECT_DIR}/',
+        (
+            f'mypy --config-file={mypy_cfg_path}'
+            f' {PROJECT_DIR}/'
+        ),
         pty=True,
     )
 
@@ -48,7 +53,7 @@ def vulture(ctx):
     print_and_run(
         (
             'vulture'
-            f' --exclude {PROJECT_DIR}/tasks'
+            f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/nt_tiepoint_generation'
             # ignore `_types.py` because vulture doesn't understand typed dicts.
             f',{PROJECT_DIR}/cdr_amsr2/bt/_types.py'
             # ignore `base_model.py` because vulture flags config options as

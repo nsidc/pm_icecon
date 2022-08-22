@@ -130,7 +130,7 @@ if __name__ == '__main__':
         ymd_arg = sys.argv[1]
         ymd = dt.datetime.strptime(ymd_arg, '%Y%m%d').date()
     except IndexError:
-        ymd = 'do all'
+        ymd = 'do all'  # type: ignore[assignment]
         # xwm('No ymd given')
     except ValueError:
         xwm(f'Could not get ymd from: {ymd_arg}')
