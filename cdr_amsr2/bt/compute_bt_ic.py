@@ -1009,10 +1009,6 @@ def bootstrap(
     wintrc = season_params.wintrc
     wslope = season_params.wslope
     wxlimt = season_params.wxlimt
-    ln1 = params.nsb2_params.vh37_params.lnline
-    lnchk = params.nsb2_params.vh37_params.lnchk
-    wtp1_default = params.nsb2_params.vh37_params.water_tie_point
-    itp = params.nsb2_params.vh37_params.ice_tie_point
 
     water_mask = ret_water_ssmi(
         tbs['v37'],
@@ -1024,7 +1020,7 @@ def bootstrap(
         wslope,
         wintrc,
         wxlimt,
-        ln1,
+        params.nsb2_params.vh37_params.lnline,
     )
 
     vh37 = ret_linfit_32(
@@ -1032,22 +1028,21 @@ def bootstrap(
         tb_mask,
         tbs['v37'],
         tbs['h37'],
-        ln1,
-        lnchk,
+        params.nsb2_params.vh37_params.lnline,
+        params.nsb2_params.vh37_params.lnchk,
         params.add1,
         water_mask,
     )
 
     ln2 = params.nsb2_params.v1937_params.lnline
     wtp2_default = params.nsb2_params.v1937_params.water_tie_point
-    itp2 = params.nsb2_params.v1937_params.ice_tie_point
 
     wtp, wtp2 = get_water_tiepoints(
         water_mask=water_mask,
         tb_v37=tbs['v37'],
         tb_h37=tbs['h37'],
         tb_v19=tbs['v19'],
-        wtp1_default=wtp1_default,
+        wtp1_default=params.nsb2_params.vh37_params.water_tie_point,
         wtp2_default=wtp2_default,
     )
 
@@ -1060,7 +1055,7 @@ def bootstrap(
         tbs['v37'],
         tbs['v19'],
         ln2,
-        lnchk,
+        params.nsb2_params.vh37_params.lnchk,
         params.add2,
         water_mask,
         tba=tbs['h37'],
@@ -1075,8 +1070,8 @@ def bootstrap(
         maxic=params.maxic,
         vh37=vh37,
         adoff=adoff,
-        itp=itp,
-        itp2=itp2,
+        itp=params.nsb2_params.vh37_params.ice_tie_point,
+        itp2=params.nsb2_params.v1937_params.ice_tie_point,
         wtp=wtp,
         wtp2=wtp2,
         v1937=v1937,
