@@ -6,7 +6,7 @@ from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
 
 
 def test_nt_f17_regression():
-    """Regressi5on test for NT F17 output."""
+    """Regression test for NT F17 output."""
     regression_data = np.fromfile(
         REGRESSION_DATA_DIR / 'nt_f17_regression' / 'nt_sample_nh.dat',
         dtype=np.int16,
