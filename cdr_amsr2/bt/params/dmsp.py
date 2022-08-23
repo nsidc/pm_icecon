@@ -21,6 +21,8 @@ DMSP_v1937_params = TbSetParams(
     iceline=[112.803, 0.550296],
 )
 
+# NOTE: we think these are defined for NSIDC-0080 (derived from CLASS) and NOT
+# from NSIDC-0001 (RSS)
 F17_F18_NORTH_PARAMS = dict(
     vh37_params=DMSP_vh37_params,
     v1937_params=DMSP_v1937_params,
