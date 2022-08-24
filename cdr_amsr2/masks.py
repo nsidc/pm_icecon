@@ -1,4 +1,13 @@
-"""Code related to land, valid ice, and pole-hole masks."""
+"""Code related to land, valid ice, and pole-hole masks.
+
+Algorithm-specific valid ice masks are in their respective algorithm-specific
+modules (e.g., `bt.masks`).
+
+TODO: should we really use different valid ice masks depending on the algorithm?
+Why not one source of truth? Ultimatley we do want to make valid ice masks
+configurable for the user. Perhaps these should me moved into the `params`
+subpackage (e.g., `bt.params`)
+"""
 import datetime as dt
 from pathlib import Path
 
@@ -8,6 +17,7 @@ import numpy.typing as npt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
+from cdr_amsr2.util import get_ps25_grid_shape
 
 
 # TODO: accept `Hemisphere` arg and return None if South?
@@ -42,7 +52,7 @@ def get_ps_pole_hole_mask(*, resolution: AU_SI_RESOLUTIONS) -> npt.NDArray[np.bo
     return pole_mask_psn
 
 
-def _get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.int16]:
+def get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.int16]:
     """Get the polar stereo south 12.5km valid ice/land/coast array.
 
     4 unique values:
@@ -67,10 +77,7 @@ def get_ps_land_mask(
     """Get the polar stereo 25km land mask."""
     # Ocean has a value of 0, land a value of 1, and coast a value of 2.
     if resolution == '25':
-        shape = {
-            'north': (448, 304),
-            'south': (332, 316),
-        }[hemisphere]
+        shape = get_ps25_grid_shape(hemisphere=hemisphere)
         _land_coast_array = np.fromfile(
             (
                 PACKAGE_DIR
@@ -93,7 +100,7 @@ def get_ps_land_mask(
         if hemisphere == 'south':
             # Any date is OK. The land mask is the same for all of the pss 12
             # validice/land masks
-            _land_coast_array = _get_pss_12_validice_land_coast_array(
+            _land_coast_array = get_pss_12_validice_land_coast_array(
                 date=dt.date.today()
             )
             land_mask = np.logical_or(_land_coast_array == 0, _land_coast_array == 32)
@@ -137,44 +144,3 @@ def get_e2n625_land_mask() -> npt.NDArray[np.bool_]:
     land_mask_e2n625 = _land_coast_array_e2n625 != 50
 
     return land_mask_e2n625
-
-
-# TODO: rename to indicate this is derived from SST?
-def get_ps_valid_ice_mask(
-    *,
-    hemisphere: Hemisphere,
-    date: dt.date,
-    resolution: AU_SI_RESOLUTIONS,
-) -> npt.NDArray[np.bool_]:
-    """Read and return the polar stereo valid ice mask."""
-    print(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')
-    if hemisphere == 'north':
-        if resolution == '25':
-            sst_fn = (
-                PACKAGE_DIR
-                / '../legacy'
-                / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
-            ).resolve()
-            sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
-        elif resolution == '12':
-            mask_fn = Path(
-                '/share/apps/amsr2-cdr/cdr_testdata/btequiv_psn12.5/'
-                f'bt_validmask_psn12.5km_{date:%m}.dat'
-            )
-
-            sst_mask = np.fromfile(mask_fn, dtype=np.int16).reshape(896, 608)
-    else:
-        if resolution == '12':
-            # values of 24 indicate invalid ice.
-            sst_mask = _get_pss_12_validice_land_coast_array(date=date)
-        elif resolution == '25':
-            sst_fn = Path(
-                '/share/apps/amsr2-cdr'
-                '/cdr_testdata/bt_goddard_ANCILLARY'
-                f'/SH_{date:%m}_SST_avhrr_threshold_{date:%m}_fixd.int'
-            )
-            sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(332, 316)
-
-    is_high_sst = sst_mask == 24
-
-    return is_high_sst
