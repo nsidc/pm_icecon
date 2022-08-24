@@ -32,3 +32,4 @@ dependencies:
   - click ~=8.1
   - loguru ~=0.6
   - pydantic ~=1.9
+  - pandas ~=1.4.2

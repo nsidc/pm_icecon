@@ -5,19 +5,27 @@ and computes:
     iceout
 """
 
+import calendar
+import copy
 import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import xarray as xr
 
-from cdr_amsr2.bt._types import ParaVals, Variables
-from cdr_amsr2.config.models.bt import BootstrapParams
-from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2.bt._types import Tiepoint
+from cdr_amsr2.config.models.bt import (
+    BootstrapParams,
+    WeatherFilterParams,
+    WeatherFilterParamsForSeason,
+)
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
+from cdr_amsr2.masks import get_ps_valid_ice_mask
 
 THIS_DIR = Path(__file__).parent
 
@@ -82,7 +90,7 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     }
 
 
-def ret_adj_adoff(wtp, vh37, perc=0.92):
+def ret_adj_adoff(*, wtp: Tiepoint, vh37: list[float], perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is two water tie points
     # vh37 is offset and slope
@@ -107,128 +115,11 @@ def ret_adj_adoff(wtp, vh37, perc=0.92):
     return adoff
 
 
-def ret_para_nsb2(tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date) -> ParaVals:
-    # TODO: what does this do and why?
-    # reproduce effect of ret_para_nsb2()
-    # Note: instead of '1' or '2', use description of axes tb1 and tb2
-    #       to identify the TB set whose parameters are being set
-    #       So, tbset is 'v1937' or 'vh37'
-    # Note: 'sat' is a *string*, not an integer
-
-    is_june_through_oct15 = (date.month >= 6 and date.month <= 9) or (
-        date.month == 10 and date.day <= 15
-    )
-
-    # Set wintrc, wslope, wxlimt
-    print(f'in ret_para_nsb2(): sat is {sat}')
-    if sat == '00':
-        if is_june_through_oct15:
-            wintrc = 60.1667
-            wslope = 0.633333
-            wxlimt = 24.00
-        else:
-            wintrc = 53.4153
-            wslope = 0.661017
-            wxlimt = 22.00
-    elif sat == 'u2':
-        if is_june_through_oct15:
-            # Using the "Season 3" values from ret_parameters_amsru2.f
-            wintrc = 82.71
-            wslope = 0.5352
-            wxlimt = 23.34
-        else:
-            wintrc = 84.73
-            wslope = 0.5352
-            wxlimt = 18.39
-    elif sat == 'a2l1c':
-        if is_june_through_oct15:
-            # Using the "Season 3" values from ret_parameters_amsru2.f
-            wintrc = 82.71
-            wslope = 0.5352
-            wxlimt = 23.34
-        else:
-            wintrc = 84.73
-            wslope = 0.5352
-            wxlimt = 18.39
-    else:
-        if is_june_through_oct15:
-            if sat != '17' and sat != '18':
-                wintrc = 89.3316
-                wslope = 0.501537
-            else:
-                wintrc = 89.2000
-                wslope = 0.503750
-            wxlimt = 21.00
-        else:
-            if sat != '17' and sat != '18':
-                wintrc = 90.3355
-                wslope = 0.501537
-            else:
-                wintrc = 87.6467
-                wslope = 0.517333
-            wxlimt = 14.00
-
-    if sat == 'u2':
-        # Values for AMSRU
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [207.2, 131.9]
-            itp = [256.3, 241.2]
-            lnline = [-71.99, 1.20]
-            iceline = [-30.26, 1.0564]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [207.2, 182.4]
-            itp = [256.3, 258.9]
-            lnline = [48.26, 0.8048]
-            iceline = [110.03, 0.5759]
-            lnchk = 1.5
-    elif sat == 'a2l1c':
-        # Values for AMSRU
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [207.2, 131.9]
-            itp = [256.3, 241.2]
-            lnline = [-71.99, 1.20]
-            iceline = [-30.26, 1.0564]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [207.2, 182.4]
-            itp = [256.3, 258.9]
-            lnline = [48.26, 0.8048]
-            iceline = [110.03, 0.5759]
-            lnchk = 1.5
-    else:
-        # Values for DMSP
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [201.916, 132.815]
-            itp = [255.670, 241.713]
-            lnline = [-73.5471, 1.21104]
-            iceline = [-25.9729, 1.04382]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [201.916, 178.771]
-            itp = [255.670, 258.341]
-            lnline = [47.0061, 0.809335]
-            iceline = [112.803, 0.550296]
-            lnchk = 1.5
-
-    return {
-        'wintrc': wintrc,
-        'wslope': wslope,
-        'wxlimt': wxlimt,
-        'wtp': wtp,
-        'itp': itp,
-        'lnline': lnline,
-        'iceline': iceline,
-        'lnchk': lnchk,
-    }
-
-
-def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) -> float:
+def ret_wtp_32(
+    water_mask: npt.NDArray[np.bool_],
+    tb: npt.NDArray[np.float32],
+) -> float:
     # Attempt to reproduce Goddard methodology for computing water tie point
-    # v['wtp19v'] = ret_wtp_32(water_arr, v19, wtp19v)
 
     # Note: this *really* should be done with np.percentile()
 
@@ -236,7 +127,7 @@ def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) ->
 
     # Compute quarter-Kelvin histograms
     histo, _ = np.histogram(
-        tb[water_arr == 1],
+        tb[water_mask],
         bins=1200,
         range=(0, 300),
     )
@@ -260,6 +151,51 @@ def ret_wtp_32(water_arr: npt.NDArray[np.int16], tb: npt.NDArray[np.float32]) ->
     wtp = f(ival) * 0.25
 
     return wtp
+
+
+def get_water_tiepoints(
+    *,
+    water_mask,
+    tb_v37,
+    tb_h37,
+    tb_v19,
+    wtp1_default: Tiepoint,
+    wtp2_default: Tiepoint,
+) -> tuple[Tiepoint, Tiepoint]:
+    def _within_plusminus_10(target_value, value) -> bool:
+        return (target_value - 10) < value < (target_value + 10)
+
+    # Get wtp1
+    wtp1 = list(copy.copy(wtp1_default))
+
+    wtp37v = ret_wtp_32(water_mask, tb_v37)
+    wtp37h = ret_wtp_32(water_mask, tb_h37)
+
+    # If the calculated wtps are within the bounds of the default (+/- 10), use
+    # the calculated value.
+    if _within_plusminus_10(wtp1_default[0], wtp37v):
+        wtp1[0] = wtp37v
+    if _within_plusminus_10(wtp1_default[1], wtp37h):
+        wtp1[1] = wtp37h
+
+    # get wtp2
+    wtp2 = list(copy.copy(wtp2_default))
+
+    wtp19v = ret_wtp_32(water_mask, tb_v19)
+
+    # If the calculated wtps are within the bounds of the default (+/- 10), use
+    # the calculated value.
+    if (wtp2_default[0] - 10) < wtp37v < (wtp2_default[0] + 10):
+        wtp2[0] = wtp37v
+    if (wtp2_default[1] - 10) < wtp19v < (wtp2_default[1] + 10):
+        wtp2[1] = wtp19v
+
+    water_tiepoints: tuple[Tiepoint, Tiepoint] = (  # type: ignore[assignment]
+        tuple(wtp1),
+        tuple(wtp2),
+    )
+
+    return water_tiepoints
 
 
 def linfit_32(xvals, yvals):
@@ -293,7 +229,7 @@ def ret_linfit_32(
     lnline,
     lnchk,
     add,
-    water,
+    water_mask,
     tba=None,
     iceline=None,
     adoff=None,
@@ -310,9 +246,7 @@ def ret_linfit_32(
 
     is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
 
-    is_water0 = water == 0
-
-    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & is_water0
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
     icnt = np.sum(np.where(is_valid, 1, 0))
 
@@ -390,18 +324,129 @@ def fsqt(a: npt.ArrayLike):
     return np.sqrt(a, dtype=np.float32)
 
 
+def _get_wx_params(
+    *,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+) -> WeatherFilterParams:
+    """Return weather filter params for a given date.
+
+    Given a list of `WeatherFilterParamsForSeason` and a date, return the
+    correct weather filter params.
+
+    If a date occurs between seasons, use linear interpolation to determine
+    weather filter params from the adjacent seasons.
+
+    TODO: simplify this code! Originally, I thought it would be straightforward
+    to simply create a period_range from a season start day/month and season
+    end day/month. However, seasons can span the end of the year (e.g., November
+    through April).
+
+    This code uses pandas dataframes to build up a list of dates with given
+    parameters for each season. Each season has its parameters duplicated for
+    all days in the season for the year given by `date` and year + 1. This
+    allows pandas to do linear interpolation that occurs 'across' a year.
+    """
+    monthly_dfs = []
+    for season in weather_filter_seasons:
+
+        if season.start_month > season.end_month:
+            # E.g., start_month=11 and end_month=4:
+            # season_months=[11, 12, 1, 2, 3, 4].
+            season_months = list(range(season.start_month, 12 + 1)) + list(
+                range(1, season.end_month + 1)
+            )
+
+        else:
+            season_months = list(range(season.start_month, season.end_month + 1))
+
+        for month in season_months:
+            # Default to the start of the month. If we're at the beginning of
+            # the season, then optionally use `season.start_day`.
+            start_day = 1
+            if month == season.start_month:
+                start_day = season.start_day if season.start_day else start_day
+
+            # Default to the end of the month. If we're looking at the end of
+            # the season, then optionally use `season.end_day`.
+            end_day = calendar.monthrange(date.year, month)[1]
+            if month == season.end_month:
+                end_day = season.end_day if season.end_day else end_day
+
+            periods_this_year = pd.period_range(
+                start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
+                end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
+            )
+
+            # if the date we are interested in is in this month of the season,
+            # return the weather filter params.
+            if pd.Period(date, freq='D') in periods_this_year:
+                return season.weather_filter_params
+
+            # Get the same periods for the following year. and include those in
+            # the dataframe we are building. This ensures that a date that
+            # occurs between seasons that span a year gets correctly
+            # interpolated.
+            periods_next_year = pd.period_range(
+                start=pd.Period(
+                    year=date.year + 1, month=month, day=start_day, freq='D'
+                ),
+                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
+            )
+            all_periods = list(periods_this_year) + list(periods_next_year)
+
+            monthly_dfs.append(
+                pd.DataFrame(
+                    data={
+                        key: [getattr(season.weather_filter_params, key)]
+                        * len(all_periods)
+                        for key in ('wintrc', 'wslope', 'wxlimt')
+                    },
+                    index=all_periods,
+                )
+            )
+
+    # Create a df with a period index that includes an entry for every day so
+    # that we can `loc` the date we are interested in.
+    df_with_daily_index = pd.DataFrame(
+        index=pd.period_range(
+            start=pd.Period(year=date.year, month=1, day=1, freq='D'),
+            end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
+        )
+    )
+    joined = df_with_daily_index.join(pd.concat(monthly_dfs))
+    interpolated = joined.interpolate()
+
+    return WeatherFilterParams(
+        **{
+            key: interpolated.loc[pd.Period(date, freq='D')][key]
+            for key in ('wintrc', 'wslope', 'wxlimt')
+        }
+    )
+
+
+# TODO: change the name of this function. Or, do we need different conditions
+# for non SSMI data?
 def ret_water_ssmi(
+    *,
     v37,
     h37,
     v22,
     v19,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    wslope,
-    wintrc,
-    wxlimt,
     ln1,
-) -> npt.NDArray[np.int16]:
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+) -> npt.NDArray[np.bool_]:
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=weather_filter_seasons,
+    )
+    wintrc = season_params.wintrc
+    wslope = season_params.wslope
+    wxlimt = season_params.wxlimt
+
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
@@ -409,62 +454,78 @@ def ret_water_ssmi(
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
+    # TODO: where does this 230.0 value come from? Should it be configuratble?
     is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
 
     is_water = not_land_or_masked & is_cond1 & is_cond2
 
-    water = np.zeros_like(land_mask, dtype=np.int16)
-    water[is_water] = 1
-
-    return water
+    return is_water
 
 
-def calc_rad_coeffs_32(v: Variables):
+def calc_rad_coeffs_32(
+    *,
+    itp,
+    wtp,
+    vh37,
+    itp2,
+    wtp2,
+    v1937,
+):
     # Compute radlsp, radoff, radlen vars
-    v_out = v.copy()
-
-    v_out['radslp1'] = fdiv(
-        fsub(f(v_out['itp'][1]), f(v_out['wtp'][1])),
-        fsub(f(v_out['itp'][0]), f(v_out['wtp'][0])),
+    radslp1 = fdiv(
+        fsub(f(itp[1]), f(wtp[1])),
+        fsub(f(itp[0]), f(wtp[0])),
     )
-    v_out['radoff1'] = fsub(
-        f(v_out['wtp'][1]), fmul(f(v_out['wtp'][0]), f(v_out['radslp1']))
-    )
+    radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
     xint = fdiv(
-        fsub(f(v_out['radoff1']), f(v_out['vh37'][0])),
-        fsub(f(v_out['vh37'][1]), f(v_out['radslp1'])),
+        fsub(f(radoff1), f(vh37[0])),
+        fsub(f(vh37[1]), f(radslp1)),
     )
-    yint = fadd(fmul(v_out['vh37'][1], f(xint)), f(v_out['vh37'][0]))
-    v_out['radlen1'] = fsqt(
+    yint = fadd(fmul(vh37[1], f(xint)), f(vh37[0]))
+    radlen1 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(v_out['wtp'][0]))),
-            fsqr(fsub(f(yint), f(v_out['wtp'][1]))),
+            fsqr(fsub(f(xint), f(wtp[0]))),
+            fsqr(fsub(f(yint), f(wtp[1]))),
         )
     )
 
-    v_out['radslp2'] = fdiv(
-        fsub(f(v_out['itp2'][1]), f(v_out['wtp2'][1])),
-        fsub(f(v_out['itp2'][0]), f(v_out['wtp2'][0])),
+    radslp2 = fdiv(
+        fsub(f(itp2[1]), f(wtp2[1])),
+        fsub(f(itp2[0]), f(wtp2[0])),
     )
-    v_out['radoff2'] = fsub(
-        f(v_out['wtp2'][1]), fmul(f(v_out['wtp2'][0]), f(v_out['radslp2']))
-    )
+    radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
     xint = fdiv(
-        fsub(f(v_out['radoff2']), f(v_out['v1937'][0])),
-        fsub(f(v_out['v1937'][1]), f(v_out['radslp2'])),
+        fsub(f(radoff2), f(v1937[0])),
+        fsub(f(v1937[1]), f(radslp2)),
     )
-    yint = fadd(fmul(f(v_out['v1937'][1]), f(xint)), f(v_out['v1937'][0]))
-    v_out['radlen2'] = fsqt(
+    yint = fadd(fmul(f(v1937[1]), f(xint)), f(v1937[0]))
+    radlen2 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(v_out['wtp2'][0]))),
-            fsqr(fsub(f(yint), f(v_out['wtp2'][1]))),
+            fsqr(fsub(f(xint), f(wtp2[0]))),
+            fsqr(fsub(f(yint), f(wtp2[1]))),
         )
     )
 
-    return v_out
+    return {
+        'radslp1': radslp1,
+        'radoff1': radoff1,
+        'radlen1': radlen1,
+        'radslp2': radslp2,
+        'radoff2': radoff2,
+        'radlen2': radlen2,
+    }
 
 
-def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
+def sst_clean_sb2(
+    *,
+    sat: ValidSatellites,
+    iceout,
+    missval,
+    landval,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: str,
+):
     # implement fortran's sst_clean_sb2() routine
 
     sst_mask: npt.NDArray[np.uint8 | np.int16]
@@ -478,14 +539,11 @@ def sst_clean_sb2(*, sat, iceout, missval, landval, date: dt.date):
         sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
         is_high_sst = sst_mask == 50
     else:
-        print('Reading valid ice mask for PSN 25km grid')
-        sst_fn = (
-            PACKAGE_DIR
-            / '../legacy'
-            / f'SB2_NRT_programs/ANCILLARY/np_sect_sst1_sst2_mask_{date:%m}.int'
-        ).resolve()
-        sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(448, 304)
-        is_high_sst = sst_mask == 24
+        is_high_sst = get_ps_valid_ice_mask(
+            hemisphere=hemisphere,
+            date=date,
+            resolution=resolution,  # type: ignore[arg-type]
+        )
 
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
@@ -851,71 +909,91 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.
 
 
 def calc_bt_ice(
-    p: BootstrapParams,
-    v: Variables,
+    *,
+    missval,
+    landval,
+    maxic,
+    vh37,
+    adoff,
+    v1937,
+    wtp,
+    wtp2,
+    itp,
+    itp2,
     tbs,
     land_mask: npt.NDArray[np.bool_],
-    water_arr,
+    water_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
 ):
 
+    # ## LINES calculating radslp1 ... to radlen2 ###
+    rad_coeffs = calc_rad_coeffs_32(
+        itp=itp,
+        wtp=wtp,
+        vh37=vh37,
+        itp2=itp2,
+        wtp2=wtp2,
+        v1937=v1937,
+    )
+    radslp1 = rad_coeffs['radslp1']
+    radoff1 = rad_coeffs['radoff1']
+    radlen1 = rad_coeffs['radlen1']
+    radslp2 = rad_coeffs['radslp2']
+    radoff2 = rad_coeffs['radoff2']
+    radlen2 = rad_coeffs['radlen2']
+
     # main calc_bt_ice() block
-    vh37chk = v['vh37'][0] - v['adoff'] + v['vh37'][1] * tbs['v37']
+    vh37chk = vh37[0] - adoff + vh37[1] * tbs['v37']
 
     # Compute radchk1
     is_check1 = tbs['h37'] > vh37chk
-    is_h37_lt_rc1 = tbs['h37'] < (v['radslp1'] * tbs['v37'] + v['radoff1'])
+    is_h37_lt_rc1 = tbs['h37'] < (radslp1 * tbs['v37'] + radoff1)
 
-    iclen1 = np.sqrt(
-        np.square(tbs['v37'] - v['wtp'][0]) + np.square(tbs['h37'] - v['wtp'][1])
-    )
-    is_iclen1_gt_radlen1 = iclen1 > v['radlen1']
+    iclen1 = np.sqrt(np.square(tbs['v37'] - wtp[0]) + np.square(tbs['h37'] - wtp[1]))
+    is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1 = ret_ic_32(
         tbs['v37'],
         tbs['h37'],
-        v['wtp'][0],
-        v['wtp'][1],
-        v['vh37'][0],
-        v['vh37'][1],
-        p.missval,
-        p.maxic,
+        wtp[0],
+        wtp[1],
+        vh37[0],
+        vh37[1],
+        missval,
+        maxic,
     )
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
-    # icpix1[is_h37_lt_rc1 & (iclen1 <= v['radlen1'])]
-    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > v['radlen1'])
-    icpix1[is_condition1] = iclen1[is_condition1] / v['radlen1']
+    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
+    icpix1[is_condition1] = iclen1[is_condition1] / radlen1
 
     # Compute radchk2
-    is_v19_lt_rc2 = tbs['v19'] < (v['radslp2'] * tbs['v37'] + v['radoff2'])
+    is_v19_lt_rc2 = tbs['v19'] < (radslp2 * tbs['v37'] + radoff2)
 
-    iclen2 = np.sqrt(
-        np.square(tbs['v37'] - v['wtp2'][0]) + np.square(tbs['v19'] - v['wtp2'][1])
-    )
-    is_iclen2_gt_radlen2 = iclen2 > v['radlen2']
+    iclen2 = np.sqrt(np.square(tbs['v37'] - wtp2[0]) + np.square(tbs['v19'] - wtp2[1]))
+    is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2 = ret_ic_32(
         tbs['v37'],
         tbs['v19'],
-        v['wtp2'][0],
-        v['wtp2'][1],
-        v['v1937'][0],
-        v['v1937'][1],
-        p.missval,
-        p.maxic,
+        wtp2[0],
+        wtp2[1],
+        v1937[0],
+        v1937[1],
+        missval,
+        maxic,
     )
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
-    icpix2[is_condition2] = iclen2[is_condition2] / v['radlen2']
+    icpix2[is_condition2] = iclen2[is_condition2] / radlen2
 
     ic = icpix1
     ic[~is_check1] = icpix2[~is_check1]
 
-    is_ic_is_missval = ic == p.missval
-    ic[is_ic_is_missval] = p.missval
+    is_ic_is_missval = ic == missval
+    ic[is_ic_is_missval] = missval
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
-    ic[water_arr == 1] = 0.0
-    ic[tb_mask] = p.missval
-    ic[land_mask] = p.landval
+    ic[water_mask] = 0.0
+    ic[tb_mask] = missval
+    ic[land_mask] = landval
 
     return ic
 
@@ -924,8 +1002,11 @@ def bootstrap(
     *,
     tbs: dict[str, npt.NDArray],
     params: BootstrapParams,
-    variables: Variables,
     date: dt.date,
+    hemisphere: Hemisphere,
+    # TODO: should be grid-independent. We should probably pass in the valid ice
+    # mask like we do for the pole hole and land mask via `params`
+    resolution: str,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     tb_mask = tb_data_mask(
@@ -941,91 +1022,75 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date)
-    wintrc = para_vals_vh37['wintrc']
-    wslope = para_vals_vh37['wslope']
-    wxlimt = para_vals_vh37['wxlimt']
-    ln1 = para_vals_vh37['lnline']
-    lnchk = para_vals_vh37['lnchk']
-    variables['wtp'] = para_vals_vh37['wtp']
-    variables['itp'] = para_vals_vh37['itp']
-
-    water_arr = ret_water_ssmi(
-        tbs['v37'],
-        tbs['h37'],
-        tbs['v22'],
-        tbs['v19'],
-        params.land_mask,
-        tb_mask,
-        wslope,
-        wintrc,
-        wxlimt,
-        ln1,
+    water_mask = ret_water_ssmi(
+        v37=tbs['v37'],
+        h37=tbs['h37'],
+        v22=tbs['v22'],
+        v19=tbs['v19'],
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        ln1=params.vh37_params.lnline,
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    # Set wtp, which is tp37v and tp37h
-    variables['wtp37v'] = ret_wtp_32(water_arr, tbs['v37'])
-    variables['wtp37h'] = ret_wtp_32(water_arr, tbs['h37'])
-
-    # assert these keys are not None so the typechecker does not complain.
-    assert variables['wtp37v'] is not None
-    assert variables['wtp37h'] is not None
-
-    if (variables['wtp'][0] - 10) < variables['wtp37v'] < (variables['wtp'][0] + 10):
-        variables['wtp'][0] = variables['wtp37v']
-    if (variables['wtp'][1] - 10) < variables['wtp37h'] < (variables['wtp'][1] + 10):
-        variables['wtp'][1] = variables['wtp37h']
-
-    calc_vh37 = ret_linfit_32(
+    vh37 = ret_linfit_32(
         params.land_mask,
         tb_mask,
         tbs['v37'],
         tbs['h37'],
-        ln1,
-        lnchk,
+        params.vh37_params.lnline,
+        params.vh37_params.lnchk,
         params.add1,
-        water_arr,
+        water_mask,
     )
-    variables['vh37'] = calc_vh37
 
-    variables['adoff'] = ret_adj_adoff(variables['wtp'], variables['vh37'])
+    ln2 = params.v1937_params.lnline
+    wtp2_default = params.v1937_params.water_tie_point
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date)
-    ln2 = para_vals_v1937['lnline']
-    variables['wtp2'] = para_vals_v1937['wtp']
-    variables['itp2'] = para_vals_v1937['itp']
-    variables['v1937'] = para_vals_v1937['iceline']
+    wtp, wtp2 = get_water_tiepoints(
+        water_mask=water_mask,
+        tb_v37=tbs['v37'],
+        tb_h37=tbs['h37'],
+        tb_v19=tbs['v19'],
+        wtp1_default=params.vh37_params.water_tie_point,
+        wtp2_default=wtp2_default,
+    )
 
-    variables['wtp19v'] = ret_wtp_32(water_arr, tbs['v19'])
-
-    assert variables['wtp19v'] is not None
-
-    if (variables['wtp2'][0] - 10) < variables['wtp37v'] < (variables['wtp2'][0] + 10):
-        variables['wtp2'][0] = variables['wtp37v']
-    if (variables['wtp2'][1] - 10) < variables['wtp19v'] < (variables['wtp2'][1] + 10):
-        variables['wtp2'][1] = variables['wtp19v']
+    adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
 
     # Try the ret_para... values for v1937
-    calc_v1937 = ret_linfit_32(
+    v1937 = ret_linfit_32(
         params.land_mask,
         tb_mask,
         tbs['v37'],
         tbs['v19'],
         ln2,
-        lnchk,
+        params.vh37_params.lnchk,
         params.add2,
-        water_arr,
+        water_mask,
         tba=tbs['h37'],
-        iceline=variables['vh37'],
-        adoff=variables['adoff'],
+        iceline=vh37,
+        adoff=adoff,
     )
-    variables['v1937'] = calc_v1937
-
-    # ## LINES calculating radslp1 ... to radlen2 ###
-    variables = calc_rad_coeffs_32(variables)
 
     # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(params, variables, tbs, params.land_mask, water_arr, tb_mask)
+    iceout = calc_bt_ice(
+        missval=params.missval,
+        landval=params.landval,
+        maxic=params.maxic,
+        vh37=vh37,
+        adoff=adoff,
+        itp=params.vh37_params.ice_tie_point,
+        itp2=params.v1937_params.ice_tie_point,
+        wtp=wtp,
+        wtp2=wtp2,
+        v1937=v1937,
+        tbs=tbs,
+        land_mask=params.land_mask,
+        water_mask=water_mask,
+        tb_mask=tb_mask,
+    )
 
     # *** Do sst cleaning ***
     print(f'before sst_clean, params:\n{params}')
@@ -1035,6 +1100,8 @@ def bootstrap(
         missval=params.missval,
         landval=params.landval,
         date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     # *** Do spatial interp ***
