@@ -1,7 +1,4 @@
-"""
-get_nt_tiepoint.py
-
-Gives a table of NASA Team tiepoint(s)
+"""Gives a table of NASA Team tiepoint(s).
 
 Sample usage:
     nt_tiepoint_table[sat][hem][freq][tiepoint]
@@ -17,8 +14,7 @@ at the end of this file.
 
 
 def get_nt_tiepoint_table():
-    """
-    Returns the tiepoint table
+    """Return the tiepoint table.
 
     The structure of the table -- which are nested dictionaries -- is:
         nt_tiepoint_table[sat][hem][freq][tiepoint]
@@ -32,7 +28,6 @@ def get_nt_tiepoint_table():
       eg
         nt_tiepoint_table[f08][n][37v][ow]
     """
-
     nt_tiepoint_table = {
         # Source: pmalgos::seaice_goddard.f
         'f08': {
@@ -170,7 +165,7 @@ def get_nt_tiepoint_table():
         },
     }  # End of nt_tiepoint_table{}
 
-    '''
+    """
         # This section is a template for a future NT tiepoint set
         # Source: <How these tiepoints were calculated>
         'TBsource': {
@@ -200,7 +195,7 @@ def get_nt_tiepoint_table():
                     'ow': ,
                     'fy': ,
                     'my': }}},
-    '''
+    """
 
     return nt_tiepoint_table
 
