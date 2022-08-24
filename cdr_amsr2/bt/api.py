@@ -38,8 +38,6 @@ def amsr2_bootstrap(
         else None,
     )
 
-    variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
-
     tbs = {
         'v19': xr_tbs['v18'].data,
         'v37': xr_tbs['v36'].data,
@@ -50,7 +48,6 @@ def amsr2_bootstrap(
     conc_ds = bt.bootstrap(
         tbs=tbs,
         params=params,
-        variables=variables,
         date=date,
         hemisphere=hemisphere,
         resolution=resolution,
@@ -77,8 +74,6 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         pole_mask=None,
     )
 
-    variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables_amsru.json')
-
     tbs = {
         'v19': xr_tbs['v18'].data,
         'v37': xr_tbs['v36'].data,
@@ -89,7 +84,6 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
     conc_ds = bt.bootstrap(
         tbs=tbs,
         params=params,
-        variables=variables,
         date=date,
         hemisphere=hemisphere,
         resolution='6.25',
@@ -121,7 +115,6 @@ def original_f18_example() -> xr.Dataset:
         land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution='25'),
         pole_mask=get_ps_pole_hole_mask(resolution='25'),
     )
-    variables = import_cfg_file(PACKAGE_DIR / 'bt' / 'ret_ic_variables.json')
 
     otbs: dict[str, npt.NDArray[np.float32]] = {}
 
@@ -151,7 +144,6 @@ def original_f18_example() -> xr.Dataset:
     conc_ds = bt.bootstrap(
         tbs=otbs,
         params=params,
-        variables=variables,
         date=dt.date(2018, 2, 17),
         hemisphere=hemisphere,
         resolution='25',
