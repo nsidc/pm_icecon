@@ -62,11 +62,6 @@ class TbSetParams(ConfigBaseModel):
     """
 
     lnline: tuple[float, float]
-    # TODO: is `iceline` needed? It is NOT currently used in the code.
-    iceline: tuple[float, float]
-    # TODO: does `lnchk` need to be set per tb set? Or is this a higher-level
-    # param? Currently just the `lnchk` from the `vh37` params gets used.
-    lnchk: float = 1.5
 
 
 class BootstrapParams(ConfigBaseModel):
