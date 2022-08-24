@@ -16,7 +16,10 @@ def typecheck(ctx):
     """Run mypy typechecking."""
     mypy_cfg_path = PROJECT_DIR / '.mypy.ini'
     print_and_run(
-        (f'mypy --config-file={mypy_cfg_path}' f' {PROJECT_DIR}/'),
+        (
+            f'PYTHONPATH={PROJECT_DIR} mypy --config-file={mypy_cfg_path}'
+            f' {PROJECT_DIR}/'
+        ),
         pty=True,
     )
 
