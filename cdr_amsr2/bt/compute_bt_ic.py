@@ -264,9 +264,9 @@ def ret_linfit_32(
             'This may need some additional investigation! The code from Goddard would'
             ' fall back on defaults defined by the `iceline` parameter if this'
             ' condition was met. However, it is probably better to investigate'
-            ' this situation and determine what to do on a case-by-case situtation'
+            ' this situation and determine what to do on a case-by-case basis'
             ' rather than "silently" fall back on some default values. We are not'
-            ' sure how the default values (`iceline`) were originally chosen.'
+            ' sure how the default values of (`iceline`) were originally chosen.'
         )
 
     fit_off = fadd(intrca, add)
