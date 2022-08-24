@@ -202,7 +202,7 @@ def compute_ratios(tbs, coefs) -> dict[str, npt.NDArray]:
 def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]:
     """Return the gradient ratio thresholds for this sat, hem combo."""
     gr_thresholds = {}
-    if sat == '17':
+    if sat == '17_final':
         if hem == 'north':
             gr_thresholds['3719'] = 0.050
             gr_thresholds['2219'] = 0.045

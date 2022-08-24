@@ -197,8 +197,9 @@ def get_tiepoints(
     try:
         sat = {
             'u2': 'amsru_a2',
-            '17': 'f17_final',
-            '18': 'f18_class',
+            '17_final': 'f17_final',
+            '18_class': 'f18_class',
+            '18_final': 'f18_class',
         }[satellite]
     except KeyError:
         raise NotImplementedError(

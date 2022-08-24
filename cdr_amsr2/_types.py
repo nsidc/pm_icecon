@@ -7,13 +7,10 @@ Hemisphere = Literal['north', 'south']
 #       some behavior/config.
 ValidSatellites = Literal[
     'u2',  # AU_SI25
-
-    # TODO: what does '17' really mean? Bootstrap code appears to use NRT/CLASS
-    # data parameters but NT currently assumes 17 == RSS/final data. Maybe we
-    # need to have two '17' sats here.
-    '17',  # f17 data (from CLASS for bootstrap, otherwise from RSS?)
-
-    '18',  # f18 data from CLASS
+    '17_class',  # f17 from CLASS (NRT)
+    '17_final',  # f17 from RSS (final)
+    '18_class',  # f18 data from CLASS (NRT)
+    '18_final',  # f18 data from RSS (final)
     '00',  # SMMR
     'a2l1c',
 ]

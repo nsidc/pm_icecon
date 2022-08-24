@@ -117,7 +117,7 @@ def original_f18_example() -> xr.Dataset:
     """
     hemisphere: Hemisphere = 'north'
     params = BootstrapParams(
-        sat='18',
+        sat='18_class',
         land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution='25'),
         pole_mask=get_ps_pole_hole_mask(resolution='25'),
         **F17_F18_NORTH_PARAMS,

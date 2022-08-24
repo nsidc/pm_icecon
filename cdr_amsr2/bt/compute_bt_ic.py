@@ -63,12 +63,12 @@ def tb_data_mask(
 
 def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     # NRT regressions
-    if sat == '17':
+    if sat == '17_class':
         v37 = fadd(fmul(1.0170066, v37), -4.9383355)
         h37 = fadd(fmul(1.0009720, h37), -1.3709822)
         v19 = fadd(fmul(1.0140723, v19), -3.4705583)
         v22 = fadd(fmul(0.99652931, v22), -0.82305684)
-    elif sat == '18':
+    elif sat == '18_class':
         v37 = fadd(fmul(1.0104497, v37), -3.3174017)
         h37 = fadd(fmul(0.98914390, h37), 1.2031835)
         v19 = fadd(fmul(1.0057373, v19), -0.92638520)

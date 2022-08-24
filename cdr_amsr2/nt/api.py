@@ -24,6 +24,6 @@ def original_example() -> xr.Dataset:
             dtype=np.int16,
         ).reshape(448, 304)
 
-    conc_ds = nasateam(tbs=tbs, sat='17', hemisphere='north')
+    conc_ds = nasateam(tbs=tbs, sat='17_final', hemisphere='north')
 
     return conc_ds
