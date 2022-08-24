@@ -27,8 +27,6 @@ from cdr_amsr2.config.models.bt import (
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 from cdr_amsr2.masks import get_ps_valid_ice_mask
 
-THIS_DIR = Path(__file__).parent
-
 
 def f(num):
     # return float32 of num
