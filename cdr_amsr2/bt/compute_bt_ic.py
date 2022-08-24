@@ -222,13 +222,14 @@ def linfit_32(xvals, yvals):
 
 
 def ret_linfit_32(
+    *,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
     lnline,
-    lnchk,
     add,
+    lnchk=1.5,
     water_mask,
     tba=None,
     iceline=None,
@@ -249,16 +250,27 @@ def ret_linfit_32(
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
     icnt = np.sum(np.where(is_valid, 1, 0))
+    if icnt <= 125:
+        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
 
     xvals = tbx[is_valid].astype(np.float32).flatten().astype(np.float64)
     yvals = tby[is_valid].astype(np.float32).flatten().astype(np.float64)
 
-    if icnt > 125:
-        intrca, slopeb = linfit_32(xvals, yvals)
-        fit_off = fadd(intrca, add)
-        fit_slp = f(slopeb)
-    else:
-        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
+    intrca, slopeb = linfit_32(xvals, yvals)
+
+    if slopeb > lnchk:
+        raise BootstrapAlgError(
+            f'lnchk failed. {slopeb=} > {lnchk=}. '
+            'This may need some additional investigation! The code from Goddard would'
+            ' fall back on defaults defined by the `iceline` parameter if this'
+            ' condition was met. However, it is probably better to investigate'
+            ' this situation and determine what to do on a case-by-case basis'
+            ' rather than "silently" fall back on some default values. We are not'
+            ' sure how the default values of (`iceline`) were originally chosen.'
+        )
+
+    fit_off = fadd(intrca, add)
+    fit_slp = f(slopeb)
 
     return [fit_off, fit_slp]
 
@@ -1035,18 +1047,14 @@ def bootstrap(
     )
 
     vh37 = ret_linfit_32(
-        params.land_mask,
-        tb_mask,
-        tbs['v37'],
-        tbs['h37'],
-        params.vh37_params.lnline,
-        params.vh37_params.lnchk,
-        params.add1,
-        water_mask,
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        tbx=tbs['v37'],
+        tby=tbs['h37'],
+        lnline=params.vh37_params.lnline,
+        add=params.add1,
+        water_mask=water_mask,
     )
-
-    ln2 = params.v1937_params.lnline
-    wtp2_default = params.v1937_params.water_tie_point
 
     wtp, wtp2 = get_water_tiepoints(
         water_mask=water_mask,
@@ -1054,21 +1062,20 @@ def bootstrap(
         tb_h37=tbs['h37'],
         tb_v19=tbs['v19'],
         wtp1_default=params.vh37_params.water_tie_point,
-        wtp2_default=wtp2_default,
+        wtp2_default=params.v1937_params.water_tie_point,
     )
 
     adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
 
     # Try the ret_para... values for v1937
     v1937 = ret_linfit_32(
-        params.land_mask,
-        tb_mask,
-        tbs['v37'],
-        tbs['v19'],
-        ln2,
-        params.vh37_params.lnchk,
-        params.add2,
-        water_mask,
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        tbx=tbs['v37'],
+        tby=tbs['v19'],
+        lnline=params.v1937_params.lnline,
+        add=params.add2,
+        water_mask=water_mask,
         tba=tbs['h37'],
         iceline=vh37,
         adoff=adoff,
