@@ -11,27 +11,19 @@ Note: the original Goddard code involves the following files:
 """
 
 import os
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 import numpy.typing as npt
+import xarray as xr
 
-from cdr_amsr2.config import import_cfg_file
+from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.errors import NasateamAlgError
-
-THIS_DIR = Path(__file__).parent
 
 
 def fdiv(a, b):
     return np.divide(a, b, dtype=np.float32)
-
-
-def read_tb_field_raw(tbfn):
-    # Read int16 scaled by 10 and return float32 unscaled
-    raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
-    return raw
 
 
 def nt_spatint(tbs):
@@ -41,7 +33,7 @@ def nt_spatint(tbs):
     #                      diagonally adjacent weighted 0.707
     interp_tbs = {}
     for tb in tbs.keys():
-        orig = tbs[tb]
+        orig = tbs[tb].copy()
         total = np.zeros_like(orig, dtype=np.float32)
         count = np.zeros_like(orig, dtype=np.float32)
 
@@ -90,14 +82,14 @@ def correct_spi_tbs(tbs):
     return tbs
 
 
-def get_tiepoints(sat: str, hem: str) -> dict[str, dict[str, float]]:
+def get_tiepoints(sat: ValidSatellites, hem: Hemisphere) -> dict[str, dict[str, float]]:
     """Return the tiepoints for this sat/hem combo."""
     tiepoints: dict[str, dict[str, float]] = {}
-    if sat == 'f17':
+    if sat == '17':
         tiepoints['v19'] = {}
         tiepoints['h19'] = {}
         tiepoints['v37'] = {}
-        if hem == 'n':
+        if hem == 'north':
             tiepoints['v19']['ow'] = 184.9
             tiepoints['v19']['fy'] = 248.4
             tiepoints['v19']['my'] = 220.7
@@ -235,14 +227,14 @@ def compute_ratios(tbs, coefs) -> dict[str, npt.NDArray]:
     return ratios
 
 
-def get_gr_thresholds(sat: str, hem: str) -> dict[str, float]:
+def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]:
     """Return the gradient ratio thresholds for this sat, hem combo."""
     gr_thresholds = {}
-    if sat == 'f17':
-        if hem == 'n':
+    if sat == '17':
+        if hem == 'north':
             gr_thresholds['3719'] = 0.050
             gr_thresholds['2219'] = 0.045
-        elif hem == 's':
+        else:
             gr_thresholds['3719'] = 0.053
             gr_thresholds['2219'] = 0.045
 
@@ -428,24 +420,12 @@ def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
     return new_conc
 
 
-if __name__ == '__main__':
-    # Given date, hemisphere, and input source., get tbs (multiple channels)
-    #
-
+def nasateam(
+    *, tbs: dict[str, npt.NDArray], sat: ValidSatellites, hemisphere: Hemisphere
+):
     do_exact = True
 
-    params = import_cfg_file(THIS_DIR / 'nt_sample_nh.json')
-
-    params['sat'] = 'f17'
-    params['hem'] = 'n'
-
-    print(f'{params}')
-
-    orig_tbs = {}
-    for tb in ('v19', 'h19', 'v22', 'h37', 'v37'):
-        orig_tbs[tb] = read_tb_field_raw(params['raw_fns'][tb])
-
-    spi_tbs = nt_spatint(orig_tbs)
+    spi_tbs = nt_spatint(tbs)
     if do_exact:
         # overwrites values at 4 gridcells to match the C code output.
         # TODO: move this logic to regression test.
@@ -466,7 +446,7 @@ if __name__ == '__main__':
     # ipole = 0
 
     # Calls: team( 1, 1, missing, brtemps, scale )
-    tiepoints = get_tiepoints(params['sat'], params['hem'])
+    tiepoints = get_tiepoints(sat, hemisphere)
     print(f'tiepoints: {tiepoints}')
 
     nt_coefficients = compute_nt_coefficients(tiepoints)
@@ -476,7 +456,7 @@ if __name__ == '__main__':
 
     is_valid_tbs = compute_valid_tbs(spi_tbs)
 
-    gr_thresholds = get_gr_thresholds(params['sat'], params['hem'])
+    gr_thresholds = get_gr_thresholds(sat, hemisphere)
     print(f'gr_thresholds:\n{gr_thresholds}')
 
     ratios = compute_ratios(spi_tbs, nt_coefficients)
@@ -505,5 +485,6 @@ if __name__ == '__main__':
     # Apply pole hole
     conc_pole = apply_polehole(conc_sst)
 
-    # Write output file
-    conc_pole.tofile('nt_sample_nh.dat')
+    ds = xr.Dataset({'conc': (('y', 'x'), conc_pole)})
+
+    return ds

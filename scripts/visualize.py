@@ -8,17 +8,18 @@ visualization code.
 import datetime as dt
 from pathlib import Path
 
-import cartopy.crs as ccrs
 import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
 
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch import au_si25
+from cdr_amsr2.fetch import au_si
+from cdr_amsr2.masks import get_ps_pole_hole_mask, get_ps_valid_ice_mask
 
-EXAMPLE_BT_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression/')
-EXAMPLE_BT_NC = EXAMPLE_BT_DIR / 'NH_20200101_py_NRT_amsr2.nc'  # noqa
+OUTPUT_DIR = Path('/tmp/diffs/')
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # TODO: these stolen from `seaice`'s `image` submodules. Eventually we'll want
 # to be able to generate 'standard' images using the `seaice` library, but that
@@ -74,27 +75,19 @@ COLORBOUNDS = [
     120.001,
 ]
 
-N_PROJ = ccrs.Stereographic(
-    central_latitude=90.0,
-    central_longitude=-45.0,
-    false_easting=0.0,
-    false_northing=0.0,
-    true_scale_latitude=70,
-    globe=None,
-)
 
-
-def get_example_output() -> xr.Dataset:
+def get_example_output(
+    *, hemisphere: Hemisphere, date: dt.date, resolution: au_si.AU_SI_RESOLUTIONS
+) -> xr.Dataset:
     """Get the example AMSR2 output from our python code.
 
     * Flip the data so that North is 'up'.
     * Scale the data by 10 and round to np.uint8 dtype.
     """
-    # golden = xr.open_dataset(EXAMPLE_BT_NC)
-    # example_ds = xr.open_dataset(PACKAGE_DIR / '..' / 'NH_20200101_py_NRT_amsr2.nc')
     example_ds = amsr2_bootstrap(
-        date=dt.date(2020, 1, 1),
-        hemisphere='north',
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,  # type: ignore[arg-type]
     )
     # flip the image to be 'right-side' up
     example_ds = example_ds.reindex(y=example_ds.y[::-1], x=example_ds.x)
@@ -108,115 +101,129 @@ def get_example_output() -> xr.Dataset:
     return example_ds
 
 
-def save_n_conc_image(conc_array: xr.DataArray, filepath: Path) -> None:
-    """Create an image representing the N. hemisphere conc field."""
+def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
+    """Create an image representing the conc field."""
     conc_array.plot.imshow(  # type: ignore[attr-defined]
-        ax=plt.axes((0, 0, 1, 1), projection=N_PROJ),
+        ax=ax,
         colors=COLORS,
         levels=COLORBOUNDS,
         add_colorbar=False,
         add_labels=False,
     )
-    plt.savefig(filepath, bbox_inches='tight', pad_inches=0.05)
-
-    plt.clf()
-    plt.cla()
-    plt.close()
 
 
-def get_au_si25_bt_conc() -> xr.DataArray:
-    date = dt.date(2020, 1, 1)
-    ds = au_si25._get_au_si25_data_fields(
-        base_dir=Path('/ecs/DP1/AMSA/AU_SI25.001/'),
+def get_au_si25_bt_conc(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+) -> xr.DataArray:
+    ds = au_si._get_au_si_data_fields(
+        # TODO: DRY out base dir defualt. No need to pass this around...
+        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
         date=date,
-        hemisphere='north',
+        hemisphere=hemisphere,
+        resolution=resolution,  # type: ignore[arg-type]
     )
 
     # flip the image to be 'right-side' up
     ds = ds.reindex(YDim=ds.YDim[::-1], XDim=ds.XDim)
     ds = ds.rename({'YDim': 'y', 'XDim': 'x'})
 
-    nt_conc = ds.SI_25km_NH_ICECON_DAY
-    diff = ds.SI_25km_NH_ICEDIFF_DAY
+    nt_conc = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICECON_DAY')
+    diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
     bt_conc = nt_conc + diff
 
     return bt_conc
 
 
-def _get_valid_icemask():
-    ds = xr.open_dataset(
-        '/projects/DATASETS/nsidc0622_valid_seaice_masks'
-        '/NIC_valid_ice_mask.N25km.01.1972-2007.nc'
-    )
-
-    return ds
-
-
-def _mask_data(data):
+def _mask_data(
+    data, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS, date: dt.date
+):
     aui_si25_conc_masked = data.where(data != 110, 0)
 
-    # Mask out lakes (value of 4)
-    valid_icemask = _get_valid_icemask()
+    # Mask out invalid ice (the AU_SI products have conc values in lakes. We
+    # don't include those in our valid ice masks.
+    # TODO: better to exclude lakes explicitly via the land mask?
+    valid_icemask = get_ps_valid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,
+    )
     aui_si25_conc_masked = aui_si25_conc_masked.where(
-        valid_icemask.valid_ice_flag.data != 4,
+        ~valid_icemask,
         0,
     )
 
-    # mask out pole hole
-    pole_hole_path = (
-        PACKAGE_DIR
-        / '../legacy/SB2_NRT_programs'
-        / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-    ).resolve()
-    holemask = (
-        np.fromfile(pole_hole_path, dtype=np.int16).reshape(448, 304).astype(bool)
-    )
-    aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
+    if hemisphere == 'north':
+
+        # mask out pole hole
+        holemask = get_ps_pole_hole_mask(resolution=resolution)
+        aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
 
     return aui_si25_conc_masked
 
 
-if __name__ == '__main__':
-    # Get and save an image of the NH example data produced by our python code.
-    example_ds = get_example_output()
-    save_n_conc_image(example_ds.conc, Path('/tmp/NH_20200101_py_amsr2.png'))
+def do_comparisons_au_si(
+    *,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+) -> None:
+    fig, ax = plt.subplots(
+        nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
+    )
 
-    # Do the same for the bootstrap concentration field that comes with the
-    # AU_SI25 data.
-    au_si25_conc = get_au_si25_bt_conc()
-    save_n_conc_image(au_si25_conc, Path('/tmp/NH_20200101_au_si25_amsr2.png'))
+    # Get the bootstrap concentration field that comes with the
+    # AU_SI data.
+    _ax = ax[0][0]
+    au_si25_conc = get_au_si25_bt_conc(
+        date=date, hemisphere=hemisphere, resolution=resolution
+    )
+    _ax.title.set_text(f'AU_SI{resolution} provided conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
+    save_conc_image(
+        conc_array=au_si25_conc,
+        hemisphere=hemisphere,
+        ax=_ax,
+    )
+
+    # Get the example data produced by our python code.
+    example_ds = get_example_output(
+        hemisphere=hemisphere, date=date, resolution=resolution
+    )
+    _ax = ax[0][1]
+    _ax.title.set_text('Python calculated conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
+    save_conc_image(
+        conc_array=example_ds.conc,
+        hemisphere=hemisphere,
+        ax=_ax,
+    )
 
     # Do a difference between the two images.
-    aui_si25_conc_masked = _mask_data(au_si25_conc)
+    aui_si25_conc_masked = _mask_data(au_si25_conc, hemisphere, resolution, date)
 
     diff = example_ds.conc - aui_si25_conc_masked
-    plt.clf()
-    plt.cla()
-    plt.close()
-    ax = plt.axes((0, 0, 1, 1), projection=N_PROJ)
+    _ax = ax[1][0]
+    _ax.title.set_text(f'Python minus AU_SI{resolution} conc')
+    _ax.set_xticks([])
+    _ax.set_yticks([])
     diff.plot.imshow(
-        ax=ax,
+        ax=_ax,
         add_colorbar=True,
-        transform=N_PROJ,
-        # (left, right, bottom, top)
-        extent=[-3850000.000, 3750000.0, -5350000.0, 5850000.000],
-    )
-    ax.coastlines()
-    plt.savefig(
-        '/tmp/NH_20200101_diff_amsr2.png',
-        bbox_inches='tight',
-        pad_inches=0.05,
+        add_labels=False,
     )
 
     # Histogram
-    plt.clf()
-    plt.cla()
-    plt.close()
-
     diff = diff.data.flatten()
     diff_excluding_0 = diff[diff != 0]
 
-    plt.hist(
+    _ax = ax[1][1]
+    _ax.title.set_text('Histogram of non-zero differences')
+    _ax.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),
         log=True,
@@ -224,8 +231,18 @@ if __name__ == '__main__':
 
     plt.xticks(list(range(-100, 120, 20)))
 
-    plt.savefig(
-        '/tmp/NH_20200101_diff_hist_amsr2.png',
+    fig.suptitle(f'AU_SI{resolution} {hemisphere[0].upper()}H {date:%Y-%m-%d}')
+    fig.set_size_inches(w=20, h=16)
+    fig.savefig(
+        OUTPUT_DIR / f'{resolution}km_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
         bbox_inches='tight',
         pad_inches=0.05,
+    )
+
+
+if __name__ == '__main__':
+    do_comparisons_au_si(
+        hemisphere='north',
+        date=dt.date(2022, 8, 1),
+        resolution='12',
     )

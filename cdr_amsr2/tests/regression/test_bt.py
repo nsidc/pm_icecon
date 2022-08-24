@@ -1,13 +1,11 @@
 import datetime as dt
-from pathlib import Path
 
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_equal
 
 from cdr_amsr2.bt.api import amsr2_bootstrap, original_f18_example
-
-REGRESSION_DATA_DIR = Path('/share/apps/amsr2-cdr/cdr_testdata')
+from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
 
 
 def test_bt_amsr2_regression():
@@ -28,6 +26,7 @@ def test_bt_amsr2_regression():
         actual_ds = amsr2_bootstrap(
             date=date,
             hemisphere='north',
+            resolution='25',
         )
 
         assert_equal(
