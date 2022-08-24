@@ -55,10 +55,10 @@ class TbSetParams(ConfigBaseModel):
     """
 
     ice_tie_point: Tiepoint
-    """Starting or 'default' ice tie point (itp) for this Tb set.
+    """Ice tie point (itp) for this Tb set.
 
-    A new itp is calculated and used if the calculated wtp is within +/- 10 of
-    the given itp.
+    Used to calculate the coefficients `radslp` `radoff` `radlen`. See
+    `calc_rad_coeffs_32`.
     """
 
     lnline: tuple[float, float]
