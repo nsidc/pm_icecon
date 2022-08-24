@@ -19,7 +19,7 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.errors import NasateamAlgError
+from cdr_amsr2.nt.tiepoints import get_tiepoints
 
 
 def fdiv(a, b):
@@ -82,34 +82,6 @@ def correct_spi_tbs(tbs):
     return tbs
 
 
-def get_tiepoints(sat: ValidSatellites, hem: Hemisphere) -> dict[str, dict[str, float]]:
-    """Return the tiepoints for this sat/hem combo."""
-    tiepoints: dict[str, dict[str, float]] = {}
-    if sat == '17':
-        tiepoints['v19'] = {}
-        tiepoints['h19'] = {}
-        tiepoints['v37'] = {}
-        if hem == 'north':
-            tiepoints['v19']['ow'] = 184.9
-            tiepoints['v19']['fy'] = 248.4
-            tiepoints['v19']['my'] = 220.7
-
-            tiepoints['h19']['ow'] = 113.4
-            tiepoints['h19']['fy'] = 232.0
-            tiepoints['h19']['my'] = 196.0
-
-            tiepoints['v37']['ow'] = 207.1
-            tiepoints['v37']['fy'] = 242.3
-            tiepoints['v37']['my'] = 188.5
-
-            have_combo = True
-
-    if have_combo:
-        return tiepoints
-    else:
-        raise NasateamAlgError(f'No such combo for tiepoints: sat: {sat}, hem: {hem}')
-
-
 def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]:
     """Compute coefficients for the NT algorithm.
 
@@ -125,12 +97,12 @@ def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]
     sums: dict[str, dict[str, Any]] = {}
     for tiepoint in ('ow', 'fy', 'my'):
         diff[tiepoint] = {}
-        diff[tiepoint]['19v19h'] = tp['v19'][tiepoint] - tp['h19'][tiepoint]
-        diff[tiepoint]['37v19v'] = tp['v37'][tiepoint] - tp['v19'][tiepoint]
+        diff[tiepoint]['19v19h'] = tp['19v'][tiepoint] - tp['19h'][tiepoint]
+        diff[tiepoint]['37v19v'] = tp['37v'][tiepoint] - tp['19v'][tiepoint]
 
         sums[tiepoint] = {}
-        sums[tiepoint]['19v19h'] = tp['v19'][tiepoint] + tp['h19'][tiepoint]
-        sums[tiepoint]['37v19v'] = tp['v37'][tiepoint] + tp['v19'][tiepoint]
+        sums[tiepoint]['19v19h'] = tp['19v'][tiepoint] + tp['19h'][tiepoint]
+        sums[tiepoint]['37v19v'] = tp['37v'][tiepoint] + tp['19v'][tiepoint]
 
     coefs = {}
 
@@ -446,7 +418,7 @@ def nasateam(
     # ipole = 0
 
     # Calls: team( 1, 1, missing, brtemps, scale )
-    tiepoints = get_tiepoints(sat, hemisphere)
+    tiepoints = get_tiepoints(satellite=sat, hemisphere=hemisphere)
     print(f'tiepoints: {tiepoints}')
 
     nt_coefficients = compute_nt_coefficients(tiepoints)
