@@ -1,3 +1,5 @@
+import datetime as dt
+
 import numpy as np
 import numpy.typing as npt
 
@@ -9,6 +11,7 @@ from cdr_amsr2.util import get_ps25_grid_shape
 def get_ps25_sst_mask(
     *,
     hemisphere: Hemisphere,
+    date: dt.date,
     sst_threshold=2780,
 ) -> npt.NDArray[np.bool_]:
     """Read and return the ps25 SST mask.
@@ -17,10 +20,11 @@ def get_ps25_sst_mask(
     """
     # TODO: why are the northern hemisphere files 'fixed' while the southern
     # hemisphere are not (except in one case)?
+    month_abbr = f'{date:%b}'.lower()
     if hemisphere == 'north':
-        sst_fn = 'jan.temp.zdf.ssmi_fixed_25fill.fixed'
+        sst_fn = f'{month_abbr}.temp.zdf.ssmi_fixed_25fill.fixed'
     else:
-        sst_fn = 'jan.temp.zdf.ssmi_25fill'
+        sst_fn = f'{month_abbr}.temp.zdf.ssmi_25fill'
 
     sst_path = (
         PACKAGE_DIR

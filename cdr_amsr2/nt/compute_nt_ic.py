@@ -10,6 +10,7 @@ Note: the original Goddard code involves the following files:
     3: NT ice conc, including land spillover and valid ice masking
 """
 
+import datetime as dt
 import os
 from typing import Any
 
@@ -378,6 +379,7 @@ def nasateam(
     hemisphere: Hemisphere,
     shoremap: npt.NDArray,
     minic: npt.NDArray,
+    date: dt.date,
 ):
     do_exact = True
 
@@ -438,7 +440,7 @@ def nasateam(
     )
 
     # Apply SST-threshold
-    invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere)
+    invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
     conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
 
     # Apply pole hole if in the northern hemi

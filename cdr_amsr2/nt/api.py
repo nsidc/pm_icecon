@@ -1,3 +1,4 @@
+import datetime as dt
 from pathlib import Path
 
 import numpy as np
@@ -11,12 +12,13 @@ from cdr_amsr2.util import get_ps25_grid_shape
 
 def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     """Return the concentration field example for f17_20180101."""
+    date = dt.date(2018, 1, 1)
     raw_fns = {
-        'h19': f'tb_f17_20180101_v4_{hemisphere[0].lower()}19h.bin',
-        'v19': f'tb_f17_20180101_v4_{hemisphere[0].lower()}19v.bin',
-        'v22': f'tb_f17_20180101_v4_{hemisphere[0].lower()}22v.bin',
-        'h37': f'tb_f17_20180101_v4_{hemisphere[0].lower()}37h.bin',
-        'v37': f'tb_f17_20180101_v4_{hemisphere[0].lower()}37v.bin',
+        'h19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin',
+        'v19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19v.bin',
+        'v22': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}22v.bin',
+        'h37': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}37h.bin',
+        'v37': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}37v.bin',
     }
 
     tbs = {}
@@ -50,6 +52,7 @@ def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         hemisphere=hemisphere,
         shoremap=shoremap,
         minic=minic,
+        date=date,
     )
 
     return conc_ds
