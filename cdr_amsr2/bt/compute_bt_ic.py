@@ -249,16 +249,27 @@ def ret_linfit_32(
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
     icnt = np.sum(np.where(is_valid, 1, 0))
+    if icnt <= 125:
+        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
 
     xvals = tbx[is_valid].astype(np.float32).flatten().astype(np.float64)
     yvals = tby[is_valid].astype(np.float32).flatten().astype(np.float64)
 
-    if icnt > 125:
-        intrca, slopeb = linfit_32(xvals, yvals)
-        fit_off = fadd(intrca, add)
-        fit_slp = f(slopeb)
-    else:
-        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
+    intrca, slopeb = linfit_32(xvals, yvals)
+
+    if slopeb > lnchk:
+        raise BootstrapAlgError(
+            f'lnchk failed. {slopeb=} > {lnchk=}. '
+            'This may need some additional investigation! The code from Goddard would'
+            ' fall back on defaults defined by the `iceline` parameter if this'
+            ' condition was met. However, it is probably better to investigate'
+            ' this situation and determine what to do on a case-by-case situtation'
+            ' rather than "silently" fall back on some default values. We are not'
+            ' sure how the default values (`iceline`) were originally chosen.'
+        )
+
+    fit_off = fadd(intrca, add)
+    fit_slp = f(slopeb)
 
     return [fit_off, fit_slp]
 
