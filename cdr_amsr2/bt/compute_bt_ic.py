@@ -5,20 +5,25 @@ and computes:
     iceout
 """
 
+import calendar
 import copy
 import datetime as dt
 from functools import reduce
 from pathlib import Path
-from typing import Literal, Optional, Sequence, get_args
+from typing import Optional, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import xarray as xr
-from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
-from cdr_amsr2.bt._types import ParaVals
-from cdr_amsr2.config.models.bt import BootstrapParams
+from cdr_amsr2.bt._types import Tiepoint
+from cdr_amsr2.config.models.bt import (
+    BootstrapParams,
+    WeatherFilterParams,
+    WeatherFilterParamsForSeason,
+)
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 from cdr_amsr2.masks import get_ps_valid_ice_mask
 
@@ -85,7 +90,7 @@ def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
     }
 
 
-def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
+def ret_adj_adoff(*, wtp: Tiepoint, vh37: list[float], perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is two water tie points
     # vh37 is offset and slope
@@ -108,167 +113,6 @@ def ret_adj_adoff(*, wtp: list[float], vh37: list[float], perc=0.92) -> float:
     adoff = off - new_off
 
     return adoff
-
-
-def _get_params_for_season(*, sat: str, date: dt.date, hemisphere: Hemisphere):
-    is_june_through_oct15 = (date.month >= 6 and date.month <= 9) or (
-        date.month == 10 and date.day <= 15
-    )
-
-    # Set wintrc, wslope, wxlimt
-    if sat == '00':
-        if is_june_through_oct15:
-            wintrc = 60.1667
-            wslope = 0.633333
-            wxlimt = 24.00
-        else:
-            wintrc = 53.4153
-            wslope = 0.661017
-            wxlimt = 22.00
-    elif sat == 'u2':
-        # TODO: do we need to implement the seasons 2 and 3 values for AMSR?
-        if hemisphere == 'north':
-            if is_june_through_oct15:
-                # Using the "Season 3" values from ret_parameters_amsru2.f
-                wintrc = 82.71
-                wslope = 0.5352
-                wxlimt = 23.34
-            else:
-                wintrc = 84.73
-                wslope = 0.5352
-                wxlimt = 18.39
-        else:
-            # southern hemisphere has no seasonality
-            wintrc = 85.13
-            wslope = 0.5379
-            wxlimt = 18.596
-
-    elif sat == 'a2l1c':
-        if is_june_through_oct15:
-            # Using the "Season 3" values from ret_parameters_amsru2.f
-            wintrc = 82.71
-            wslope = 0.5352
-            wxlimt = 23.34
-        else:
-            wintrc = 84.73
-            wslope = 0.5352
-            wxlimt = 18.39
-    elif sat in get_args(ValidSatellites):
-        logger.warning(
-            f'Using default seasonal values for {sat}. '
-            'You may want to consider defining satellite-specific parameters!'
-        )
-        if is_june_through_oct15:
-            if sat != '17' and sat != '18':
-                wintrc = 89.3316
-                wslope = 0.501537
-            else:
-                wintrc = 89.2000
-                wslope = 0.503750
-            wxlimt = 21.00
-        else:
-            if sat != '17' and sat != '18':
-                wintrc = 90.3355
-                wslope = 0.501537
-            else:
-                wintrc = 87.6467
-                wslope = 0.517333
-            wxlimt = 14.00
-    else:
-        raise NotImplementedError(f'No params defined for {sat}')
-
-    return {
-        'wintrc': wintrc,
-        'wslope': wslope,
-        'wxlimt': wxlimt,
-    }
-
-
-def ret_para_nsb2(
-    tbset: Literal['vh37', 'v1937'], sat: str, date: dt.date, hemisphere: Hemisphere
-) -> ParaVals:
-    # TODO: what does this do and why?
-    # reproduce effect of ret_para_nsb2()
-    # Note: instead of '1' or '2', use description of axes tb1 and tb2
-    #       to identify the TB set whose parameters are being set
-    #       So, tbset is 'v1937' or 'vh37'
-    # Note: 'sat' is a *string*, not an integer
-
-    if hemisphere == 'south' and sat != 'u2':
-        raise NotImplementedError('Southern hemisphere is only implemented for AMSR2')
-
-    print(f'in ret_para_nsb2(): sat is {sat}')
-    season_params = _get_params_for_season(sat=sat, date=date, hemisphere=hemisphere)
-
-    if sat == 'u2':
-        # Values for AMSRU
-        print(f'Setting sat values for: {sat}')
-        if hemisphere == 'north':
-            if tbset == 'vh37':
-                wtp = [207.2, 131.9]
-                itp = [256.3, 241.2]
-                lnline = [-71.99, 1.20]
-                iceline = [-30.26, 1.0564]
-                lnchk = 1.5
-            elif tbset == 'v1937':
-                wtp = [207.2, 182.4]
-                itp = [256.3, 258.9]
-                lnline = [48.26, 0.8048]
-                iceline = [110.03, 0.5759]
-                lnchk = 1.5
-        else:
-            if tbset == 'vh37':
-                wtp = [207.6, 131.9]
-                itp = [259.4, 247.3]
-                lnline = [-90.62, 1.2759]
-                iceline = [-38.31, 1.0969]
-                lnchk = 1.5
-            elif tbset == 'v1937':
-                wtp = [207.6, 182.7]
-                itp = [259.4, 261.6]
-                lnline = [62.89, 0.7618]
-                iceline = [114.26, 0.5817]
-                lnchk = 1.5
-
-    elif sat == 'a2l1c':
-        # Values for AMSRU
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [207.2, 131.9]
-            itp = [256.3, 241.2]
-            lnline = [-71.99, 1.20]
-            iceline = [-30.26, 1.0564]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [207.2, 182.4]
-            itp = [256.3, 258.9]
-            lnline = [48.26, 0.8048]
-            iceline = [110.03, 0.5759]
-            lnchk = 1.5
-    else:
-        # Values for DMSP
-        print(f'Setting sat values for: {sat}')
-        if tbset == 'vh37':
-            wtp = [201.916, 132.815]
-            itp = [255.670, 241.713]
-            lnline = [-73.5471, 1.21104]
-            iceline = [-25.9729, 1.04382]
-            lnchk = 1.5
-        elif tbset == 'v1937':
-            wtp = [201.916, 178.771]
-            itp = [255.670, 258.341]
-            lnline = [47.0061, 0.809335]
-            iceline = [112.803, 0.550296]
-            lnchk = 1.5
-
-    return {
-        **season_params,  # type: ignore
-        'wtp': wtp,
-        'itp': itp,
-        'lnline': lnline,
-        'iceline': iceline,
-        'lnchk': lnchk,
-    }
 
 
 def ret_wtp_32(
@@ -310,13 +154,19 @@ def ret_wtp_32(
 
 
 def get_water_tiepoints(
-    *, water_mask, tb_v37, tb_h37, tb_v19, wtp1_default, wtp2_default
-):
+    *,
+    water_mask,
+    tb_v37,
+    tb_h37,
+    tb_v19,
+    wtp1_default: Tiepoint,
+    wtp2_default: Tiepoint,
+) -> tuple[Tiepoint, Tiepoint]:
     def _within_plusminus_10(target_value, value) -> bool:
         return (target_value - 10) < value < (target_value + 10)
 
     # Get wtp1
-    wtp1 = copy.copy(wtp1_default)
+    wtp1 = list(copy.copy(wtp1_default))
 
     wtp37v = ret_wtp_32(water_mask, tb_v37)
     wtp37h = ret_wtp_32(water_mask, tb_h37)
@@ -329,7 +179,7 @@ def get_water_tiepoints(
         wtp1[1] = wtp37h
 
     # get wtp2
-    wtp2 = copy.copy(wtp2_default)
+    wtp2 = list(copy.copy(wtp2_default))
 
     wtp19v = ret_wtp_32(water_mask, tb_v19)
 
@@ -340,7 +190,12 @@ def get_water_tiepoints(
     if (wtp2_default[1] - 10) < wtp19v < (wtp2_default[1] + 10):
         wtp2[1] = wtp19v
 
-    return wtp1, wtp2
+    water_tiepoints: tuple[Tiepoint, Tiepoint] = (  # type: ignore[assignment]
+        tuple(wtp1),
+        tuple(wtp2),
+    )
+
+    return water_tiepoints
 
 
 def linfit_32(xvals, yvals):
@@ -469,20 +324,129 @@ def fsqt(a: npt.ArrayLike):
     return np.sqrt(a, dtype=np.float32)
 
 
+def _get_wx_params(
+    *,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+) -> WeatherFilterParams:
+    """Return weather filter params for a given date.
+
+    Given a list of `WeatherFilterParamsForSeason` and a date, return the
+    correct weather filter params.
+
+    If a date occurs between seasons, use linear interpolation to determine
+    weather filter params from the adjacent seasons.
+
+    TODO: simplify this code! Originally, I thought it would be straightforward
+    to simply create a period_range from a season start day/month and season
+    end day/month. However, seasons can span the end of the year (e.g., November
+    through April).
+
+    This code uses pandas dataframes to build up a list of dates with given
+    parameters for each season. Each season has its parameters duplicated for
+    all days in the season for the year given by `date` and year + 1. This
+    allows pandas to do linear interpolation that occurs 'across' a year.
+    """
+    monthly_dfs = []
+    for season in weather_filter_seasons:
+
+        if season.start_month > season.end_month:
+            # E.g., start_month=11 and end_month=4:
+            # season_months=[11, 12, 1, 2, 3, 4].
+            season_months = list(range(season.start_month, 12 + 1)) + list(
+                range(1, season.end_month + 1)
+            )
+
+        else:
+            season_months = list(range(season.start_month, season.end_month + 1))
+
+        for month in season_months:
+            # Default to the start of the month. If we're at the beginning of
+            # the season, then optionally use `season.start_day`.
+            start_day = 1
+            if month == season.start_month:
+                start_day = season.start_day if season.start_day else start_day
+
+            # Default to the end of the month. If we're looking at the end of
+            # the season, then optionally use `season.end_day`.
+            end_day = calendar.monthrange(date.year, month)[1]
+            if month == season.end_month:
+                end_day = season.end_day if season.end_day else end_day
+
+            periods_this_year = pd.period_range(
+                start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
+                end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
+            )
+
+            # if the date we are interested in is in this month of the season,
+            # return the weather filter params.
+            if pd.Period(date, freq='D') in periods_this_year:
+                return season.weather_filter_params
+
+            # Get the same periods for the following year. and include those in
+            # the dataframe we are building. This ensures that a date that
+            # occurs between seasons that span a year gets correctly
+            # interpolated.
+            periods_next_year = pd.period_range(
+                start=pd.Period(
+                    year=date.year + 1, month=month, day=start_day, freq='D'
+                ),
+                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
+            )
+            all_periods = list(periods_this_year) + list(periods_next_year)
+
+            monthly_dfs.append(
+                pd.DataFrame(
+                    data={
+                        key: [getattr(season.weather_filter_params, key)]
+                        * len(all_periods)
+                        for key in ('wintrc', 'wslope', 'wxlimt')
+                    },
+                    index=all_periods,
+                )
+            )
+
+    # Create a df with a period index that includes an entry for every day so
+    # that we can `loc` the date we are interested in.
+    df_with_daily_index = pd.DataFrame(
+        index=pd.period_range(
+            start=pd.Period(year=date.year, month=1, day=1, freq='D'),
+            end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
+        )
+    )
+    joined = df_with_daily_index.join(pd.concat(monthly_dfs))
+    interpolated = joined.interpolate()
+
+    return WeatherFilterParams(
+        **{
+            key: interpolated.loc[pd.Period(date, freq='D')][key]
+            for key in ('wintrc', 'wslope', 'wxlimt')
+        }
+    )
+
+
 # TODO: change the name of this function. Or, do we need different conditions
 # for non SSMI data?
 def ret_water_ssmi(
+    *,
     v37,
     h37,
     v22,
     v19,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    wslope,
-    wintrc,
-    wxlimt,
     ln1,
+    date: dt.date,
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> npt.NDArray[np.bool_]:
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=weather_filter_seasons,
+    )
+    wintrc = season_params.wintrc
+    wslope = season_params.wslope
+    wxlimt = season_params.wxlimt
+
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
@@ -1058,26 +1022,16 @@ def bootstrap(
 
     tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
 
-    para_vals_vh37 = ret_para_nsb2('vh37', params.sat, date, hemisphere)
-    wintrc = para_vals_vh37['wintrc']
-    wslope = para_vals_vh37['wslope']
-    wxlimt = para_vals_vh37['wxlimt']
-    ln1 = para_vals_vh37['lnline']
-    lnchk = para_vals_vh37['lnchk']
-    wtp1_default = para_vals_vh37['wtp']
-    itp = para_vals_vh37['itp']
-
     water_mask = ret_water_ssmi(
-        tbs['v37'],
-        tbs['h37'],
-        tbs['v22'],
-        tbs['v19'],
-        params.land_mask,
-        tb_mask,
-        wslope,
-        wintrc,
-        wxlimt,
-        ln1,
+        v37=tbs['v37'],
+        h37=tbs['h37'],
+        v22=tbs['v22'],
+        v19=tbs['v19'],
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        ln1=params.vh37_params.lnline,
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
     )
 
     vh37 = ret_linfit_32(
@@ -1085,24 +1039,21 @@ def bootstrap(
         tb_mask,
         tbs['v37'],
         tbs['h37'],
-        ln1,
-        lnchk,
+        params.vh37_params.lnline,
+        params.vh37_params.lnchk,
         params.add1,
         water_mask,
     )
 
-    para_vals_v1937 = ret_para_nsb2('v1937', params.sat, date, hemisphere)
-    ln2 = para_vals_v1937['lnline']
-    wtp2_default = para_vals_v1937['wtp']
-    itp2 = para_vals_v1937['itp']
-    v1937 = para_vals_v1937['iceline']
+    ln2 = params.v1937_params.lnline
+    wtp2_default = params.v1937_params.water_tie_point
 
     wtp, wtp2 = get_water_tiepoints(
         water_mask=water_mask,
         tb_v37=tbs['v37'],
         tb_h37=tbs['h37'],
         tb_v19=tbs['v19'],
-        wtp1_default=wtp1_default,
+        wtp1_default=params.vh37_params.water_tie_point,
         wtp2_default=wtp2_default,
     )
 
@@ -1115,7 +1066,7 @@ def bootstrap(
         tbs['v37'],
         tbs['v19'],
         ln2,
-        lnchk,
+        params.vh37_params.lnchk,
         params.add2,
         water_mask,
         tba=tbs['h37'],
@@ -1130,8 +1081,8 @@ def bootstrap(
         maxic=params.maxic,
         vh37=vh37,
         adoff=adoff,
-        itp=itp,
-        itp2=itp2,
+        itp=params.vh37_params.ice_tie_point,
+        itp2=params.v1937_params.ice_tie_point,
         wtp=wtp,
         wtp2=wtp2,
         v1937=v1937,

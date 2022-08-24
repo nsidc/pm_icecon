@@ -1,4 +1,6 @@
-from typing import Optional, TypedDict
+from typing import TypedDict
+
+Tiepoint = tuple[float, float]
 
 
 class RawFns(TypedDict):
