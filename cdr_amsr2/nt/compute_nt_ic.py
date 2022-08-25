@@ -382,6 +382,7 @@ def nasateam(
 
     # Here, the tbs are identical to the output of the Goddard code
 
+    # TODO: is this already implemented? Do we need this comment?
     # TODO: what is this 'next step to implement'?
     # The next step is to implement:
     #   seaice5con 001 2018 001 2018 TOT_CON ssmif17 n
