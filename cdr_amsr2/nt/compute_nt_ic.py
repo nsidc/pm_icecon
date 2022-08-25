@@ -287,12 +287,18 @@ def apply_nt_spillover(
     """Apply the NASA Team land spillover routine."""
     newice = conc_int16.copy()
 
+    # TODO: what do these represent? Missing data? Later (in vis code) we cast
+    # to uint8, which results in these values being clamped to 0.
     newice[shoremap == 1] = -9999
     newice[shoremap == 2] = -9998
 
-    minic[(shoremap == 5) & (minic > 200)] = 200
-    minic[(shoremap == 4) & (minic > 400)] = 400
-    minic[(shoremap == 3) & (minic > 600)] = 600
+    is_at_coast = shoremap == 5
+    is_near_coast = shoremap == 4
+    is_far_coastal = shoremap == 3
+
+    minic[is_at_coast & (minic > 200)] = 200
+    minic[is_near_coast & (minic > 400)] = 400
+    minic[is_far_coastal & (minic > 600)] = 600
 
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc_int16, dtype=np.uint8)
@@ -305,15 +311,11 @@ def apply_nt_spillover(
             rolled = np.roll(conc_int16, (joff, ioff), axis=(0, 1))
             is_rolled_low = (rolled < 150) & (rolled >= 0)
 
-            is_at_coast = shoremap == 5
-            is_near_coastal = shoremap == 4
-            is_far_coastal = shoremap == 3
-
             if offmax <= 1:
                 n_low[is_rolled_low & is_at_coast] += 1
 
             if offmax <= 2:
-                n_low[is_rolled_low & is_near_coastal] += 1
+                n_low[is_rolled_low & is_near_coast] += 1
 
             if offmax <= 3:
                 n_low[is_rolled_low & is_far_coastal] += 1
