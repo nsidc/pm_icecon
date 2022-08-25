@@ -73,17 +73,6 @@ def nt_spatint(tbs):
     return interp_tbs
 
 
-def correct_spi_tbs(tbs):
-    # Cause spatially interpolated files to *exactly* match the C code output
-    tbs['h19'][438, 300] = 1091  # instead of computed 1090
-    tbs['v19'][234, 156] = 2354  # instead of computed 2353
-    tbs['v22'][17, 183] = 2500  # instead of computed 2499
-    tbs['h37'][20, 182] = 2436  # instead of computed 2435
-    # No correction to 'v37'
-
-    return tbs
-
-
 def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]:
     """Compute coefficients for the NT algorithm.
 
@@ -389,13 +378,7 @@ def nasateam(
     minic: npt.NDArray,
     date: dt.date,
 ):
-    do_exact = True
-
     spi_tbs = nt_spatint(tbs)
-    if do_exact and hemisphere == 'north':
-        # overwrites values at 4 gridcells to match the C code output.
-        # TODO: move this logic to regression test.
-        spi_tbs = correct_spi_tbs(spi_tbs)
 
     # Here, the tbs are identical to the output of the Goddard code
 
