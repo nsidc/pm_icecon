@@ -348,10 +348,7 @@ def apply_invalid_icemask(
     return masked_conc
 
 
-def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
-    """Apply the pole hole."""
-    new_conc = conc.copy()
-
+def _get_polehole_mask():
     # TODO: pass in the pole hole as an kwarg to `nasateam`. Then only run this
     # func if the pole hole is not None.
     # TODO: this pole hole path is different than the one for bt. Are they the
@@ -367,6 +364,15 @@ def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
     print(f'  polehole max: {polehole.max()}')
 
     where_polehole = polehole == 1
+
+    return where_polehole
+
+
+def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
+    """Apply the pole hole."""
+    new_conc = conc.copy()
+
+    where_polehole = _get_polehole_mask()
     new_conc[where_polehole] = -50
 
     return new_conc
