@@ -9,6 +9,7 @@ import datetime as dt
 from pathlib import Path
 
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
 
@@ -139,38 +140,41 @@ def get_au_si25_bt_conc(
 
 
 def _mask_data(
-    data, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS, date: dt.date
+    data,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    valid_icemask,
+    pole_hole_mask=None,
 ):
     aui_si25_conc_masked = data.where(data != 110, 0)
 
     # Mask out invalid ice (the AU_SI products have conc values in lakes. We
     # don't include those in our valid ice masks.
-    # TODO: better to exclude lakes explicitly via the land mask?
-    valid_icemask = get_ps_valid_ice_mask(
-        hemisphere=hemisphere,
-        date=date,
-        resolution=resolution,
-    )
     aui_si25_conc_masked = aui_si25_conc_masked.where(
         ~valid_icemask,
         0,
     )
 
-    if hemisphere == 'north':
-
-        # mask out pole hole
-        holemask = get_ps_pole_hole_mask(resolution=resolution)
-        aui_si25_conc_masked = aui_si25_conc_masked.where(~holemask, 110)
+    if hemisphere == 'north' and pole_hole_mask:
+        aui_si25_conc_masked = aui_si25_conc_masked.where(~pole_hole_mask, 110)
 
     return aui_si25_conc_masked
 
 
-def do_comparisons_au_si(
+def do_comparisons(
     *,
+    # concentration field produced by our code
+    cdr_amsr2_conc: xr.DataArray,
+    # concentration against which the cdr_amsr2_conc will be compared.
+    comparison_conc: xr.DataArray,
     hemisphere: Hemisphere,
+    valid_icemask: npt.NDArray[np.bool_],
     date: dt.date,
-    resolution: au_si.AU_SI_RESOLUTIONS,
+    # e.g., `AU_SI25`
+    product_name: str,
+    pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ) -> None:
+    """Create figure showing comparison between concentration fields."""
     fig, ax = plt.subplots(
         nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
     )
@@ -178,38 +182,33 @@ def do_comparisons_au_si(
     # Get the bootstrap concentration field that comes with the
     # AU_SI data.
     _ax = ax[0][0]
-    au_si25_conc = get_au_si25_bt_conc(
-        date=date, hemisphere=hemisphere, resolution=resolution
-    )
-    _ax.title.set_text(f'AU_SI{resolution} provided conc')
+    _ax.title.set_text(f'{product_name} provided conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
-        conc_array=au_si25_conc,
+        conc_array=comparison_conc,
         hemisphere=hemisphere,
         ax=_ax,
     )
 
-    # Get the example data produced by our python code.
-    example_ds = get_example_output(
-        hemisphere=hemisphere, date=date, resolution=resolution
-    )
     _ax = ax[0][1]
     _ax.title.set_text('Python calculated conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
-        conc_array=example_ds.conc,
+        conc_array=cdr_amsr2_conc,
         hemisphere=hemisphere,
         ax=_ax,
     )
 
     # Do a difference between the two images.
-    aui_si25_conc_masked = _mask_data(au_si25_conc, hemisphere, resolution, date)
+    comparison_conc_masked = _mask_data(
+        comparison_conc, hemisphere, date, valid_icemask
+    )
 
-    diff = example_ds.conc - aui_si25_conc_masked
+    diff = cdr_amsr2_conc - comparison_conc_masked
     _ax = ax[1][0]
-    _ax.title.set_text(f'Python minus AU_SI{resolution} conc')
+    _ax.title.set_text(f'Python minus {product_name} conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     diff.plot.imshow(
@@ -232,17 +231,56 @@ def do_comparisons_au_si(
 
     plt.xticks(list(range(-100, 120, 20)))
 
-    fig.suptitle(f'AU_SI{resolution} {hemisphere[0].upper()}H {date:%Y-%m-%d}')
+    fig.suptitle(f'{product_name} {hemisphere[0].upper()}H {date:%Y-%m-%d}')
     fig.set_size_inches(w=20, h=16)
     fig.savefig(
-        OUTPUT_DIR / f'{resolution}km_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
+        OUTPUT_DIR / f'{product_name}_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
         bbox_inches='tight',
         pad_inches=0.05,
     )
 
 
+def do_comparisons_au_si_bt(
+    *,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+) -> None:
+    """Create figure showing comparison for AU_SI{25|12}."""
+    au_si25_conc = get_au_si25_bt_conc(
+        date=date, hemisphere=hemisphere, resolution=resolution
+    )
+
+    # Get the example data produced by our python code.
+    example_ds = get_example_output(
+        hemisphere=hemisphere, date=date, resolution=resolution
+    )
+
+    # TODO: better to exclude lakes explicitly via the land mask?
+    valid_icemask = get_ps_valid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,
+    )
+
+    if hemisphere == 'north':
+        holemask = get_ps_pole_hole_mask(resolution=resolution)
+    else:
+        holemask = None
+
+    do_comparisons(
+        cdr_amsr2_conc=example_ds.conc,
+        comparison_conc=au_si25_conc,
+        hemisphere=hemisphere,
+        valid_icemask=valid_icemask,
+        date=date,
+        product_name=f'AU_SI{resolution}',
+        pole_hole_mask=holemask,
+    )
+
+
 if __name__ == '__main__':
-    do_comparisons_au_si(
+    do_comparisons_au_si_bt(
         hemisphere='north',
         date=dt.date(2022, 8, 1),
         resolution='12',
