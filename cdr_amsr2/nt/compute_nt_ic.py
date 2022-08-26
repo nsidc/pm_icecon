@@ -10,6 +10,7 @@ Note: the original Goddard code involves the following files:
     3: NT ice conc, including land spillover and valid ice masking
 """
 
+import datetime as dt
 import os
 from typing import Any
 
@@ -19,6 +20,7 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.nt.masks import get_ps25_sst_mask
 from cdr_amsr2.nt.tiepoints import get_tiepoints
 
 
@@ -279,24 +281,10 @@ def compute_nt_conc(
     return conc
 
 
-def apply_nt_spillover(conc_int16: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
+def apply_nt_spillover(
+    *, conc_int16: npt.NDArray[np.int16], shoremap: npt.NDArray, minic: npt.NDArray
+) -> npt.NDArray[np.int16]:
     """Apply the NASA Team land spillover routine."""
-    shoremap_fn = (
-        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/shoremap_north_25'
-    )
-    shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(448, 304)
-    print(f'Read shoremap from:\n  .../{os.path.basename(shoremap_fn)}')
-    print(f'  shoremap min: {shoremap.min()}')
-    print(f'  shoremap max: {shoremap.max()}')
-
-    minic_fn = (
-        PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps/SSMI8_monavg_min_con'
-    )
-    minic = np.fromfile(minic_fn, dtype='>i2')[150:].reshape(448, 304)
-    print(f'Read minic from:\n  .../{os.path.basename(minic_fn)}')
-    print(f'  minic min: {minic.min()}')
-    print(f'  minic max: {minic.max()}')
-
     newice = conc_int16.copy()
 
     newice[shoremap == 1] = -9999
@@ -351,31 +339,23 @@ def apply_nt_spillover(conc_int16: npt.NDArray[np.int16]) -> npt.NDArray[np.int1
     return newice
 
 
-def apply_sst(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
-    """Apply the sst filter."""
-    sst_threshold = 2780
-    sst = conc.copy()
+def apply_invalid_icemask(
+    *, conc: npt.NDArray[np.int16], invalid_ice_mask: npt.NDArray[np.bool_]
+) -> npt.NDArray[np.int16]:
+    """Replace all `True` elements in the invalid ice mask with 0."""
+    masked_conc = np.where(invalid_ice_mask, 0, conc.copy())
 
-    sst_fn = (
-        PACKAGE_DIR
-        / '../legacy'
-        / 'nt_orig/DATAFILES/data36/SST/North/jan.temp.zdf.ssmi_fixed_25fill.fixed'
-    )
-    sst_field = np.fromfile(sst_fn, dtype='>i2')[150:].reshape(448, 304)
-    print(f'Read sst from:\n  .../{os.path.basename(sst_fn)}')
-    print(f'  sst_field min: {sst_field.min()}')
-    print(f'  sst_field max: {sst_field.max()}')
-
-    where_sst_high = sst_field >= sst_threshold
-    sst[where_sst_high] = 0
-
-    return sst
+    return masked_conc
 
 
 def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
     """Apply the pole hole."""
     new_conc = conc.copy()
 
+    # TODO: pass in the pole hole as an kwarg to `nasateam`. Then only run this
+    # func if the pole hole is not None.
+    # TODO: this pole hole path is different than the one for bt. Are they the
+    # same data?
     polehole_fn = (
         PACKAGE_DIR
         / '..'
@@ -393,12 +373,18 @@ def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
 
 
 def nasateam(
-    *, tbs: dict[str, npt.NDArray], sat: ValidSatellites, hemisphere: Hemisphere
+    *,
+    tbs: dict[str, npt.NDArray],
+    sat: ValidSatellites,
+    hemisphere: Hemisphere,
+    shoremap: npt.NDArray,
+    minic: npt.NDArray,
+    date: dt.date,
 ):
     do_exact = True
 
     spi_tbs = nt_spatint(tbs)
-    if do_exact:
+    if do_exact and hemisphere == 'north':
         # overwrites values at 4 gridcells to match the C code output.
         # TODO: move this logic to regression test.
         spi_tbs = correct_spi_tbs(spi_tbs)
@@ -449,14 +435,18 @@ def nasateam(
     # conc_int16.tofile('conc_raw_py.dat')
 
     # Apply NT-land spillover filter
-    conc_spill = apply_nt_spillover(conc_int16)
+    conc_spill = apply_nt_spillover(
+        conc_int16=conc_int16, shoremap=shoremap, minic=minic
+    )
 
     # Apply SST-threshold
-    conc_sst = apply_sst(conc_spill)
+    invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
+    conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
 
-    # Apply pole hole
-    conc_pole = apply_polehole(conc_sst)
+    # Apply pole hole if in the northern hemi
+    if hemisphere == 'north':
+        conc = apply_polehole(conc)
 
-    ds = xr.Dataset({'conc': (('y', 'x'), conc_pole)})
+    ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
     return ds

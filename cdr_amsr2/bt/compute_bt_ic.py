@@ -19,13 +19,13 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.bt._types import Tiepoint
+from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
 from cdr_amsr2.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
-from cdr_amsr2.masks import get_ps_valid_ice_mask
 
 
 def f(num):
