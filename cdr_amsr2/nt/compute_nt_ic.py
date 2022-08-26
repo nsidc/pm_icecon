@@ -17,6 +17,7 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
+from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import PACKAGE_DIR
@@ -193,7 +194,12 @@ def compute_ratios(tbs, coefs) -> dict[str, npt.NDArray]:
 def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]:
     """Return the gradient ratio thresholds for this sat, hem combo."""
     gr_thresholds = {}
-    if sat == '17_final':
+    if sat == '17_final' or sat == 'u2':
+        if sat == 'u2':
+            logger.warning(
+                'The graident threshold values were stolen from f17_final!'
+                ' Do we need new ones for AMSR2? How do we get them?'
+            )
         if hem == 'north':
             gr_thresholds['3719'] = 0.050
             gr_thresholds['2219'] = 0.045

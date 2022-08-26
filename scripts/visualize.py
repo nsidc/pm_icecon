@@ -13,15 +13,15 @@ import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
 
-from cdr_amsr2.util import get_ps25_grid_shape
 import cdr_amsr2.nt.compute_nt_ic as nt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
-from cdr_amsr2.nt.api import original_example
+from cdr_amsr2.nt.api import amsr2_nasateam, original_example
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
+from cdr_amsr2.util import get_ps25_grid_shape
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -128,7 +128,7 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
     )
 
 
-def get_au_si25_bt_conc(
+def get_au_si_bt_nt_conc(
     *,
     date: dt.date,
     hemisphere: Hemisphere,
@@ -150,7 +150,7 @@ def get_au_si25_bt_conc(
     diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
     bt_conc = nt_conc + diff
 
-    return bt_conc
+    return (bt_conc, nt_conc)
 
 
 def _mask_data(
@@ -261,7 +261,7 @@ def do_comparisons_au_si_bt(  # noqa
     resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> None:
     """Create figure showing comparison for AU_SI{25|12}."""
-    au_si25_conc = get_au_si25_bt_conc(
+    au_si25_conc, _ = get_au_si_bt_nt_conc(
         date=date, hemisphere=hemisphere, resolution=resolution
     )
 
@@ -293,30 +293,32 @@ def do_comparisons_au_si_bt(  # noqa
     )
 
 
+def _fix_conc_field_for_nt(ds):
+    # land == 25. Concentrations > 100 exist. # pole hole/missing == 252. We'll
+    # need to 'fix' this so that visualizations come out looking right
+    # (colorbar)
+    new_ds = ds.copy()
+
+    # Account for concentrations > 100.
+    # TODO: this logic should probably be moved to the nasateam alg.
+    new_ds['conc'] = xr.where(
+        (new_ds.conc > 100) & (new_ds.conc < 200), 100, new_ds.conc
+    )
+
+    # Make the nt output land value the expected land value
+    # TODO: how is 25 land and not a valid conc value?
+    new_ds['conc'] = xr.where(new_ds.conc == 25, 120, new_ds.conc)
+
+    # Make the missing areas the expected missing value (110)
+    new_ds['conc'] = xr.where(new_ds.conc == 252, 110, new_ds.conc)
+
+    return new_ds
+
+
 def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
     """Compare original examples from Goddard for nasateam."""
     # TODO: our api for nasateam and bootstrap should return consistent fields
     # (same pole hole / missing value, 'right-side' up, etc.
-    def _fix_conc_field(ds):
-        # land == 25. Concentrations > 100 exist. # pole hole/missing == 252. We'll
-        # need to 'fix' this so that visualizations come out looking right
-        # (colorbar)
-        new_ds = ds.copy()
-
-        # Account for concentrations > 100.
-        # TODO: this logic should probably be moved to the nasateam alg.
-        new_ds['conc'] = xr.where(
-            (new_ds.conc > 100) & (new_ds.conc < 200), 100, new_ds.conc
-        )
-
-        # Make the nt output land value the expected land value
-        # TODO: how is 25 land and not a valid conc value?
-        new_ds['conc'] = xr.where(new_ds.conc == 25, 120, new_ds.conc)
-
-        # Make the missing areas the expected missing value (110)
-        new_ds['conc'] = xr.where(new_ds.conc == 252, 110, new_ds.conc)
-
-        return new_ds
 
     def _read_goddard_nasateam_file(filename: Path, /):
         with open(filename, 'rb') as fp:
@@ -342,7 +344,7 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
             }
         )
     )
-    regression_conc_ds = _fix_conc_field(regression_conc_ds)
+    regression_conc_ds = _fix_conc_field_for_nt(regression_conc_ds)
 
     date = dt.date(2018, 1, 1)
     do_comparisons(
@@ -352,7 +354,35 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
         valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
         product_name='f17_final_25km',
-        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
+    )
+
+
+def do_comparison_amsr2_nt(*, hemisphere='north'):
+    date = dt.date(2022, 8, 1)
+    resolution = '25'
+
+    our_conc_ds = amsr2_nasateam(
+        date=date,
+        hemisphere=hemisphere,
+    )
+    our_conc_ds = _flip_and_scale(our_conc_ds)
+    our_conc_ds = _fix_conc_field_for_nt(our_conc_ds)
+
+    _, comparison_conc = get_au_si_bt_nt_conc(
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,
+    )
+
+    do_comparisons(
+        cdr_amsr2_conc=our_conc_ds.conc,
+        comparison_conc=comparison_conc,
+        hemisphere=hemisphere,
+        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        date=date,
+        product_name='AU_SI25',
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
     )
 
 
@@ -362,4 +392,7 @@ if __name__ == '__main__':
     #     date=dt.date(2022, 8, 1),
     #     resolution='12',
     # )
-    do_comparison_original_example_nt(hemisphere='south')
+
+    # do_comparison_original_example_nt(hemisphere='south')
+
+    do_comparison_amsr2_nt(hemisphere='north')
