@@ -7,6 +7,7 @@ import xarray as xr
 
 import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
 from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 from cdr_amsr2.bt.params.dmsp import F17_F18_NORTH_PARAMS
@@ -40,6 +41,11 @@ def amsr2_bootstrap(
             if hemisphere == 'north'
             else None
         ),
+        valid_ice_mask=get_ps_valid_ice_mask(
+            hemisphere=hemisphere,
+            date=date,
+            resolution=resolution,  # type: ignore[arg-type]
+        ),
         **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
     )
 
@@ -72,11 +78,18 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         hemisphere='north',
     )
 
+    sst_fn = Path(
+        f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
+    )
+    sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
+    is_high_sst = sst_mask == 50
+
     params = BootstrapParams(
         sat='a2l1c',
         land_mask=get_e2n625_land_mask(),
         # TODO: For now, let's NOT impose a pole hole on the A2L1C data
         pole_mask=None,
+        valid_ice_mask=is_high_sst,
         **A2L1C_NORTH_PARAMS,
     )
 
@@ -115,11 +128,18 @@ def original_f18_example() -> xr.Dataset:
     the exact grid produced by the fortran code is in
     `legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic`
     """
+    resolution: AU_SI_RESOLUTIONS = '25'
+    date = dt.date(2018, 2, 17)
     hemisphere: Hemisphere = 'north'
     params = BootstrapParams(
         sat='18_class',
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution='25'),
-        pole_mask=get_ps_pole_hole_mask(resolution='25'),
+        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+        pole_mask=get_ps_pole_hole_mask(resolution=resolution),
+        valid_ice_mask=get_ps_valid_ice_mask(
+            hemisphere=hemisphere,
+            date=date,
+            resolution=resolution,  # type: ignore[arg-type]
+        ),
         **F17_F18_NORTH_PARAMS,
     )
 
@@ -151,9 +171,9 @@ def original_f18_example() -> xr.Dataset:
     conc_ds = bt.bootstrap(
         tbs=otbs,
         params=params,
-        date=dt.date(2018, 2, 17),
+        date=date,
         hemisphere=hemisphere,
-        resolution='25',
+        resolution=resolution,
     )
 
     return conc_ds

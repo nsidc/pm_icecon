@@ -121,3 +121,5 @@ class BootstrapParams(ConfigBaseModel):
 
     vh37_params: TbSetParams
     v1937_params: TbSetParams
+
+    valid_ice_mask: npt.NDArray[np.bool_]
