@@ -1,7 +1,9 @@
 CDR_AMSR2
 ---
 
-This code package is in development.
+This code package is in development and the API is subject to change without
+notice. There is no guarantee that this code works as expected. The addition of
+tests and verification of outputs is still in progress.
 
 The code here creates sea ice concentration estimates for the NOAA CDR using
 code adapted from Goddard's Bootstrap and NASA Team algorithms.
@@ -13,11 +15,6 @@ code adapted from Goddard's Bootstrap and NASA Team algorithms.
 
 Here are python routines which replace Goddard's original Fortran code
 for production sea ice concentration.
-
-Initially, the code is simply a translation of the original Fortran code,
-and is intended to reproduce those results as similarly as possible.
-
-As it develops, this code will become more and more general
 
 ## `./cdr_amsr2/nt/`
 
@@ -73,38 +70,6 @@ in ./legacy/SB2_NRT_programs/, execute:
 
     ./gen_sample_nh_ic_for.sh
 
-Note that this will create .json files that the python code will read
-
-Output that will be compared to an original file in cdr_testdata/
-
-    ./legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic
-
-
-Additionally, json files are created. Symlink the json files to the bt
-directory:
-
-```
-cd ../../cdr_amsr2/bt
-ln -sfn ../../legacy/SB2_NRT_programs/*.json .
-```
-
-Now generate the initial Python output
-
-
-```
-cd ../../
-./scripts/gen_sample_nh_ic_py.sh
-```
-
-Output that will be compared to the output in the fortran directory:
-
-    ./cdr_amsr2/bt/NH_20180217_SB2_NRT_f18.ic
-
-# Other routines
-
-Two short comparison scripts in cdr_amsr2/bt/ used to compare 4-byte float and
-2-byte int raw binary files respectively are: fpcomp.py and i2comp.py
-
 
 # Misc. Development notes
 
@@ -114,6 +79,12 @@ This project uses `invoke` as a task runner. To see all of the available tasks:
 $ invoke -l
 Available tasks:
 
-  format.format (format)    Apply formatting standards to the codebase.
-  test.lint (test.flake8)   Run flake8 linting.
+  format.format (format)       Apply formatting standards to the codebase.
+  test.all (test)              Run all of the tests.
+  test.ci                      Run tests in CircleCI.
+  test.lint (test.flake8)      Run flake8 linting.
+  test.regression              Run regression tests.
+  test.typecheck (test.mypy)   Run mypy typechecking.
+  test.unit                    Run unit tests.
+  test.vulture                 Use `vulture` to detect dead code.
 ```
