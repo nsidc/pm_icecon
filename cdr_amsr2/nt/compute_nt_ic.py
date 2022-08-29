@@ -211,8 +211,8 @@ def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]
 
 
 def compute_weather_filtered(
-    ratios: dict[str, npt.NDArray], thres: dict[str, float]
-) -> npt.NDArray[np.bool_]:
+    conc: npt.NDArray, ratios: dict[str, npt.NDArray], thres: dict[str, float]
+) -> npt.NDArray:
     """Return a mask representing a weather filter.
 
     `True` values represent areas that should be excluded.
@@ -225,7 +225,10 @@ def compute_weather_filtered(
 
     filtered = (ratios['gr_2219'] > thres['2219']) | (ratios['gr_3719'] > thres['3719'])
 
-    return filtered
+    filtered_conc = conc.copy()
+    filtered_conc[filtered] = 0
+
+    return filtered_conc
 
 
 def compute_valid_tbs(tbs: dict[str, npt.NDArray]) -> npt.NDArray[np.bool_]:
@@ -417,13 +420,12 @@ def nasateam(
 
     ratios = compute_ratios(spi_tbs, nt_coefficients)
 
-    weather_filtered = compute_weather_filtered(ratios, gr_thresholds)
-
     conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
+    conc = compute_weather_filtered(conc, ratios, gr_thresholds)
+
 
     # Set invalid tbs and weather-filtered values
     conc[~is_valid_tbs] = -10
-    conc[weather_filtered] = 0
     conc_int16 = conc.astype(np.int16)
 
     # This "conc_int16" field is identical to that saved to:
