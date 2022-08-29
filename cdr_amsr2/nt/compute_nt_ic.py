@@ -231,13 +231,19 @@ def apply_weather_filter(
     return filtered_conc
 
 
-def compute_valid_tbs(tbs: dict[str, npt.NDArray]) -> npt.NDArray[np.bool_]:
-    """Return boolean array where TBs are valid.
+def apply_invalid_tbs_mask(
+    conc: npt.NDArray, tbs: dict[str, npt.NDArray]
+) -> npt.NDArray:
+    """Return a copy of `conc` masked where TBs are invalid.
 
-    TODO: rename to `tb_mask` or similar. Since masks usually have `True`
-    elements representing data that's masked out, invert the bool here as well.
+    Invalid elements are set to a value of -10 in the concentration field.
     """
-    return (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
+    is_valid_tbs = (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
+
+    filtered_conc = conc.copy()
+    filtered_conc[~is_valid_tbs] = -10
+
+    return filtered_conc
 
 
 def compute_nt_conc(
@@ -413,19 +419,17 @@ def nasateam(
     for c in ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'):
         print(f'  coef {c}: {nt_coefficients[c]}')
 
-    is_valid_tbs = compute_valid_tbs(spi_tbs)
-
     gr_thresholds = get_gr_thresholds(sat, hemisphere)
     print(f'gr_thresholds:\n{gr_thresholds}')
 
     ratios = compute_ratios(spi_tbs, nt_coefficients)
 
     conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
-    conc = apply_weather_filter(conc, ratios, gr_thresholds)
-
 
     # Set invalid tbs and weather-filtered values
-    conc[~is_valid_tbs] = -10
+    conc = apply_invalid_tbs_mask(conc, spi_tbs)
+    conc = apply_weather_filter(conc, ratios, gr_thresholds)
+
     conc_int16 = conc.astype(np.int16)
 
     # This "conc_int16" field is identical to that saved to:
