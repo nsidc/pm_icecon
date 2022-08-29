@@ -213,11 +213,7 @@ def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]
 def apply_weather_filter(
     conc: npt.NDArray, ratios: dict[str, npt.NDArray], thres: dict[str, float]
 ) -> npt.NDArray:
-    """Return a mask representing a weather filter.
-
-    `True` values represent areas that should be excluded.
-
-    TODO: rename this function to something like `get_weather_mask`.
+    """Return a copy of `conc` masked by the weather filter.
     """
     # Determine where array is weather-filtered
     print(f'thres 2219: {thres["2219"]}')
