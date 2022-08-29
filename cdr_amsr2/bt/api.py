@@ -61,7 +61,6 @@ def amsr2_bootstrap(
         params=params,
         date=date,
         hemisphere=hemisphere,
-        resolution=resolution,
     )
 
     return conc_ds
@@ -105,7 +104,6 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         params=params,
         date=date,
         hemisphere=hemisphere,
-        resolution='6.25',
     )
 
     return conc_ds
@@ -173,7 +171,6 @@ def original_f18_example() -> xr.Dataset:
         params=params,
         date=date,
         hemisphere=hemisphere,
-        resolution=resolution,
     )
 
     return conc_ds

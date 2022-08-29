@@ -989,7 +989,6 @@ def bootstrap(
     hemisphere: Hemisphere,
     # TODO: should be grid-independent. We should probably pass in the valid ice
     # mask like we do for the pole hole and land mask via `params`
-    resolution: str,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     tb_mask = tb_data_mask(
