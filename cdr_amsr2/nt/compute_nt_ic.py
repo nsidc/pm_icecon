@@ -211,7 +211,7 @@ def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]
 
 
 def compute_weather_filtered(
-    tbs: dict[str, npt.NDArray], ratios: dict[str, npt.NDArray], thres: dict[str, float]
+    ratios: dict[str, npt.NDArray], thres: dict[str, float]
 ) -> npt.NDArray[np.bool_]:
     """Return a mask representing a weather filter.
 
@@ -417,7 +417,7 @@ def nasateam(
 
     ratios = compute_ratios(spi_tbs, nt_coefficients)
 
-    weather_filtered = compute_weather_filtered(spi_tbs, ratios, gr_thresholds)
+    weather_filtered = compute_weather_filtered(ratios, gr_thresholds)
 
     conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
 
