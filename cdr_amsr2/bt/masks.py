@@ -11,13 +11,16 @@ from cdr_amsr2.masks import get_pss_12_validice_land_coast_array
 from cdr_amsr2.util import get_ps25_grid_shape
 
 
-def get_ps_valid_ice_mask(
+def get_ps_invalid_ice_mask(
     *,
     hemisphere: Hemisphere,
     date: dt.date,
     resolution: AU_SI_RESOLUTIONS,
 ) -> npt.NDArray[np.bool_]:
-    """Read and return the polar stereo valid ice mask."""
+    """Read and return the polar stereo invalid ice mask.
+
+    `True` values indicate areas that are masked as invalid.
+    """
     print(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')
     if hemisphere == 'north':
         if resolution == '25':

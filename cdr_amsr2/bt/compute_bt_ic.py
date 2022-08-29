@@ -524,13 +524,13 @@ def calc_rad_coeffs_32(
     }
 
 
-def sst_clean_sb2(*, iceout, missval, landval, valid_ice_mask: npt.NDArray[np.bool_]):
+def sst_clean_sb2(*, iceout, missval, landval, invalid_ice_mask: npt.NDArray[np.bool_]):
     # implement fortran's sst_clean_sb2() routine
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
     # TODO: should this be 'valid_ice_mask' or 'invalid_ice_mask'? Probably
     # `invalid_ice_mask`. Or invert the logic.
-    is_not_land_miss_sst = is_not_land & is_not_miss & valid_ice_mask
+    is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
 
     ice_sst = iceout.copy()
     ice_sst[is_not_land_miss_sst] = 0.0
@@ -1076,7 +1076,7 @@ def bootstrap(
         iceout=iceout,
         missval=params.missval,
         landval=params.landval,
-        valid_ice_mask=params.valid_ice_mask,
+        invalid_ice_mask=params.invalid_ice_mask,
     )
 
     # *** Do spatial interp ***

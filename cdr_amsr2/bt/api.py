@@ -7,7 +7,7 @@ import xarray as xr
 
 import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
-from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
+from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 from cdr_amsr2.bt.params.dmsp import F17_F18_NORTH_PARAMS
@@ -41,7 +41,7 @@ def amsr2_bootstrap(
             if hemisphere == 'north'
             else None
         ),
-        valid_ice_mask=get_ps_valid_ice_mask(
+        invalid_ice_mask=get_ps_invalid_ice_mask(
             hemisphere=hemisphere,
             date=date,
             resolution=resolution,  # type: ignore[arg-type]
@@ -89,7 +89,7 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         land_mask=get_e2n625_land_mask(),
         # TODO: For now, let's NOT impose a pole hole on the A2L1C data
         pole_mask=None,
-        valid_ice_mask=is_high_sst,
+        invalid_ice_mask=is_high_sst,
         **A2L1C_NORTH_PARAMS,
     )
 
@@ -135,7 +135,7 @@ def original_f18_example() -> xr.Dataset:
         sat='18_class',
         land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
         pole_mask=get_ps_pole_hole_mask(resolution=resolution),
-        valid_ice_mask=get_ps_valid_ice_mask(
+        invalid_ice_mask=get_ps_invalid_ice_mask(
             hemisphere=hemisphere,
             date=date,
             resolution=resolution,  # type: ignore[arg-type]

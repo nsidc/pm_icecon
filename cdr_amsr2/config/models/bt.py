@@ -122,4 +122,5 @@ class BootstrapParams(ConfigBaseModel):
     vh37_params: TbSetParams
     v1937_params: TbSetParams
 
-    valid_ice_mask: npt.NDArray[np.bool_]
+    invalid_ice_mask: npt.NDArray[np.bool_]
+    """Mask representing areas that are invalid for sea ice."""
