@@ -1,5 +1,5 @@
 """
-create_doymask_psn25.py
+create_doymasks.py
 
 Starting with raw day-of-year if-ever valid ice masks,
 create 3-day rolling if-ever masks

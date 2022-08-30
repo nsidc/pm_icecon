@@ -20,7 +20,7 @@ fi
 # output: ./bt_doymasks_raw/ files, both NH and SH
 raw_doymask_dir=./bt_doymasks_raw
 if [ ! -d $raw_doymask_dir ]; then
-  python ./make_doy_raw_icemask_pss25.py
+  python ./make_doy_raw_icemasks.py
 else
   echo "Using existing raw doymasks in: $raw_doymask_dir"
 fi
@@ -28,7 +28,7 @@ fi
 # Use the one-day masks to create 3-day masks
 sh_doydir=./bt_doymasks_sh
 if [ ! -d $sh_doydir ]; then
-  python ./create_doymask_pss25.py
+  python ./create_doymasks.py
 else
   echo "Using doymasks in existing sh doymask dir: $sh_doydir"
 fi
