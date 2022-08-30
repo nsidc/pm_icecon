@@ -25,7 +25,7 @@ def test_nt_f17_regression_north():
 
     # min/max are the same, but 10 pixels differ
     # ipdb> not_eq = actual_ds.conc.data != regression_data
-    # ipdb> actual_data[not_eq]
+    # ipdb> actual_ds.conc.data[not_eq]
     # array([  0, 161, 280, 138, 166,  80, 261, 242, 111,  79], dtype=int16)
     # ipdb> regression_data[not_eq]
     # array([301, 187, 322, 393, 218, 593, 369, 253, 396, 571], dtype=int16)
