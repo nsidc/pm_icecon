@@ -1,7 +1,4 @@
-"""
-generate_nt_amsru_masks.py
-
-Extract the NH and SH land masks for 25km and 12.5km
+"""Extract the NH and SH land masks for 25km and 12.5km.
 
 Note: The input files for this routine are:
     NT ancillary files:
