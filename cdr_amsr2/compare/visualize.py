@@ -294,70 +294,7 @@ def do_comparisons_au_si_bt(  # noqa
     )
 
 
-def do_comparison_original_example_nt(*, hemisphere: Hemisphere):  # noqa
-    """Compare original examples from Goddard for nasateam."""
-    # TODO: our api for nasateam and bootstrap should return consistent fields
-    # (same pole hole / missing value, 'right-side' up, etc.
-    def _fix_conc_field(ds):
-        # land == 25. Concentrations > 100 exist. # pole hole/missing == 252. We'll
-        # need to 'fix' this so that visualizations come out looking right
-        # (colorbar)
-        new_ds = ds.copy()
-
-        # Account for concentrations > 100.
-        # TODO: this logic should probably be moved to the nasateam alg.
-        new_ds['conc'] = xr.where(
-            (new_ds.conc > 100) & (new_ds.conc < 200), 100, new_ds.conc
-        )
-
-        # Make the nt output land value the expected land value
-        # TODO: how is 25 land and not a valid conc value?
-        new_ds['conc'] = xr.where(new_ds.conc == 25, 120, new_ds.conc)
-
-        # Make the missing areas the expected missing value (110)
-        new_ds['conc'] = xr.where(new_ds.conc == 252, 110, new_ds.conc)
-
-        return new_ds
-
-    def _read_goddard_nasateam_file(filename: Path, /):
-        with open(filename, 'rb') as fp:
-            fp.read(300)
-            data = np.fromfile(fp, dtype='>i2')
-        return data
-
-    our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
-    our_conc_ds = _fix_conc_field(our_conc_ds)
-    regression_conc_ds = _flip_and_scale(
-        xr.Dataset(
-            {
-                'conc': (
-                    ('y', 'x'),
-                    _read_goddard_nasateam_file(
-                        (
-                            Path('/share/apps/amsr2-cdr/cdr_testdata')
-                            / 'nt_f17_regression'
-                            / f'{hemisphere[0]}ssss1d17tcon2018001.spill_sst'
-                        )
-                    ).reshape(get_ps25_grid_shape(hemisphere=hemisphere)),
-                )
-            }
-        )
-    )
-    regression_conc_ds = _fix_conc_field(regression_conc_ds)
-
-    date = dt.date(2018, 1, 1)
-    do_comparisons(
-        cdr_amsr2_conc=our_conc_ds.conc,
-        comparison_conc=regression_conc_ds.conc,
-        hemisphere=hemisphere,
-        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
-        date=date,
-        product_name='f17_final_25km',
-        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
-    )
-
-
-def compare_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
     our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
     our_conc_ds['conc'] = xr.where(
         (our_conc_ds.conc > 100) & (our_conc_ds.conc < 200), 100, our_conc_ds.conc
@@ -388,5 +325,4 @@ if __name__ == '__main__':
     #     date=dt.date(2022, 8, 1),
     #     resolution='12',
     # )
-    # do_comparison_original_example_nt(hemisphere='south')
-    compare_nt_to_sii(hemisphere='north')
+    compare_original_nt_to_sii(hemisphere='north')
