@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 from numpy.testing import assert_equal
 
-from cdr_amsr2.util import get_ps25_grid_shape
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
+from cdr_amsr2.util import get_ps25_grid_shape
 
 
 def _read_goddard_nasateam_file(filename: Path, /) -> np.ndarray:

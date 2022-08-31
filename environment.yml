@@ -1,6 +1,7 @@
 name: cdr_amsr2
 channels:
   - conda-forge
+  - nsidc
   - nodefaults
 dependencies:
   # Testing/utilities
@@ -33,3 +34,4 @@ dependencies:
   - loguru ~=0.6
   - pydantic ~=1.9
   - pandas ~=1.4.2
+  - seaice ~=5.0.0

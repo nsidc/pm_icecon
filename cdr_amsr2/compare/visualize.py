@@ -13,15 +13,16 @@ import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
 
-from cdr_amsr2.util import get_ps25_grid_shape
 import cdr_amsr2.nt.compute_nt_ic as nt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
+from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
+from cdr_amsr2.util import get_ps25_grid_shape
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -293,7 +294,7 @@ def do_comparisons_au_si_bt(  # noqa
     )
 
 
-def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
+def do_comparison_original_example_nt(*, hemisphere: Hemisphere):  # noqa
     """Compare original examples from Goddard for nasateam."""
     # TODO: our api for nasateam and bootstrap should return consistent fields
     # (same pole hole / missing value, 'right-side' up, etc.
@@ -356,10 +357,36 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
     )
 
 
+def compare_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+    our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
+    our_conc_ds['conc'] = xr.where(
+        (our_conc_ds.conc > 100) & (our_conc_ds.conc < 200), 100, our_conc_ds.conc
+    )
+    our_conc_ds['conc'] = our_conc_ds.conc.where(our_conc_ds.conc != 25, 120)
+
+    date = dt.date(2018, 1, 1)
+    sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
+    # Change the seaice land values to look like ours (120)
+    sii_conc_ds['conc'] = sii_conc_ds.conc.where(sii_conc_ds.conc != 254, 120)
+    # Do the same for coast values
+    sii_conc_ds['conc'] = sii_conc_ds.conc.where(sii_conc_ds.conc != 253, 120)
+
+    do_comparisons(
+        cdr_amsr2_conc=our_conc_ds.conc,
+        comparison_conc=sii_conc_ds.conc,
+        hemisphere=hemisphere,
+        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        date=date,
+        product_name='SII_25km',
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
+    )
+
+
 if __name__ == '__main__':
     # do_comparisons_au_si_bt(
     #     hemisphere='north',
     #     date=dt.date(2022, 8, 1),
     #     resolution='12',
     # )
-    do_comparison_original_example_nt(hemisphere='south')
+    # do_comparison_original_example_nt(hemisphere='south')
+    compare_nt_to_sii(hemisphere='north')
