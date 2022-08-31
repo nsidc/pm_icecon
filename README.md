@@ -1,12 +1,16 @@
-CDR_AMSR2
+NSIDC Sea Ice Concentrations from Passive Microwave Data
 ---
 
 This code package is in development and the API is subject to change without
 notice. There is no guarantee that this code works as expected. The addition of
 tests and verification of outputs is still in progress.
 
-The code here creates sea ice concentration estimates for the NOAA CDR using
-code adapted from Goddard's Bootstrap and NASA Team algorithms.
+The code here creates sea ice concentration estimates from passive microwave
+data using code adapted from NASA Goddard's Bootstrap and NASA Team algorithms.
+
+For more informaton about Bootstrap and NASA Team algorithms, see [Descriptions
+of and Differences between the NASA Team and Bootstrap
+Algorithms](https://nsidc.org/data/user-resources/help-center/descriptions-and-differences-between-nasa-team-and-bootstrap)
 
 
 # Directory contents:
