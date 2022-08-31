@@ -22,7 +22,6 @@ from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
-from cdr_amsr2.util import get_ps25_grid_shape
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -180,13 +179,16 @@ def do_comparisons(
     *,
     # concentration field produced by our code
     cdr_amsr2_conc: xr.DataArray,
+    # e.g., `AU_SI25`
+    cdr_amsr2_dataproduct: str,
+    cdr_amsr2_algorithm: str,
     # concentration against which the cdr_amsr2_conc will be compared.
     comparison_conc: xr.DataArray,
+    # E.g., 'SII'
+    comparison_dataproduct: str,
     hemisphere: Hemisphere,
     valid_icemask: npt.NDArray[np.bool_],
     date: dt.date,
-    # e.g., `AU_SI25`
-    product_name: str,
     pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ) -> None:
     """Create figure showing comparison between concentration fields."""
@@ -194,10 +196,9 @@ def do_comparisons(
         nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
     )
 
-    # Get the bootstrap concentration field that comes with the
-    # AU_SI data.
+    # Visualize the comparison conc.
     _ax = ax[0][0]
-    _ax.title.set_text(f'{product_name} provided conc')
+    _ax.title.set_text(f'{comparison_dataproduct} provided conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
@@ -207,7 +208,10 @@ def do_comparisons(
     )
 
     _ax = ax[0][1]
-    _ax.title.set_text('Python calculated conc')
+    _ax.title.set_text(
+        f'Python calculated conc from {cdr_amsr2_dataproduct}'
+        f' using the {cdr_amsr2_algorithm} algorithm.'
+    )
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
@@ -223,7 +227,7 @@ def do_comparisons(
 
     diff = cdr_amsr2_conc - comparison_conc_masked
     _ax = ax[1][0]
-    _ax.title.set_text(f'Python minus {product_name} conc')
+    _ax.title.set_text('Python minus comparison conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     diff.plot.imshow(
@@ -246,10 +250,19 @@ def do_comparisons(
 
     plt.xticks(list(range(-100, 120, 20)))
 
-    fig.suptitle(f'{product_name} {hemisphere[0].upper()}H {date:%Y-%m-%d}')
+    fig.suptitle(
+        f'{cdr_amsr2_dataproduct} vs {comparison_dataproduct}'
+        f' {hemisphere[0].upper()}H {date:%Y-%m-%d}'
+    )
     fig.set_size_inches(w=20, h=16)
     fig.savefig(
-        OUTPUT_DIR / f'{product_name}_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
+        (
+            OUTPUT_DIR
+            / (
+                f'{cdr_amsr2_dataproduct}_vs_{comparison_dataproduct}'
+                f'_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png'
+            )
+        ),
         bbox_inches='tight',
         pad_inches=0.05,
     )
@@ -289,7 +302,9 @@ def do_comparisons_au_si_bt(  # noqa
         hemisphere=hemisphere,
         valid_icemask=valid_icemask,
         date=date,
-        product_name=f'AU_SI{resolution}',
+        cdr_amsr2_dataproduct=f'AU_SI{resolution}',
+        cdr_amsr2_algorithm='bootstrap',
+        comparison_dataproduct=f'AU_SI{resolution}',
         pole_hole_mask=holemask,
     )
 
@@ -314,7 +329,9 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
         hemisphere=hemisphere,
         valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
-        product_name='SII_25km',
+        cdr_amsr2_dataproduct='AU_SI25',
+        cdr_amsr2_algorithm='nasateam',
+        comparison_dataproduct='SII_25km',
         pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
     )
 
