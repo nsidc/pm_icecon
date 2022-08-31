@@ -33,7 +33,6 @@ def test_nt_f17_regression_north():
     not_eq = actual_ds.conc.data != regression_data
     print(f'Number of items not equal: {np.sum(not_eq)}')
     # 10 differences (with do_exact=True).
-    breakpoint()
 
     assert_equal(
         regression_data,
