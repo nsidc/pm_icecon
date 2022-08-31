@@ -240,8 +240,22 @@ def do_comparisons(
     diff = diff.data.flatten()
     diff_excluding_0 = diff[diff != 0]
 
+    pixels_different = len(diff_excluding_0)
+    # TODO: filter total_pixels to just those that could be valid ice (not
+    # masked by land/invalid ice mask)
+    total_pixels = len(diff)
+    percent_different = (pixels_different / total_pixels) * 100
+
     _ax = ax[1][1]
-    _ax.title.set_text('Histogram of non-zero differences')
+    _ax.title.set_text(
+        'Histogram of non-zero differences'
+        '\n'
+        f'{percent_different:.3}% of pixels are different.'
+        '\n'
+        f'Min difference: {diff_excluding_0.min()}.'
+        '\n'
+        f'Max difference: {diff_excluding_0.max()}.'
+    )
     _ax.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),
