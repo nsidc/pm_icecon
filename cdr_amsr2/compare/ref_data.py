@@ -36,4 +36,9 @@ def get_sea_ice_index(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
     # create xr datasets.
     conc_ds = conc_ds.reindex(y=conc_ds.y[::-1], x=conc_ds.x)
 
+    # Change the seaice land values to look like ours (120)
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 254, 120)
+    # Do the same for coast values
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 253, 120)
+
     return conc_ds
