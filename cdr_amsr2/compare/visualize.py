@@ -323,19 +323,21 @@ def do_comparisons_au_si_bt(  # noqa
     )
 
 
-def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
-    our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
-    our_conc_ds['conc'] = xr.where(
-        (our_conc_ds.conc > 100) & (our_conc_ds.conc < 200), 100, our_conc_ds.conc
+def _fix_nt_outputs(conc_ds):
+    conc_ds = _flip_and_scale(conc_ds)
+    conc_ds['conc'] = xr.where(
+        (conc_ds.conc > 100) & (conc_ds.conc < 200), 100, conc_ds.conc
     )
-    our_conc_ds['conc'] = our_conc_ds.conc.where(our_conc_ds.conc != 25, 120)
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 25, 120)
+
+    return conc_ds
+
+
+def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+    our_conc_ds = _fix_nt_outputs(original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
     sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
-    # Change the seaice land values to look like ours (120)
-    sii_conc_ds['conc'] = sii_conc_ds.conc.where(sii_conc_ds.conc != 254, 120)
-    # Do the same for coast values
-    sii_conc_ds['conc'] = sii_conc_ds.conc.where(sii_conc_ds.conc != 253, 120)
 
     do_comparisons(
         cdr_amsr2_conc=our_conc_ds.conc,
@@ -343,11 +345,16 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
         hemisphere=hemisphere,
         valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
-        cdr_amsr2_dataproduct='AU_SI25',
+        cdr_amsr2_dataproduct='goddard_example_f17',
         cdr_amsr2_algorithm='nasateam',
         comparison_dataproduct='SII_25km',
         pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
     )
+
+
+# TODO:
+def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+    ...
 
 
 if __name__ == '__main__':
@@ -356,4 +363,5 @@ if __name__ == '__main__':
     #     date=dt.date(2022, 8, 1),
     #     resolution='12',
     # )
-    compare_original_nt_to_sii(hemisphere='north')
+    for hemisphere in ('north', 'south'):
+        compare_original_nt_to_sii(hemisphere=hemisphere)
