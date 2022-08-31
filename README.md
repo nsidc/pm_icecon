@@ -1,6 +1,6 @@
 ![NSIDC logo](/images/NSIDC_logo_2018_poster-1.png)
 ![NOAA logo](/images/noaa_at_nsidc.jpg)
-![NASA logo](/images/nasa_color-1\ gif.gif)
+![NASA logo](/images/nasa_color-1.gif)
 
 NSIDC Sea Ice Concentrations from Passive Microwave Data
 ---
