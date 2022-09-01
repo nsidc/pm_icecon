@@ -6,7 +6,7 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from cdr_amsr2.fetch.au_si import get_au_si_tbs
 from cdr_amsr2.nt.compute_nt_ic import nasateam
 from cdr_amsr2.util import get_ps25_grid_shape
 

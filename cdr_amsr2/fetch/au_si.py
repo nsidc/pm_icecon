@@ -25,6 +25,28 @@ from cdr_amsr2._types import Hemisphere
 AU_SI_RESOLUTIONS = Literal['25', '12']
 
 
+def _get_au_si_fp(base_dir: Path, date: dt.date, resolution: AU_SI_RESOLUTIONS) -> Path:
+    fn_glob = f'AMSR_U2_L3_SeaIce{resolution}km_*_{date:%Y%m%d}.he5'
+    expected_dir = base_dir / f'{date:%Y.%m.%d}'
+    results = tuple(expected_dir.glob(fn_glob))
+    if len(results) == 1:
+        return results[0]
+
+    # Fall back on recursively globbing if the file doesn't exist at the
+    # expected location.
+    results = tuple(
+        base_dir.glob(f'**/{fn_glob}')
+    )
+
+    if len(results) != 1:
+        raise FileNotFoundError(
+            f'Expected to find 1 granule for AU_SI{resolution} for {date:%Y-%m-%d}.'
+            f' Found {len(results)}.'
+        )
+
+    return results[0]
+
+
 def _get_au_si_data_fields(
     *,
     base_dir: Path,
@@ -37,17 +59,8 @@ def _get_au_si_data_fields(
     Returns an xr dataset of teh variables contained in the
     `HDFEOS/GRIDS/{N|S}pPolarGrid25km/Data Fields` group.
     """
-    results = tuple(
-        base_dir.glob(f'**/AMSR_U2_L3_SeaIce{resolution}km_*_{date:%Y%m%d}.he5')
-    )
+    granule_fp = _get_au_si_fp(base_dir=base_dir, date=date, resolution=resolution)
 
-    if len(results) != 1:
-        raise FileNotFoundError(
-            f'Expected to find 1 granule for AU_SI{resolution} for {date:%Y-%m-%d}.'
-            f' Found {len(results)}.'
-        )
-
-    granule_fp = results[0]
     ds = xr.open_dataset(
         granule_fp,
         group=(
