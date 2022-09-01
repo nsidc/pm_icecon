@@ -16,10 +16,11 @@ from matplotlib import pyplot as plt
 import cdr_amsr2.nt.compute_nt_ic as nt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
+from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
-from cdr_amsr2.nt.api import original_example
+from cdr_amsr2.nt.api import amsr2_nasateam, original_example
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
 
 OUTPUT_DIR = Path('/tmp/diffs/')
@@ -177,13 +178,16 @@ def do_comparisons(
     *,
     # concentration field produced by our code
     cdr_amsr2_conc: xr.DataArray,
+    # e.g., `AU_SI25`
+    cdr_amsr2_dataproduct: str,
+    cdr_amsr2_algorithm: str,
     # concentration against which the cdr_amsr2_conc will be compared.
     comparison_conc: xr.DataArray,
+    # E.g., 'SII'
+    comparison_dataproduct: str,
     hemisphere: Hemisphere,
     invalid_icemask: npt.NDArray[np.bool_],
     date: dt.date,
-    # e.g., `AU_SI25`
-    product_name: str,
     pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ) -> None:
     """Create figure showing comparison between concentration fields."""
@@ -191,10 +195,9 @@ def do_comparisons(
         nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
     )
 
-    # Get the bootstrap concentration field that comes with the
-    # AU_SI data.
+    # Visualize the comparison conc.
     _ax = ax[0][0]
-    _ax.title.set_text(f'{product_name} provided conc')
+    _ax.title.set_text(f'{comparison_dataproduct} provided conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
@@ -204,7 +207,10 @@ def do_comparisons(
     )
 
     _ax = ax[0][1]
-    _ax.title.set_text('Python calculated conc')
+    _ax.title.set_text(
+        f'Python calculated conc from {cdr_amsr2_dataproduct}'
+        f' using the {cdr_amsr2_algorithm} algorithm.'
+    )
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
@@ -224,7 +230,7 @@ def do_comparisons(
 
     diff = cdr_amsr2_conc - comparison_conc_masked
     _ax = ax[1][0]
-    _ax.title.set_text(f'Python minus {product_name} conc')
+    _ax.title.set_text('Python minus comparison conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
     diff.plot.imshow(
@@ -237,8 +243,22 @@ def do_comparisons(
     diff = diff.data.flatten()
     diff_excluding_0 = diff[diff != 0]
 
+    pixels_different = len(diff_excluding_0)
+    # TODO: filter total_pixels to just those that could be valid ice (not
+    # masked by land/invalid ice mask)
+    total_pixels = len(diff)
+    percent_different = (pixels_different / total_pixels) * 100
+
     _ax = ax[1][1]
-    _ax.title.set_text('Histogram of non-zero differences')
+    _ax.title.set_text(
+        'Histogram of non-zero differences'
+        '\n'
+        f'{percent_different:.3}% of pixels are different.'
+        '\n'
+        f'Min difference: {diff_excluding_0.min():.3}.'
+        '\n'
+        f'Max difference: {diff_excluding_0.max():.3}.'
+    )
     _ax.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),
@@ -247,10 +267,19 @@ def do_comparisons(
 
     plt.xticks(list(range(-100, 120, 20)))
 
-    fig.suptitle(f'{product_name} {hemisphere[0].upper()}H {date:%Y-%m-%d}')
+    fig.suptitle(
+        f'{cdr_amsr2_dataproduct} vs {comparison_dataproduct}'
+        f' {hemisphere[0].upper()}H {date:%Y-%m-%d}'
+    )
     fig.set_size_inches(w=20, h=16)
     fig.savefig(
-        OUTPUT_DIR / f'{product_name}_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png',
+        (
+            OUTPUT_DIR
+            / (
+                f'{cdr_amsr2_dataproduct}_vs_{comparison_dataproduct}'
+                f'_{hemisphere[0].upper()}H_{date:%Y-%m-%d}.png'
+            )
+        ),
         bbox_inches='tight',
         pad_inches=0.05,
     )
@@ -291,70 +320,66 @@ def do_comparisons_au_si_bt(  # noqa
         hemisphere=hemisphere,
         invalid_icemask=invalid_icemask,
         date=date,
-        product_name=f'AU_SI{resolution}',
+        cdr_amsr2_dataproduct=f'AU_SI{resolution}',
+        cdr_amsr2_algorithm='bootstrap',
+        comparison_dataproduct=f'AU_SI{resolution}',
         pole_hole_mask=holemask,
     )
 
 
-def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
-    """Compare original examples from Goddard for nasateam."""
-    if hemisphere == 'south':
-        raise NotImplementedError()
-
-    # TODO: our api for nasateam and bootstrap should return consistent fields
-    # (same pole hole / missing value, 'right-side' up, etc.
-    def _fix_conc_field(ds):
-        # land == 25. Concentrations > 100 exist. # pole hole/missing == 252. We'll
-        # need to 'fix' this so that visualizations come out looking right
-        # (colorbar)
-        new_ds = ds.copy()
-
-        # Account for concentrations > 100.
-        # TODO: this logic should probably be moved to the nasateam alg.
-        new_ds['conc'] = xr.where(
-            (new_ds.conc > 100) & (new_ds.conc < 200), 100, new_ds.conc
-        )
-
-        # Make the nt output land value the expected land value
-        # TODO: how is 25 land and not a valid conc value?
-        new_ds['conc'] = xr.where(new_ds.conc == 25, 120, new_ds.conc)
-
-        # Make the missing areas the expected missing value (110)
-        new_ds['conc'] = xr.where(new_ds.conc == 252, 110, new_ds.conc)
-
-        return new_ds
-
-    our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
-    our_conc_ds = _fix_conc_field(our_conc_ds)
-    regression_conc_ds = _flip_and_scale(
-        xr.Dataset(
-            {
-                'conc': (
-                    ('y', 'x'),
-                    np.fromfile(
-                        (
-                            Path('/share/apps/amsr2-cdr/cdr_testdata')
-                            / 'nt_f17_regression'
-                            / 'nt_sample_nh.dat'
-                        ),
-                        dtype=np.int16,
-                    ).reshape((448, 304)),
-                )
-            }
-        )
+def _fix_nt_outputs(conc_ds):
+    conc_ds = _flip_and_scale(conc_ds)
+    conc_ds['conc'] = xr.where(
+        (conc_ds.conc > 100) & (conc_ds.conc < 200), 100, conc_ds.conc
     )
-    regression_conc_ds = _fix_conc_field(regression_conc_ds)
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 25, 120)
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 252, 110)
+
+    return conc_ds
+
+
+def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
+    """Compare original examples from Goddard for nasateam."""
+    our_conc_ds = _fix_nt_outputs(original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
-    invalid_icemask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
+    sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
+
     do_comparisons(
         cdr_amsr2_conc=our_conc_ds.conc,
-        comparison_conc=regression_conc_ds.conc,
+        comparison_conc=sii_conc_ds.conc,
         hemisphere=hemisphere,
-        invalid_icemask=invalid_icemask,
+        invalid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
-        product_name='f17_final 25km',
-        pole_hole_mask=nt._get_polehole_mask(),
+        cdr_amsr2_dataproduct='goddard_example_f17',
+        cdr_amsr2_algorithm='nasateam',
+        comparison_dataproduct='SII_25km',
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
+    )
+
+
+def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+    # date = dt.date(2022, 8, 1)
+    date = dt.date(2018, 1, 1)
+
+    sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
+    our_conc_ds = _fix_nt_outputs(
+        amsr2_nasateam(
+            date=date,
+            hemisphere=hemisphere,
+        )
+    )
+
+    do_comparisons(
+        cdr_amsr2_conc=our_conc_ds.conc,
+        comparison_conc=sii_conc_ds.conc,
+        hemisphere=hemisphere,
+        invalid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        date=date,
+        cdr_amsr2_dataproduct='AU_SI25',
+        cdr_amsr2_algorithm='nasateam',
+        comparison_dataproduct='SII_25km',
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
     )
 
 
@@ -364,4 +389,6 @@ if __name__ == '__main__':
     #     date=dt.date(2022, 8, 1),
     #     resolution='12',
     # )
-    do_comparison_original_example_nt(hemisphere='north')
+    for hemisphere in ('north', 'south'):
+        # compare_original_nt_to_sii(hemisphere=hemisphere)
+        compare_amsr_nt_to_sii(hemisphere=hemisphere)  # type: ignore[arg-type]
