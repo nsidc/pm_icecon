@@ -11,7 +11,6 @@ Note: the original Goddard code involves the following files:
 """
 
 import datetime as dt
-import os
 from typing import Any
 
 import numpy as np
@@ -20,8 +19,6 @@ import xarray as xr
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
-from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.nt.masks import get_ps25_sst_mask
 from cdr_amsr2.nt.tiepoints import get_tiepoints
 
 
@@ -335,32 +332,13 @@ def apply_invalid_icemask(
     return masked_conc
 
 
-def _get_polehole_mask():
-    # TODO: pass in the pole hole as an kwarg to `nasateam`. Then only run this
-    # func if the pole hole is not None.
-    # TODO: this pole hole path is different than the one for bt. Are they the
-    # same data?
-    polehole_fn = (
-        PACKAGE_DIR
-        / '..'
-        / 'legacy/nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
-    )
-    polehole = np.fromfile(polehole_fn, dtype='>i2')[150:].reshape(448, 304)
-    print(f'Read polehole from:\n  .../{os.path.basename(polehole_fn)}')
-    print(f'  polehole min: {polehole.min()}')
-    print(f'  polehole max: {polehole.max()}')
-
-    where_polehole = polehole == 1
-
-    return where_polehole
-
-
-def apply_polehole(conc: npt.NDArray[np.int16]) -> npt.NDArray[np.int16]:
+def apply_polehole(
+    *, conc: npt.NDArray[np.int16], pole_hole_mask: npt.NDArray[np.bool_]
+) -> npt.NDArray[np.int16]:
     """Apply the pole hole."""
     new_conc = conc.copy()
 
-    where_polehole = _get_polehole_mask()
-    new_conc[where_polehole] = -50
+    new_conc[pole_hole_mask] = -50
 
     return new_conc
 
@@ -373,6 +351,8 @@ def nasateam(
     shoremap: npt.NDArray,
     minic: npt.NDArray,
     date: dt.date,
+    invalid_ice_mask: npt.NDArray[np.bool_],
+    pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ):
     spi_tbs = nt_spatint(tbs)
 
@@ -424,12 +404,11 @@ def nasateam(
         conc_int16=conc_int16, shoremap=shoremap, minic=minic
     )
     # Apply SST-threshold
-    invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
     conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
 
     # Apply pole hole if in the northern hemi
-    if hemisphere == 'north':
-        conc = apply_polehole(conc)
+    if hemisphere == 'north' and pole_hole_mask is not None:
+        conc = apply_polehole(conc=conc, pole_hole_mask=pole_hole_mask)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
