@@ -13,6 +13,7 @@ import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
 
+from cdr_amsr2.util import get_ps25_grid_shape
 import cdr_amsr2.nt.compute_nt_ic as nt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
@@ -298,9 +299,6 @@ def do_comparisons_au_si_bt(  # noqa
 
 def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
     """Compare original examples from Goddard for nasateam."""
-    if hemisphere == 'south':
-        raise NotImplementedError()
-
     # TODO: our api for nasateam and bootstrap should return consistent fields
     # (same pole hole / missing value, 'right-side' up, etc.
     def _fix_conc_field(ds):
@@ -324,6 +322,12 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
 
         return new_ds
 
+    def _read_goddard_nasateam_file(filename: Path, /):
+        with open(filename, 'rb') as fp:
+            fp.read(300)
+            data = np.fromfile(fp, dtype='>i2')
+        return data
+
     our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
     our_conc_ds = _fix_conc_field(our_conc_ds)
     regression_conc_ds = _flip_and_scale(
@@ -331,14 +335,13 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
             {
                 'conc': (
                     ('y', 'x'),
-                    np.fromfile(
+                    _read_goddard_nasateam_file(
                         (
                             Path('/share/apps/amsr2-cdr/cdr_testdata')
                             / 'nt_f17_regression'
-                            / 'nt_sample_nh.dat'
-                        ),
-                        dtype=np.int16,
-                    ).reshape((448, 304)),
+                            / f'{hemisphere[0]}ssss1d17tcon2018001.spill_sst'
+                        )
+                    ).reshape(get_ps25_grid_shape(hemisphere=hemisphere)),
                 )
             }
         )
@@ -353,8 +356,8 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
         hemisphere=hemisphere,
         invalid_icemask=invalid_icemask,
         date=date,
-        product_name='f17_final 25km',
-        pole_hole_mask=nt._get_polehole_mask(),
+        product_name='f17_final_25km',
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
     )
 
 
@@ -364,4 +367,4 @@ if __name__ == '__main__':
     #     date=dt.date(2022, 8, 1),
     #     resolution='12',
     # )
-    do_comparison_original_example_nt(hemisphere='north')
+    do_comparison_original_example_nt(hemisphere='south')
