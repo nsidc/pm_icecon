@@ -16,8 +16,8 @@ from matplotlib import pyplot as plt
 import cdr_amsr2.nt.compute_nt_ic as nt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
 from cdr_amsr2.compare.ref_data import get_sea_ice_index
+from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.api import amsr2_nasateam, original_example
@@ -157,20 +157,19 @@ def _mask_data(
     data,
     hemisphere: Hemisphere,
     date: dt.date,
-    valid_icemask,
+    invalid_icemask,
     pole_hole_mask=None,
 ):
     aui_si25_conc_masked = data.where(data != 110, 0)
 
     # Mask out invalid ice (the AU_SI products have conc values in lakes. We
     # don't include those in our valid ice masks.
-    aui_si25_conc_masked = aui_si25_conc_masked.where(
-        ~valid_icemask,
-        0,
-    )
+    aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~invalid_icemask, other=0)
 
     if hemisphere == 'north' and pole_hole_mask is not None:
-        aui_si25_conc_masked = aui_si25_conc_masked.where(~pole_hole_mask, 110)
+        aui_si25_conc_masked = aui_si25_conc_masked.where(
+            cond=~pole_hole_mask, other=110
+        )
 
     return aui_si25_conc_masked
 
@@ -187,7 +186,7 @@ def do_comparisons(
     # E.g., 'SII'
     comparison_dataproduct: str,
     hemisphere: Hemisphere,
-    valid_icemask: npt.NDArray[np.bool_],
+    invalid_icemask: npt.NDArray[np.bool_],
     date: dt.date,
     pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ) -> None:
@@ -222,7 +221,11 @@ def do_comparisons(
 
     # Do a difference between the two images.
     comparison_conc_masked = _mask_data(
-        comparison_conc, hemisphere, date, valid_icemask, pole_hole_mask=pole_hole_mask
+        comparison_conc,
+        hemisphere,
+        date,
+        invalid_icemask,
+        pole_hole_mask=pole_hole_mask,
     )
 
     diff = cdr_amsr2_conc - comparison_conc_masked
@@ -299,7 +302,8 @@ def do_comparisons_au_si_bt(  # noqa
     )
 
     # TODO: better to exclude lakes explicitly via the land mask?
-    valid_icemask = get_ps_valid_ice_mask(
+    # True areas are invalid ice. False areas are possibly valid (includes land)
+    invalid_icemask = get_ps_invalid_ice_mask(
         hemisphere=hemisphere,
         date=date,
         resolution=resolution,
@@ -314,7 +318,7 @@ def do_comparisons_au_si_bt(  # noqa
         cdr_amsr2_conc=example_ds.conc,
         comparison_conc=au_si25_conc,
         hemisphere=hemisphere,
-        valid_icemask=valid_icemask,
+        invalid_icemask=invalid_icemask,
         date=date,
         cdr_amsr2_dataproduct=f'AU_SI{resolution}',
         cdr_amsr2_algorithm='bootstrap',
@@ -335,6 +339,7 @@ def _fix_nt_outputs(conc_ds):
 
 
 def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
+    """Compare original examples from Goddard for nasateam."""
     our_conc_ds = _fix_nt_outputs(original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
@@ -344,7 +349,7 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
         cdr_amsr2_conc=our_conc_ds.conc,
         comparison_conc=sii_conc_ds.conc,
         hemisphere=hemisphere,
-        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        invalid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
         cdr_amsr2_dataproduct='goddard_example_f17',
         cdr_amsr2_algorithm='nasateam',
@@ -369,7 +374,7 @@ def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
         cdr_amsr2_conc=our_conc_ds.conc,
         comparison_conc=sii_conc_ds.conc,
         hemisphere=hemisphere,
-        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        invalid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
         cdr_amsr2_dataproduct='AU_SI25',
         cdr_amsr2_algorithm='nasateam',

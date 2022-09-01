@@ -1,5 +1,5 @@
 """
-make_doy_icemask_raw_psn25.py
+make_doy_raw_icemasks.py
 
 Create a valid ice mask from BT data
 """

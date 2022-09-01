@@ -1,7 +1,9 @@
 CDR_AMSR2
 ---
 
-This code package is in development.
+This code package is in development and the API is subject to change without
+notice. There is no guarantee that this code works as expected. The addition of
+tests and verification of outputs is still in progress.
 
 The code here creates sea ice concentration estimates for the NOAA CDR using
 code adapted from Goddard's Bootstrap and NASA Team algorithms.
@@ -14,11 +16,6 @@ code adapted from Goddard's Bootstrap and NASA Team algorithms.
 Here are python routines which replace Goddard's original Fortran code
 for production sea ice concentration.
 
-Initially, the code is simply a translation of the original Fortran code,
-and is intended to reproduce those results as similarly as possible.
-
-As it develops, this code will become more and more general
-
 ## `./cdr_amsr2/nt/`
 
 Python code related to the nasateam algorithm.
@@ -29,7 +26,7 @@ Python code related to the nasateam algorithm.
 This directory contains modifications of the original Bootstrap Fortran code
 and should yield exactly the same results as Goddard produces, given identical
 input and proper (hard-coded?) local file names.
-  
+
 ## `./legacy/nt_orig`
 
 Contains original nasateam code.
@@ -73,38 +70,6 @@ in ./legacy/SB2_NRT_programs/, execute:
 
     ./gen_sample_nh_ic_for.sh
 
-Note that this will create .json files that the python code will read
-
-Output that will be compared to an original file in cdr_testdata/
-
-    ./legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic
-
-
-Additionally, json files are created. Symlink the json files to the bt
-directory:
-
-```
-cd ../../cdr_amsr2/bt
-ln -sfn ../../legacy/SB2_NRT_programs/*.json .
-```
-
-Now generate the initial Python output
-
-
-```
-cd ../../
-./scripts/gen_sample_nh_ic_py.sh
-```
-
-Output that will be compared to the output in the fortran directory:
-
-    ./cdr_amsr2/bt/NH_20180217_SB2_NRT_f18.ic
-
-# Other routines
-
-Two short comparison scripts in cdr_amsr2/bt/ used to compare 4-byte float and
-2-byte int raw binary files respectively are: fpcomp.py and i2comp.py
-
 
 # Misc. Development notes
 
@@ -114,6 +79,69 @@ This project uses `invoke` as a task runner. To see all of the available tasks:
 $ invoke -l
 Available tasks:
 
-  format.format (format)    Apply formatting standards to the codebase.
-  test.lint (test.flake8)   Run flake8 linting.
+  format.format (format)       Apply formatting standards to the codebase.
+  test.all (test)              Run all of the tests.
+  test.ci                      Run tests in CircleCI.
+  test.lint (test.flake8)      Run flake8 linting.
+  test.regression              Run regression tests.
+  test.typecheck (test.mypy)   Run mypy typechecking.
+  test.unit                    Run unit tests.
+  test.vulture                 Use `vulture` to detect dead code.
 ```
+
+
+# Running the python code
+
+## Bootstrap
+
+### Scripting
+
+Users can write a script using the functions provided in this repo to run the
+bootstrap algorithm. The main entrypoint to the bootstrap algorithm is the
+`bootstrap` function defined in `cdr_amsr2/bt/compute_bt_ic.py`.
+
+For an example of how to write a script to convert a2l1c tbs into a
+concentration field, see `scripts/example_bt_script.py`.
+
+Additional examples are in `cdr_amsr2/bt/api.py`. Note that as of this time, all
+functions defined in the the `api` module are specifically setup to use
+hard-coded defaults for testing purposes at NSIDC. This includes paths to data
+on NSIDC infrastructure that are not available to the public.
+
+
+### CLI
+
+There is a command line interface defined for the Bootstrap algoirthm using
+common defaults for testing purposes at NSIDC.
+
+NOTE: the CLI relies on hard-coded paths to mask files on NSIDC's virtual
+machine infrastructure. This CLI will not currently work for those outside of
+NSIDC. We plan to change this in the future.
+
+The CLI can be interacted with via `scripts/cli.sh`:
+
+```
+$ ./scripts/cli.sh --help
+Usage: python -m cdr_amsr2.bt.cli [OPTIONS] COMMAND [ARGS]...
+
+  Run the bootstrap algorithm.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  a2l1c  Run the bootstrap algorithm with 'a2l1c' data.
+  amsr2  Run the bootstrap algorithm with ASMR2 data.
+```
+
+E.g., to create a NetCDF file with a `conc` variable containing concentration
+values from AU_SI12 data:
+
+```
+$ ./scripts/cli.sh amsr2 --date 2022-08-01 --hemisphere north --output-dir /tmp/ --resolution 12
+2022-08-29 13:34:49.344 | INFO     | __main__:amsr2:78 - Wrote AMSR2 concentration field: /tmp/bt_NH_20220801_u2_12km.nc
+```
+
+## Nasateam
+
+This is a work in progress. More details to come...

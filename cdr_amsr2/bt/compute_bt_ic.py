@@ -9,7 +9,6 @@ import calendar
 import copy
 import datetime as dt
 from functools import reduce
-from pathlib import Path
 from typing import Optional, Sequence
 
 import numpy as np
@@ -17,9 +16,8 @@ import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt._types import Tiepoint
-from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
 from cdr_amsr2.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -526,38 +524,11 @@ def calc_rad_coeffs_32(
     }
 
 
-def sst_clean_sb2(
-    *,
-    sat: ValidSatellites,
-    iceout,
-    missval,
-    landval,
-    date: dt.date,
-    hemisphere: Hemisphere,
-    resolution: str,
-):
+def sst_clean_sb2(*, iceout, missval, landval, invalid_ice_mask: npt.NDArray[np.bool_]):
     # implement fortran's sst_clean_sb2() routine
-
-    sst_mask: npt.NDArray[np.uint8 | np.int16]
-
-    if sat == 'a2l1c':
-        # NOTE: E2N == EASE2 North
-        print('Reading valid ice mask for E2N 6.25km grid')
-        sst_fn = Path(
-            f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
-        )
-        sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
-        is_high_sst = sst_mask == 50
-    else:
-        is_high_sst = get_ps_valid_ice_mask(
-            hemisphere=hemisphere,
-            date=date,
-            resolution=resolution,  # type: ignore[arg-type]
-        )
-
     is_not_land = iceout != landval
     is_not_miss = iceout != missval
-    is_not_land_miss_sst = is_not_land & is_not_miss & is_high_sst
+    is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
 
     ice_sst = iceout.copy()
     ice_sst[is_not_land_miss_sst] = 0.0
@@ -1016,7 +987,6 @@ def bootstrap(
     hemisphere: Hemisphere,
     # TODO: should be grid-independent. We should probably pass in the valid ice
     # mask like we do for the pole hole and land mask via `params`
-    resolution: str,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     tb_mask = tb_data_mask(
@@ -1100,13 +1070,10 @@ def bootstrap(
     # *** Do sst cleaning ***
     print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
-        sat=params.sat,
         iceout=iceout,
         missval=params.missval,
         landval=params.landval,
-        date=date,
-        hemisphere=hemisphere,
-        resolution=resolution,
+        invalid_ice_mask=params.invalid_ice_mask,
     )
 
     # *** Do spatial interp ***
