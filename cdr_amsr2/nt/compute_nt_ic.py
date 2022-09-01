@@ -280,12 +280,7 @@ def apply_nt_spillover(
 
     minic[is_at_coast & (minic > 200)] = 200
     minic[is_near_coast & (minic > 400)] = 400
-    if minic.shape == (332, 316):
-        # TODO: Overwrite the default with the BUG for SH
-        print('INTRODUCE SOUTHERN HEMISPHERE ERROR 1')
-        minic[is_far_coastal & (minic > 400)] = 400
-    else:
-        minic[is_far_coastal & (minic > 600)] = 600
+    minic[is_far_coastal & (minic > 600)] = 600
 
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc_int16, dtype=np.uint8)
@@ -312,13 +307,8 @@ def apply_nt_spillover(
     where_reduce_ice = (n_low >= 3) & (shoremap > 2)
     newice[where_reduce_ice] -= minic[where_reduce_ice]
 
-    if newice.shape == (332, 316):
-        print('INTRODUCE SOUTHERN HEMISPHERE ERROR 2')
-        where_sh_error = (conc_int16 >= 0) & (conc_int16 < minic) & (shoremap > 2)
-        newice[where_sh_error] = 0
-    else:
-        where_ice_overreduced = (conc_int16 >= 0) & (newice < 0) & (shoremap > 2)
-        newice[where_ice_overreduced] = 0
+    where_ice_overreduced = (conc_int16 >= 0) & (newice < 0) & (shoremap > 2)
+    newice[where_ice_overreduced] = 0
 
     # Preserve missing data (conc value of -10)
     where_missing = (conc_int16 < 0) & where_reduce_ice & (shoremap > 2)
