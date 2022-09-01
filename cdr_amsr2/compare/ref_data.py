@@ -41,4 +41,10 @@ def get_sea_ice_index(*, hemisphere: Hemisphere, date: dt.date) -> xr.Dataset:
     # Do the same for coast values
     conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 253, 120)
 
+    # and make polehole/missing values match ours missing value (110)
+    # polehole
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 251, 110)
+    # missing
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 255, 110)
+
     return conc_ds

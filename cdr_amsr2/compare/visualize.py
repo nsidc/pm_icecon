@@ -20,7 +20,7 @@ from cdr_amsr2.bt.masks import get_ps_valid_ice_mask
 from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
-from cdr_amsr2.nt.api import original_example
+from cdr_amsr2.nt.api import amsr2_nasateam, original_example
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
 
 OUTPUT_DIR = Path('/tmp/diffs/')
@@ -252,9 +252,9 @@ def do_comparisons(
         '\n'
         f'{percent_different:.3}% of pixels are different.'
         '\n'
-        f'Min difference: {diff_excluding_0.min()}.'
+        f'Min difference: {diff_excluding_0.min():.3}.'
         '\n'
-        f'Max difference: {diff_excluding_0.max()}.'
+        f'Max difference: {diff_excluding_0.max():.3}.'
     )
     _ax.hist(
         diff_excluding_0,
@@ -329,6 +329,7 @@ def _fix_nt_outputs(conc_ds):
         (conc_ds.conc > 100) & (conc_ds.conc < 200), 100, conc_ds.conc
     )
     conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 25, 120)
+    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 252, 110)
 
     return conc_ds
 
@@ -348,13 +349,33 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
         cdr_amsr2_dataproduct='goddard_example_f17',
         cdr_amsr2_algorithm='nasateam',
         comparison_dataproduct='SII_25km',
-        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'south' else None,
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
     )
 
 
-# TODO:
 def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
-    ...
+    # date = dt.date(2022, 8, 1)
+    date = dt.date(2018, 1, 1)
+
+    sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
+    our_conc_ds = _fix_nt_outputs(
+        amsr2_nasateam(
+            date=date,
+            hemisphere=hemisphere,
+        )
+    )
+
+    do_comparisons(
+        cdr_amsr2_conc=our_conc_ds.conc,
+        comparison_conc=sii_conc_ds.conc,
+        hemisphere=hemisphere,
+        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        date=date,
+        cdr_amsr2_dataproduct='AU_SI25',
+        cdr_amsr2_algorithm='nasateam',
+        comparison_dataproduct='SII_25km',
+        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
+    )
 
 
 if __name__ == '__main__':
@@ -364,4 +385,5 @@ if __name__ == '__main__':
     #     resolution='12',
     # )
     for hemisphere in ('north', 'south'):
-        compare_original_nt_to_sii(hemisphere=hemisphere)
+        # compare_original_nt_to_sii(hemisphere=hemisphere)
+        compare_amsr_nt_to_sii(hemisphere=hemisphere)
