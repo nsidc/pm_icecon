@@ -133,7 +133,7 @@ def get_au_si_bt_nt_conc(
     date: dt.date,
     hemisphere: Hemisphere,
     resolution: au_si.AU_SI_RESOLUTIONS,
-) -> xr.DataArray:
+) -> tuple[xr.DataArray, xr.DataArray]:
     ds = au_si._get_au_si_data_fields(
         # TODO: DRY out base dir defualt. No need to pass this around...
         base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
@@ -319,7 +319,7 @@ def _fix_conc_field_for_nt(ds):
     return new_ds
 
 
-def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
+def do_comparison_original_example_nt(*, hemisphere: Hemisphere):  # noqa
     """Compare original examples from Goddard for nasateam."""
     # TODO: our api for nasateam and bootstrap should return consistent fields
     # (same pole hole / missing value, 'right-side' up, etc.
@@ -331,7 +331,7 @@ def do_comparison_original_example_nt(*, hemisphere: Hemisphere):
         return data
 
     our_conc_ds = _flip_and_scale(original_example(hemisphere=hemisphere))
-    our_conc_ds = _fix_conc_field(our_conc_ds)
+    our_conc_ds = _fix_conc_field_for_nt(our_conc_ds)
     regression_conc_ds = _flip_and_scale(
         xr.Dataset(
             {
@@ -377,14 +377,14 @@ def do_comparison_amsr2_nt(*, hemisphere='north'):
     _, comparison_conc = get_au_si_bt_nt_conc(
         date=date,
         hemisphere=hemisphere,
-        resolution=resolution,
+        resolution=resolution,  # type: ignore[arg-type]
     )
 
     do_comparisons(
         cdr_amsr2_conc=our_conc_ds.conc,
         comparison_conc=comparison_conc,
         hemisphere=hemisphere,
-        valid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        invalid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
         date=date,
         product_name='AU_SI25',
         pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
