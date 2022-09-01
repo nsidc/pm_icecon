@@ -6,13 +6,13 @@ our code against other sea ice concentration products.
 import datetime as dt
 
 import xarray as xr
-from seaice.data.api import concentration_daily
-from seaice.nasateam import NORTH, SOUTH
 from pyresample import AreaDefinition
 from pyresample.image import ImageContainerNearest
-import numpy as np
+from seaice.data.api import concentration_daily
+from seaice.nasateam import NORTH, SOUTH
 
 from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.util import get_ps12_grid_shape, get_ps25_grid_shape
 
 
 def _get_area_def(*, hemisphere: Hemisphere, shape: tuple[int, int]) -> AreaDefinition:
@@ -29,7 +29,7 @@ def _get_area_def(*, hemisphere: Hemisphere, shape: tuple[int, int]) -> AreaDefi
         'south': (
             '+proj=stere +lat_0=-90 +lat_ts=-70 +lon_0=0 +k=1'
             ' +x_0=0 +y_0=0 +a=6378273 +b=6356889.449 +units=m +no_defs'
-        )
+        ),
     }[hemisphere]
 
     # (lower_left_x, lower_left_y, upper_right_x, upper_right_y)
@@ -51,7 +51,9 @@ def _get_area_def(*, hemisphere: Hemisphere, shape: tuple[int, int]) -> AreaDefi
     return area_def
 
 
-def get_sea_ice_index(*, hemisphere: Hemisphere, date: dt.date, resolution='25') -> xr.Dataset:
+def get_sea_ice_index(
+    *, hemisphere: Hemisphere, date: dt.date, resolution='25'
+) -> xr.Dataset:
     """Return a sea ice concentration field from 0051 or 0081.
 
     Requires the environment variables `EARTHDATA_USERNAME` and
@@ -73,17 +75,25 @@ def get_sea_ice_index(*, hemisphere: Hemisphere, date: dt.date, resolution='25')
     if resolution not in ('12', '25'):
         raise NotImplementedError()
     if resolution == '12':
-        src_area = _get_area_def(hemisphere=hemisphere, shape=data.shape)
+        src_area = _get_area_def(
+            hemisphere=hemisphere, shape=get_ps25_grid_shape(hemisphere=hemisphere)
+        )
         dst_area = _get_area_def(
             hemisphere=hemisphere,
-            shape=tuple(np.array(data.shape) * 2)
+            shape=get_ps12_grid_shape(hemisphere=hemisphere),
         )
         # TODO: this will bilinearly interpolate flag values as well. Need to
         # mask those out. For now, Use NN resampling.
         # data = ImageContainerBilinear(data, src_area).resample(dst_area).image_data
-        data = ImageContainerNearest(
-            data, src_area, radius_of_influence=25000,
-        ).resample(dst_area).image_data
+        data = (
+            ImageContainerNearest(
+                data,
+                src_area,
+                radius_of_influence=25000,
+            )
+            .resample(dst_area)
+            .image_data
+        )
 
     conc_ds = xr.Dataset({'conc': (('y', 'x'), data)})
 

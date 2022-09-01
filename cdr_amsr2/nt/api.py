@@ -95,7 +95,7 @@ def amsr2_nasateam(
             '/share/apps/amsr2-cdr/nasateam_ancillary/'
             'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'
         ),
-        dtype=np.unit8,
+        dtype=np.uint8,
     ).reshape(get_ps25_grid_shape(hemisphere=hemisphere))
     minic = np.fromfile(
         (

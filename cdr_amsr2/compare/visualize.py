@@ -358,7 +358,9 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     )
 
 
-def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere, resolution: str) -> None:
+def compare_amsr_nt_to_sii(
+    *, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS
+) -> None:
     # date = dt.date(2022, 8, 1)
     date = dt.date(2018, 1, 1)
 
@@ -395,6 +397,6 @@ if __name__ == '__main__':
     for hemisphere in ('north', 'south'):
         # compare_original_nt_to_sii(hemisphere=hemisphere)
         compare_amsr_nt_to_sii(
-            hemisphere=hemisphere,
+            hemisphere=hemisphere,  # type: ignore[arg-type]
             resolution='12',  # type: ignore[arg-type]
         )

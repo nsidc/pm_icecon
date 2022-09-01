@@ -34,9 +34,7 @@ def _get_au_si_fp(base_dir: Path, date: dt.date, resolution: AU_SI_RESOLUTIONS) 
 
     # Fall back on recursively globbing if the file doesn't exist at the
     # expected location.
-    results = tuple(
-        base_dir.glob(f'**/{fn_glob}')
-    )
+    results = tuple(base_dir.glob(f'**/{fn_glob}'))
 
     if len(results) != 1:
         raise FileNotFoundError(
