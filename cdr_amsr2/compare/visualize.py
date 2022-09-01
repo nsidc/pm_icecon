@@ -16,8 +16,8 @@ from matplotlib import pyplot as plt
 import cdr_amsr2.nt.compute_nt_ic as nt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
+from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.api import amsr2_nasateam, original_example
@@ -358,15 +358,18 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     )
 
 
-def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere, resolution: str) -> None:
     # date = dt.date(2022, 8, 1)
     date = dt.date(2018, 1, 1)
 
-    sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
+    sii_conc_ds = get_sea_ice_index(
+        hemisphere=hemisphere, date=date, resolution=resolution
+    )
     our_conc_ds = _fix_nt_outputs(
         amsr2_nasateam(
             date=date,
             hemisphere=hemisphere,
+            resolution=resolution,
         )
     )
 
@@ -391,4 +394,7 @@ if __name__ == '__main__':
     # )
     for hemisphere in ('north', 'south'):
         # compare_original_nt_to_sii(hemisphere=hemisphere)
-        compare_amsr_nt_to_sii(hemisphere=hemisphere)  # type: ignore[arg-type]
+        compare_amsr_nt_to_sii(
+            hemisphere=hemisphere,
+            resolution='12',  # type: ignore[arg-type]
+        )

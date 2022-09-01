@@ -35,3 +35,4 @@ dependencies:
   - pydantic ~=1.9
   - pandas ~=1.4.2
   - seaice ~=5.0.0
+  - pyresample ~=1.25

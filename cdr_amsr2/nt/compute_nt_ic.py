@@ -19,7 +19,6 @@ import numpy.typing as npt
 import xarray as xr
 from loguru import logger
 
-
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.nt.masks import get_ps25_sst_mask

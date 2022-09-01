@@ -6,41 +6,42 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch.au_si import get_au_si_tbs
+from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from cdr_amsr2.nt.compute_nt_ic import nasateam
 from cdr_amsr2.util import get_ps25_grid_shape
 
 
-def _get_shoremap(*, hemisphere: Hemisphere):
-    shoremap_fn = (
-        PACKAGE_DIR
-        / '..'
-        / f'legacy/nt_orig/DATAFILES/data36/maps/shoremap_{hemisphere}_25'
-    )
-    shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(
-        get_ps25_grid_shape(hemisphere=hemisphere)
-    )
-
-    return shoremap
-
-
-def _get_minic(*, hemisphere: Hemisphere):
-    # TODO: why is 'SSMI8' on FH fn and not SH?
-    if hemisphere == 'north':
-        minic_fn = 'SSMI8_monavg_min_con'
-    else:
-        minic_fn = 'SSMI_monavg_min_con_s'
-
-    minic_path = PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps' / minic_fn
-    minic = np.fromfile(minic_path, dtype='>i2')[150:].reshape(
-        get_ps25_grid_shape(hemisphere=hemisphere)
-    )
-
-    return minic
-
-
 def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     """Return the concentration field example for f17_20180101."""
+
+    def _get_shoremap(*, hemisphere: Hemisphere):
+        shoremap_fn = (
+            PACKAGE_DIR
+            / '..'
+            / f'legacy/nt_orig/DATAFILES/data36/maps/shoremap_{hemisphere}_25'
+        )
+        shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(
+            get_ps25_grid_shape(hemisphere=hemisphere)
+        )
+
+        return shoremap
+
+    def _get_minic(*, hemisphere: Hemisphere):
+        # TODO: why is 'SSMI8' on FH fn and not SH?
+        if hemisphere == 'north':
+            minic_fn = 'SSMI8_monavg_min_con'
+        else:
+            minic_fn = 'SSMI_monavg_min_con_s'
+
+        minic_path = (
+            PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps' / minic_fn
+        )
+        minic = np.fromfile(minic_path, dtype='>i2')[150:].reshape(
+            get_ps25_grid_shape(hemisphere=hemisphere)
+        )
+
+        return minic
+
     date = dt.date(2018, 1, 1)
     raw_fns = {
         'h19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin',
@@ -71,12 +72,14 @@ def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     return conc_ds
 
 
-def amsr2_nasateam(*, date: dt.date, hemisphere: Hemisphere):
+def amsr2_nasateam(
+    *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
+):
     """Compute sea ice concentration from AU_SI25 TBs."""
     xr_tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
-        resolution='25',
+        resolution=resolution,
     )
 
     tbs = {
@@ -87,12 +90,27 @@ def amsr2_nasateam(*, date: dt.date, hemisphere: Hemisphere):
         'v37': xr_tbs['v36'].data,
     }
 
+    shoremap = np.fromfile(
+        (
+            '/share/apps/amsr2-cdr/nasateam_ancillary/'
+            'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'
+        ),
+        dtype=np.unit8,
+    ).reshape(get_ps25_grid_shape(hemisphere=hemisphere))
+    minic = np.fromfile(
+        (
+            '/share/apps/amsr2-cdr/nasateam_ancillary/'
+            'minic_amsru_{hemisphere[0]}h{resolution}.dat'
+        ),
+        dtype=np.uint8,
+    ).reshape(get_ps25_grid_shape(hemisphere=hemisphere))
+
     conc_ds = nasateam(
         tbs=tbs,
         sat='u2',
         hemisphere=hemisphere,
-        shoremap=_get_shoremap(hemisphere=hemisphere),
-        minic=_get_minic(hemisphere=hemisphere),
+        shoremap=shoremap,
+        minic=minic,
         date=date,
     )
 
