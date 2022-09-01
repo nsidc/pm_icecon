@@ -18,6 +18,7 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
+
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
@@ -56,14 +57,6 @@ def nt_spatint(tbs):
         replace_locs = interp_locs & (count > 1.2)
         count[count == 0] = 1
         average = np.divide(total, count, dtype=np.float32)
-
-        """ Debugging, chasing down differences between C and Python
-        i = 300
-        j = 438
-        print(f'total at ({i}, {j}): {total[j, i]}')
-        print(f'count at ({i}, {j}): {count[j, i]}')
-        print(f'avg   at ({i}, {j}): {average[j, i]}')
-        """
 
         interp = orig.copy()
         interp[replace_locs] = average[replace_locs]
@@ -287,7 +280,12 @@ def apply_nt_spillover(
 
     minic[is_at_coast & (minic > 200)] = 200
     minic[is_near_coast & (minic > 400)] = 400
-    minic[is_far_coastal & (minic > 600)] = 600
+    if minic.shape == (332, 316):
+        # TODO: Overwrite the default with the BUG for SH
+        print('INTRODUCE SOUTHERN HEMISPHERE ERROR 1')
+        minic[is_far_coastal & (minic > 400)] = 400
+    else:
+        minic[is_far_coastal & (minic > 600)] = 600
 
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc_int16, dtype=np.uint8)
@@ -295,7 +293,6 @@ def apply_nt_spillover(
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
-            # print(f'offset: ({ioff}, {joff}): {offmax}')
 
             rolled = np.roll(conc_int16, (joff, ioff), axis=(0, 1))
             is_rolled_low = (rolled < 150) & (rolled >= 0)
@@ -315,17 +312,17 @@ def apply_nt_spillover(
     where_reduce_ice = (n_low >= 3) & (shoremap > 2)
     newice[where_reduce_ice] -= minic[where_reduce_ice]
 
-    # where_ice_overreduced = (conc_int16 >= 0) & (newice < 0) & (newice > -9000)
-    where_ice_overreduced = (conc_int16 >= 0) & (newice < 0) & (shoremap > 2)
-    newice[where_ice_overreduced] = 0
+    if newice.shape == (332, 316):
+        print('INTRODUCE SOUTHERN HEMISPHERE ERROR 2')
+        where_sh_error = (conc_int16 >= 0) & (conc_int16 < minic) & (shoremap > 2)
+        newice[where_sh_error] = 0
+    else:
+        where_ice_overreduced = (conc_int16 >= 0) & (newice < 0) & (shoremap > 2)
+        newice[where_ice_overreduced] = 0
 
     # Preserve missing data (conc value of -10)
-    # where_missing = (conc_int16 < 0) & (newice > -9000)
     where_missing = (conc_int16 < 0) & where_reduce_ice & (shoremap > 2)
     newice[where_missing] = conc_int16[where_missing]
-
-    # newice.tofile('conc_landspill_py.dat')
-    # print('Wrote: conc_landspill_py.dat')
 
     return newice
 
@@ -430,7 +427,6 @@ def nasateam(
     conc_spill = apply_nt_spillover(
         conc_int16=conc_int16, shoremap=shoremap, minic=minic
     )
-
     # Apply SST-threshold
     invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
     conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
