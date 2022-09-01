@@ -334,7 +334,7 @@ def _fix_nt_outputs(conc_ds):
     return conc_ds
 
 
-def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     our_conc_ds = _fix_nt_outputs(original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
@@ -386,4 +386,4 @@ if __name__ == '__main__':
     # )
     for hemisphere in ('north', 'south'):
         # compare_original_nt_to_sii(hemisphere=hemisphere)
-        compare_amsr_nt_to_sii(hemisphere=hemisphere)
+        compare_amsr_nt_to_sii(hemisphere=hemisphere)  # type: ignore[arg-type]
