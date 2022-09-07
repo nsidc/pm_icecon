@@ -19,6 +19,7 @@ import xarray as xr
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.nt.tiepoints import get_tiepoints
 
 
@@ -225,7 +226,9 @@ def apply_invalid_tbs_mask(
     is_valid_tbs = (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
 
     filtered_conc = conc.copy()
-    filtered_conc[~is_valid_tbs] = -10
+    # TODO: would it be better to have a flag value specifically for invalid
+    # data? Is treating this as 'missing' really appropriate?
+    filtered_conc[~is_valid_tbs] = DEFAULT_FLAG_VALUES.missing
 
     return filtered_conc
 
@@ -275,10 +278,12 @@ def apply_nt_spillover(
     """Apply the NASA Team land spillover routine."""
     newice = conc_int16.copy()
 
-    # TODO: what do these represent? Missing data? Later (in vis code) we cast
-    # to uint8, which results in these values being clamped to 0.
-    newice[shoremap == 1] = -9999
-    newice[shoremap == 2] = -9998
+    # Set land/coast flag values.
+    # TODO: do we want the coast to be 'land' as it is in bootstrap?
+    # 1 == land
+    newice[shoremap == 1] = DEFAULT_FLAG_VALUES.land
+    # 2 == coast
+    newice[shoremap == 2] = DEFAULT_FLAG_VALUES.coast
 
     is_at_coast = shoremap == 5
     is_near_coast = shoremap == 4
@@ -338,7 +343,7 @@ def apply_polehole(
     """Apply the pole hole."""
     new_conc = conc.copy()
 
-    new_conc[pole_hole_mask] = -50
+    new_conc[pole_hole_mask] = DEFAULT_FLAG_VALUES.pole_hole
 
     return new_conc
 
