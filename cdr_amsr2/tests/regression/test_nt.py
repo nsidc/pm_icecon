@@ -6,6 +6,18 @@ from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
 from cdr_amsr2.util import get_ps25_grid_shape
 
 
+def _hack_flag_vals(conc):
+    from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
+
+    hacked = conc.copy()
+    hacked[hacked == -9999] = DEFAULT_FLAG_VALUES.land
+    hacked[hacked == -9998] = DEFAULT_FLAG_VALUES.coast
+    hacked[hacked == -50] = DEFAULT_FLAG_VALUES.pole_hole
+    hacked[hacked == -10] = DEFAULT_FLAG_VALUES.missing
+
+    return hacked
+
+
 def test_nt_f17_regression_north():
     """Regression test for NT F17 output."""
     regression_data = np.fromfile(
@@ -15,8 +27,10 @@ def test_nt_f17_regression_north():
 
     actual_ds = original_example(hemisphere='north')
 
+    hacked = _hack_flag_vals(regression_data)
+
     assert_equal(
-        regression_data,
+        hacked,
         actual_ds.conc.data,
     )
 
@@ -30,7 +44,9 @@ def test_nt_f17_regression_south():
         dtype=np.int16,
     ).reshape(get_ps25_grid_shape(hemisphere='south'))
 
+    hacked = _hack_flag_vals(regression_data)
+
     assert_equal(
-        regression_data,
+        hacked,
         actual_ds.conc.data,
     )
