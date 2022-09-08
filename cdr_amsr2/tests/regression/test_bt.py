@@ -60,7 +60,6 @@ def test_bt_f18_regression():
     actual_ds = original_f18_example()
 
     hacked = _hack_flag_vals(regression_data)
-    not_eq = hacked != actual_ds.conc.data
 
     assert_equal(
         hacked,
