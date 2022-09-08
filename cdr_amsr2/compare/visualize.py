@@ -142,9 +142,7 @@ def _mask_data(
     aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~invalid_icemask, other=0)
 
     if hemisphere == 'north' and pole_hole_mask is not None:
-        aui_si25_conc_masked = aui_si25_conc_masked.where(
-            cond=~pole_hole_mask, other=0
-        )
+        aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~pole_hole_mask, other=0)
 
     return aui_si25_conc_masked
 
@@ -203,6 +201,18 @@ def do_comparisons(
         pole_hole_mask=pole_hole_mask,
     )
 
+    # Exclude areas that are not valid concentrations in both fields (exlude
+    # mismatches between land masks)
+    cdr_amsr2_conc_validice = (cdr_amsr2_conc >= 0) & (cdr_amsr2_conc <= 100)
+    # fmt: off
+    comparison_conc_validice = (
+        (comparison_conc_masked >= 0)
+        & (comparison_conc_masked <= 100)
+    )
+    # fmt: on
+    common_validice = cdr_amsr2_conc_validice & comparison_conc_validice
+    cdr_amsr2_conc = cdr_amsr2_conc.where(common_validice, 0)
+    comparison_conc_masked = comparison_conc_masked.where(common_validice, 0)
     diff = cdr_amsr2_conc - comparison_conc_masked
     _ax = ax[1][0]
     _ax.title.set_text('Python minus comparison conc')
@@ -230,9 +240,9 @@ def do_comparisons(
         '\n'
         f'{percent_different:.3}% of pixels are different.'
         '\n'
-        f'Min difference: {diff_excluding_0.min():.3}.'
+        f'Min difference: {diff_excluding_0.min():.6}.'
         '\n'
-        f'Max difference: {diff_excluding_0.max():.3}.'
+        f'Max difference: {diff_excluding_0.max():.6}.'
     )
     _ax.hist(
         diff_excluding_0,
@@ -336,8 +346,8 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
 def compare_amsr_nt_to_sii(  # noqa
     *, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS
 ) -> None:
-    # date = dt.date(2022, 8, 1)
-    date = dt.date(2018, 1, 1)
+    date = dt.date(2022, 8, 1)
+    # date = dt.date(2018, 1, 1)
 
     sii_conc_ds = get_sea_ice_index(
         hemisphere=hemisphere, date=date, resolution=resolution
@@ -368,14 +378,14 @@ def compare_amsr_nt_to_sii(  # noqa
 
 
 if __name__ == '__main__':
-    # do_comparisons_au_si_bt(
-    #     hemisphere='north',
-    #     date=dt.date(2022, 8, 1),
-    #     resolution='12',
-    # )
     for hemisphere in ('north', 'south'):
-        # compare_original_nt_to_sii(hemisphere=hemisphere)
-        compare_amsr_nt_to_sii(
-            hemisphere=hemisphere,  # type: ignore[arg-type]
-            resolution='12',  # type: ignore[arg-type]
+        do_comparisons_au_si_bt(
+            hemisphere=hemisphere,
+            date=dt.date(2022, 8, 1),
+            resolution='12',
         )
+    #     # compare_original_nt_to_sii(hemisphere=hemisphere)
+    #     compare_amsr_nt_to_sii(
+    #         hemisphere=hemisphere,  # type: ignore[arg-type]
+    #         resolution='12',  # type: ignore[arg-type]
+    #     )
