@@ -283,7 +283,9 @@ def apply_nt_spillover(
     # 1 == land
     newice[shoremap == 1] = DEFAULT_FLAG_VALUES.land
     # 2 == coast
-    newice[shoremap == 2] = DEFAULT_FLAG_VALUES.coast
+    # TODO: re-add this flag. For now, making the flags for nt consistent w/ bt.
+    # newice[shoremap == 2] = DEFAULT_FLAG_VALUES.coast
+    newice[shoremap == 2] = DEFAULT_FLAG_VALUES.land
 
     is_at_coast = shoremap == 5
     is_near_coast = shoremap == 4

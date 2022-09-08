@@ -1,20 +1,22 @@
 from typing import get_args
 
 import numpy as np
-# from numpy.testing import assert_equal
 
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
 from cdr_amsr2.util import get_ps25_grid_shape
-from cdr_amsr2._types import Hemisphere
+
+# from numpy.testing import assert_equal
 
 
 def _hack_flag_vals(conc):
 
     hacked = conc.copy()
     hacked[hacked == -9999] = DEFAULT_FLAG_VALUES.land
-    hacked[hacked == -9998] = DEFAULT_FLAG_VALUES.coast
+    # make coastlines into 'land' for now.
+    hacked[hacked == -9998] = DEFAULT_FLAG_VALUES.land
     hacked[hacked == -50] = DEFAULT_FLAG_VALUES.pole_hole
     hacked[hacked == -10] = DEFAULT_FLAG_VALUES.missing
 
