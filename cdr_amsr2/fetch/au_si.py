@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Literal
 
 import xarray as xr
+from loguru import logger
 
 from cdr_amsr2._types import Hemisphere
 
@@ -34,9 +35,11 @@ def _get_au_si_fp(base_dir: Path, date: dt.date, resolution: AU_SI_RESOLUTIONS) 
 
     # Fall back on recursively globbing if the file doesn't exist at the
     # expected location.
-    results = tuple(
-        base_dir.glob(f'**/{fn_glob}')
+    logger.warning(
+        f'Could not find AU_SI{resolution} data in expected directory ({expected_dir}).'
+        f' Falling back to recursive search in {base_dir=}'
     )
+    results = tuple(base_dir.glob(f'**/{fn_glob}'))
 
     if len(results) != 1:
         raise FileNotFoundError(

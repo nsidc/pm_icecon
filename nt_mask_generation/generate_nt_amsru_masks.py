@@ -38,14 +38,22 @@ from scipy.signal import convolve2d
 ifn = './AMSR_U2_L3_SeaIce25km_B04_20210101.he5'
 fid = File(ifn, 'r')
 conc = {}
-conc['nh25'] = np.array(fid['HDFEOS']['GRIDS']['NpPolarGrid25km']['Data Fields']['SI_25km_NH_ICECON_DAY'])  # noqa
-conc['sh25'] = np.array(fid['HDFEOS']['GRIDS']['SpPolarGrid25km']['Data Fields']['SI_25km_SH_ICECON_DAY'])  # noqa
+conc['nh25'] = np.array(
+    fid['HDFEOS']['GRIDS']['NpPolarGrid25km']['Data Fields']['SI_25km_NH_ICECON_DAY']
+)  # noqa
+conc['sh25'] = np.array(
+    fid['HDFEOS']['GRIDS']['SpPolarGrid25km']['Data Fields']['SI_25km_SH_ICECON_DAY']
+)  # noqa
 fid = None
 
 ifn = './AMSR_U2_L3_SeaIce12km_B04_20210101.he5'
 fid = File(ifn, 'r')
-conc['nh12'] = np.array(fid['HDFEOS']['GRIDS']['NpPolarGrid12km']['Data Fields']['SI_12km_NH_ICECON_DAY'])  # noqa
-conc['sh12'] = np.array(fid['HDFEOS']['GRIDS']['SpPolarGrid12km']['Data Fields']['SI_12km_SH_ICECON_DAY'])  # noqa
+conc['nh12'] = np.array(
+    fid['HDFEOS']['GRIDS']['NpPolarGrid12km']['Data Fields']['SI_12km_NH_ICECON_DAY']
+)  # noqa
+conc['sh12'] = np.array(
+    fid['HDFEOS']['GRIDS']['SpPolarGrid12km']['Data Fields']['SI_12km_SH_ICECON_DAY']
+)  # noqa
 fid = None
 
 print('Conc field shapes:')
@@ -56,23 +64,39 @@ for key in conc.keys():
 goddard_land = {}
 
 # NH
-goddard_land['raw_nh25'] = np.fromfile('./shoremap_north_25', dtype='>i2')[150:].reshape(448, 304)  # noqa
+goddard_land['raw_nh25'] = np.fromfile('./shoremap_north_25', dtype='>i2')[
+    150:
+].reshape(
+    448, 304
+)  # noqa
 goddard_land['nh25'] = goddard_land['raw_nh25'].astype(np.uint8)
 print(f'values in goddard_land: {np.unique(goddard_land["nh25"])}')
 
 goddard_minic = {}
-goddard_minic['raw_nh25'] = np.fromfile('./SSMI8_monavg_min_con', dtype='>i2')[150:].reshape(448, 304)  # noqa
+goddard_minic['raw_nh25'] = np.fromfile('./SSMI8_monavg_min_con', dtype='>i2')[
+    150:
+].reshape(
+    448, 304
+)  # noqa
 print(f'goddard_minic: min: {goddard_minic["raw_nh25"].min()}')
 print(f'goddard_minic: max: {goddard_minic["raw_nh25"].max()}')
 goddard_minic['nh25'] = np.zeros((448, 304), dtype=np.int16)
 goddard_minic['nh25'][:] = goddard_minic['raw_nh25']
 
 # SH
-goddard_land['raw_sh25'] = np.fromfile('./shoremap_south_25', dtype='>i2')[150:].reshape(332, 316)  # noqa
+goddard_land['raw_sh25'] = np.fromfile('./shoremap_south_25', dtype='>i2')[
+    150:
+].reshape(
+    332, 316
+)  # noqa
 goddard_land['sh25'] = goddard_land['raw_sh25'].astype(np.uint8)
 print(f'values in goddard_land: {np.unique(goddard_land["sh25"])}')
 
-goddard_minic['raw_sh25'] = np.fromfile('./SSMI_monavg_min_con_s', dtype='>i2')[150:].reshape(332, 316)  # noqa
+goddard_minic['raw_sh25'] = np.fromfile('./SSMI_monavg_min_con_s', dtype='>i2')[
+    150:
+].reshape(
+    332, 316
+)  # noqa
 print(f'goddard_minic: min: {goddard_minic["raw_sh25"].min()}')
 print(f'goddard_minic: max: {goddard_minic["raw_sh25"].max()}')
 goddard_minic['sh25'] = np.zeros((332, 316), dtype=np.int16)
@@ -83,15 +107,19 @@ is_land = {}
 
 # NH
 is_land['godd_nh25'] = (goddard_land['nh25'] == 1) | (goddard_land['nh25'] == 2)  # noqa
-is_land['amsru_nh25'] = (conc['nh25'] == 120)
-is_land['amsru_nh12'] = (conc['nh12'] == 120)
+# TODO: use defaults.
+is_land['amsru_nh25'] = conc['nh25'] == 120
+is_land['amsru_nh12'] = conc['nh12'] == 120
 
-print(f'land_godd_nh25 same as land_amsru_nh25: {np.all(is_land["godd_nh25"] == is_land["amsru_nh25"])}')  # noqa
+print(
+    'land_godd_nh25 same as land_amsru_nh25:'
+    f' {np.all(is_land["godd_nh25"] == is_land["amsru_nh25"])}'
+)  # noqa
 
 # SH
 is_land['godd_sh25'] = (goddard_land['sh25'] == 1) | (goddard_land['sh25'] == 2)  # noqa
-is_land['amsru_sh25'] = (conc['sh25'] == 120)
-is_land['amsru_sh12'] = (conc['sh12'] == 120)
+is_land['amsru_sh25'] = conc['sh25'] == 120
+is_land['amsru_sh12'] = conc['sh12'] == 120
 
 # Use interpolation to generate NH minic field
 # For the purposes of minic-field interpolation, cause land to be 1000
@@ -100,12 +128,13 @@ is_land['amsru_sh12'] = (conc['sh12'] == 120)
 filled_minic_nh25 = goddard_minic['nh25'].copy()
 filled_minic_nh25[is_land['godd_nh25']] = 1000
 interp_func = RectBivariateSpline(
-    np.arange(0, 448),
-    np.arange(0, 304),
-    goddard_minic['nh25'],
-    kx=1,
-    ky=1)
-goddard_minic['nh12'] = interp_func(np.arange(0, 448, 0.5), np.arange(0, 304, 0.5)).astype(np.int16)  # noqa
+    np.arange(0, 448), np.arange(0, 304), goddard_minic['nh25'], kx=1, ky=1
+)
+goddard_minic['nh12'] = interp_func(
+    np.arange(0, 448, 0.5), np.arange(0, 304, 0.5)
+).astype(
+    np.int16
+)  # noqa
 goddard_minic['nh12'][is_land['amsru_nh12']] = 1
 
 # SH
@@ -116,12 +145,13 @@ filled_minic_sh25[is_land['amsru_sh25']] = 1
 
 # continue calculating amsru_12...
 interp_func = RectBivariateSpline(
-    np.arange(0, 332),
-    np.arange(0, 316),
-    goddard_minic['sh25'],
-    kx=1,
-    ky=1)
-goddard_minic['sh12'] = interp_func(np.arange(0, 332, 0.5), np.arange(0, 316, 0.5)).astype(np.int16)  # noqa
+    np.arange(0, 332), np.arange(0, 316), goddard_minic['sh25'], kx=1, ky=1
+)
+goddard_minic['sh12'] = interp_func(
+    np.arange(0, 332, 0.5), np.arange(0, 316, 0.5)
+).astype(
+    np.int16
+)  # noqa
 goddard_minic['sh12'][is_land['amsru_sh12']] = 1
 
 for key in goddard_minic.keys():
@@ -130,7 +160,9 @@ for key in goddard_minic.keys():
         # ofn = f'minic_amsru_{key}_{xdim}x{ydim}.dat'
         ofn = f'minic_amsru_{key}.dat'
         goddard_minic[key].tofile(ofn)
-        print(f'Wrote: {ofn}  {goddard_minic[key].dtype}  {goddard_minic[key].shape}')  # noqa
+        print(
+            f'Wrote: {ofn}  {goddard_minic[key].dtype}  {goddard_minic[key].shape}'
+        )  # noqa
 
 # Now, compute the shoremap files from the land file
 # Note: Doing this revealed that there are a few errors
@@ -146,36 +178,39 @@ for key in [key for key in is_land.keys() if 'amsru' in key]:
     up = shift(field, (-1, 0), order=0, mode='nearest')
     down = shift(field, (1, 0), order=0, mode='nearest')
 
-    is_coast = (field == 1) & \
-        ((left == 0) | (right == 0) | (up == 0) | (down == 0))
+    # fmt: off
+    is_coast = (
+        (field == 1)
+        & (
+            (left == 0)
+            | (right == 0)
+            | (up == 0)
+            | (down == 0)
+        )
+    )
+    # fmt: on
     field[is_coast] = 2
 
     # Now, expand
     # Convolve the field with a 3x3 'ones' matrix to get all
     # diagonally connected points
     convolved = convolve2d(
-        field,
-        [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-        mode='same',
-        boundary='symm')
+        field, [[1, 1, 1], [1, 1, 1], [1, 1, 1]], mode='same', boundary='symm'
+    )
     is_shore = (convolved > 0) & (field == 0)
     field[is_shore] = 3
 
     # Expand to near_shore, *not* diagonally connected
     convolved = convolve2d(
-        field,
-        [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
-        mode='same',
-        boundary='symm')
+        field, [[0, 1, 0], [1, 1, 1], [0, 1, 0]], mode='same', boundary='symm'
+    )
     is_near = (convolved > 0) & (field == 0)
     field[is_near] = 4
 
     # Expand to far_shore, *not* diagonally connected
     convolved = convolve2d(
-        field,
-        [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
-        mode='same',
-        boundary='symm')
+        field, [[0, 1, 0], [1, 1, 1], [0, 1, 0]], mode='same', boundary='symm'
+    )
     is_far = (convolved > 0) & (field == 0)
     field[is_far] = 5
 

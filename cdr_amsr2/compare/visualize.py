@@ -13,14 +13,13 @@ import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
 
-import cdr_amsr2.nt.compute_nt_ic as nt
+import cdr_amsr2.nt.api as nt_api
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
+from cdr_amsr2.compare.ref_data import get_sea_ice_index
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
-from cdr_amsr2.nt.api import amsr2_nasateam, original_example
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
 
 OUTPUT_DIR = Path('/tmp/diffs/')
@@ -340,7 +339,7 @@ def _fix_nt_outputs(conc_ds):
 
 def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     """Compare original examples from Goddard for nasateam."""
-    our_conc_ds = _fix_nt_outputs(original_example(hemisphere=hemisphere))
+    our_conc_ds = _fix_nt_outputs(nt_api.original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
     sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
@@ -354,19 +353,26 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
         cdr_amsr2_dataproduct='goddard_example_f17',
         cdr_amsr2_algorithm='nasateam',
         comparison_dataproduct='SII_25km',
-        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
+        pole_hole_mask=get_ps_pole_hole_mask(resolution='25')
+        if hemisphere == 'north'
+        else None,
     )
 
 
-def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
+def compare_amsr_nt_to_sii(
+    *, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS
+) -> None:
     # date = dt.date(2022, 8, 1)
     date = dt.date(2018, 1, 1)
 
-    sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
+    sii_conc_ds = get_sea_ice_index(
+        hemisphere=hemisphere, date=date, resolution=resolution
+    )
     our_conc_ds = _fix_nt_outputs(
-        amsr2_nasateam(
+        nt_api.amsr2_nasateam(
             date=date,
             hemisphere=hemisphere,
+            resolution=resolution,
         )
     )
 
@@ -374,12 +380,16 @@ def compare_amsr_nt_to_sii(*, hemisphere: Hemisphere) -> None:
         cdr_amsr2_conc=our_conc_ds.conc,
         comparison_conc=sii_conc_ds.conc,
         hemisphere=hemisphere,
-        invalid_icemask=get_ps25_sst_mask(hemisphere=hemisphere, date=date),
+        invalid_icemask=get_ps_invalid_ice_mask(
+            hemisphere=hemisphere, date=date, resolution=resolution
+        ),
         date=date,
-        cdr_amsr2_dataproduct='AU_SI25',
+        cdr_amsr2_dataproduct=f'AU_SI{resolution}',
         cdr_amsr2_algorithm='nasateam',
-        comparison_dataproduct='SII_25km',
-        pole_hole_mask=nt._get_polehole_mask() if hemisphere == 'north' else None,
+        comparison_dataproduct=f'SII_{resolution}km',
+        pole_hole_mask=get_ps_pole_hole_mask(resolution=resolution)
+        if hemisphere == 'north'
+        else None,
     )
 
 
@@ -391,4 +401,7 @@ if __name__ == '__main__':
     # )
     for hemisphere in ('north', 'south'):
         # compare_original_nt_to_sii(hemisphere=hemisphere)
-        compare_amsr_nt_to_sii(hemisphere=hemisphere)  # type: ignore[arg-type]
+        compare_amsr_nt_to_sii(
+            hemisphere=hemisphere,  # type: ignore[arg-type]
+            resolution='12',  # type: ignore[arg-type]
+        )

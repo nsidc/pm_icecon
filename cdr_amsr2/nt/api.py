@@ -5,42 +5,60 @@ import numpy as np
 import xarray as xr
 
 from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.constants import PACKAGE_DIR
-from cdr_amsr2.fetch.au_si import get_au_si_tbs
+from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.compute_nt_ic import nasateam
-from cdr_amsr2.util import get_ps25_grid_shape
-
-
-def _get_shoremap(*, hemisphere: Hemisphere):
-    shoremap_fn = (
-        PACKAGE_DIR
-        / '..'
-        / f'legacy/nt_orig/DATAFILES/data36/maps/shoremap_{hemisphere}_25'
-    )
-    shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(
-        get_ps25_grid_shape(hemisphere=hemisphere)
-    )
-
-    return shoremap
-
-
-def _get_minic(*, hemisphere: Hemisphere):
-    # TODO: why is 'SSMI8' on FH fn and not SH?
-    if hemisphere == 'north':
-        minic_fn = 'SSMI8_monavg_min_con'
-    else:
-        minic_fn = 'SSMI_monavg_min_con_s'
-
-    minic_path = PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps' / minic_fn
-    minic = np.fromfile(minic_path, dtype='>i2')[150:].reshape(
-        get_ps25_grid_shape(hemisphere=hemisphere)
-    )
-
-    return minic
+from cdr_amsr2.nt.masks import get_ps25_sst_mask
+from cdr_amsr2.util import get_ps25_grid_shape, get_ps_grid_shape
 
 
 def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     """Return the concentration field example for f17_20180101."""
+
+    def _get_shoremap(*, hemisphere: Hemisphere):
+        shoremap_fn = (
+            PACKAGE_DIR
+            / '..'
+            / f'legacy/nt_orig/DATAFILES/data36/maps/shoremap_{hemisphere}_25'
+        )
+        shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(
+            get_ps25_grid_shape(hemisphere=hemisphere)
+        )
+
+        return shoremap
+
+    def _get_minic(*, hemisphere: Hemisphere):
+        # TODO: why is 'SSMI8' on FH fn and not SH?
+        if hemisphere == 'north':
+            minic_fn = 'SSMI8_monavg_min_con'
+        else:
+            minic_fn = 'SSMI_monavg_min_con_s'
+
+        minic_path = (
+            PACKAGE_DIR / '..' / 'legacy/nt_orig/DATAFILES/data36/maps' / minic_fn
+        )
+        minic = np.fromfile(minic_path, dtype='>i2')[150:].reshape(
+            get_ps25_grid_shape(hemisphere=hemisphere)
+        )
+
+        return minic
+
+    def _get_polehole_mask():
+        # TODO: this pole hole path is different than the one for bt. Are they the
+        # same data?
+        polehole_fn = (
+            PACKAGE_DIR
+            / '..'
+            / 'legacy/nt_orig/DATAFILES/data36/maps/nsssspoleholemask_for_ICprod'
+        )
+        polehole = np.fromfile(polehole_fn, dtype='>i2')[150:].reshape(448, 304)
+
+        where_polehole = polehole == 1
+
+        return where_polehole
+
     date = dt.date(2018, 1, 1)
     raw_fns = {
         'h19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin',
@@ -59,6 +77,8 @@ def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
             dtype=np.int16,
         ).reshape(grid_shape)
 
+    invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
+
     conc_ds = nasateam(
         tbs=tbs,
         sat='17_final',
@@ -66,17 +86,21 @@ def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         shoremap=_get_shoremap(hemisphere=hemisphere),
         minic=_get_minic(hemisphere=hemisphere),
         date=date,
+        invalid_ice_mask=invalid_ice_mask,
+        pole_hole_mask=_get_polehole_mask() if hemisphere == 'north' else None,
     )
 
     return conc_ds
 
 
-def amsr2_nasateam(*, date: dt.date, hemisphere: Hemisphere):
+def amsr2_nasateam(
+    *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
+):
     """Compute sea ice concentration from AU_SI25 TBs."""
     xr_tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
-        resolution='25',
+        resolution=resolution,
     )
 
     tbs = {
@@ -87,13 +111,44 @@ def amsr2_nasateam(*, date: dt.date, hemisphere: Hemisphere):
         'v37': xr_tbs['v36'].data,
     }
 
+    shoremap = np.fromfile(
+        (
+            '/share/apps/amsr2-cdr/nasateam_ancillary/'
+            f'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'
+        ),
+        dtype=np.uint8,
+    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
+    minic = np.fromfile(
+        (
+            '/share/apps/amsr2-cdr/nasateam_ancillary/'
+            f'minic_amsru_{hemisphere[0]}h{resolution}.dat'
+        ),
+        dtype=np.int16,
+    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
+
+    # TODO: this function is currently defined in the bootstrap-specific masks
+    # module. Should it be moved to the top-level masks? Originally split masks
+    # between nt and bt modules because the original goddard nasateam example
+    # used a unique invalid ice mask. Eventually won't matter too much because
+    # we plan to move most masks into common nc files that will be read on a
+    # per-grid basis.
+    invalid_ice_mask = get_ps_invalid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,
+    )
+
+    pole_hole_mask = get_ps_pole_hole_mask(resolution=resolution)
+
     conc_ds = nasateam(
         tbs=tbs,
         sat='u2',
         hemisphere=hemisphere,
-        shoremap=_get_shoremap(hemisphere=hemisphere),
-        minic=_get_minic(hemisphere=hemisphere),
+        shoremap=shoremap,
+        minic=minic,
         date=date,
+        invalid_ice_mask=invalid_ice_mask,
+        pole_hole_mask=pole_hole_mask,
     )
 
     return conc_ds
