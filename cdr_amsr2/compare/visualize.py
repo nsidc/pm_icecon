@@ -17,7 +17,7 @@ import cdr_amsr2.nt.api as nt_api
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
-from cdr_amsr2.compare.ref_data import get_sea_ice_index
+from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_sea_ice_index
 from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
@@ -126,38 +126,6 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
         add_colorbar=False,
         add_labels=False,
     )
-
-
-def get_au_si25_bt_conc(
-    *,
-    date: dt.date,
-    hemisphere: Hemisphere,
-    resolution: au_si.AU_SI_RESOLUTIONS,
-) -> xr.DataArray:
-    ds = au_si._get_au_si_data_fields(
-        # TODO: DRY out base dir defualt. No need to pass this around...
-        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
-        date=date,
-        hemisphere=hemisphere,
-        resolution=resolution,  # type: ignore[arg-type]
-    )
-
-    # flip the image to be 'right-side' up
-    ds = ds.reindex(YDim=ds.YDim[::-1], XDim=ds.XDim)
-    ds = ds.rename({'YDim': 'y', 'XDim': 'x'})
-
-    nt_conc = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICECON_DAY')
-    diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
-    bt_conc = nt_conc + diff
-
-    # change the AU_SI flags to our defaults
-    # and make polehole/missing values match ours missing value (110)
-    # missing
-    bt_conc = bt_conc.where(bt_conc != 110, DEFAULT_FLAG_VALUES.missing / 10)
-    # land
-    bt_conc = bt_conc.where(bt_conc != 120, DEFAULT_FLAG_VALUES.land / 10)
-
-    return bt_conc
 
 
 def _mask_data(
@@ -299,7 +267,7 @@ def do_comparisons_au_si_bt(  # noqa
     resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> None:
     """Create figure showing comparison for AU_SI{25|12}."""
-    au_si25_conc = get_au_si25_bt_conc(
+    au_si25_conc = get_au_si_bt_conc(
         date=date, hemisphere=hemisphere, resolution=resolution
     )
 
