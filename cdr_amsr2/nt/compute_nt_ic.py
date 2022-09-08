@@ -200,37 +200,28 @@ def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]
     return gr_thresholds
 
 
-def apply_weather_filter(
-    conc: npt.NDArray, ratios: dict[str, npt.NDArray], thres: dict[str, float]
-) -> npt.NDArray:
-    """Return a copy of `conc` masked by the weather filter."""
+def get_weather_filter_mask(
+    *, ratios: dict[str, npt.NDArray], gr_thresholds: dict[str, float]
+) -> npt.NDArray[np.bool_]:
     # Determine where array is weather-filtered
-    print(f'thres 2219: {thres["2219"]}')
-    print(f'thres 3719: {thres["3719"]}')
+    print(f'gr_thresholds 2219: {gr_thresholds["2219"]}')
+    print(f'gr_thresholds 3719: {gr_thresholds["3719"]}')
 
-    filtered = (ratios['gr_2219'] > thres['2219']) | (ratios['gr_3719'] > thres['3719'])
+    # fmt: off
+    weather_filter_mask = (
+        (ratios['gr_2219'] > gr_thresholds['2219'])
+        | (ratios['gr_3719'] > gr_thresholds['3719'])
+    )
+    # fmt: on
 
-    filtered_conc = conc.copy()
-    filtered_conc[filtered] = 0
-
-    return filtered_conc
+    return weather_filter_mask
 
 
-def apply_invalid_tbs_mask(
-    conc: npt.NDArray, tbs: dict[str, npt.NDArray]
-) -> npt.NDArray:
-    """Return a copy of `conc` masked where TBs are invalid.
-
-    Invalid elements are set to a value of -10 in the concentration field.
-    """
+def get_invalid_tbs_mask(tbs: dict[str, npt.NDArray]) -> npt.NDArray[np.bool_]:
     is_valid_tbs = (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
+    invalid_tbs = ~is_valid_tbs
 
-    filtered_conc = conc.copy()
-    # TODO: would it be better to have a flag value specifically for invalid
-    # data? Is treating this as 'missing' really appropriate?
-    filtered_conc[~is_valid_tbs] = DEFAULT_FLAG_VALUES.missing
-
-    return filtered_conc
+    return invalid_tbs
 
 
 def compute_nt_conc(
@@ -330,15 +321,6 @@ def apply_nt_spillover(
     return newice
 
 
-def apply_invalid_icemask(
-    *, conc: npt.NDArray[np.int16], invalid_ice_mask: npt.NDArray[np.bool_]
-) -> npt.NDArray[np.int16]:
-    """Replace all `True` elements in the invalid ice mask with 0."""
-    masked_conc = np.where(invalid_ice_mask, 0, conc.copy())
-
-    return masked_conc
-
-
 def nasateam(
     *,
     tbs: dict[str, npt.NDArray],
@@ -383,8 +365,12 @@ def nasateam(
     conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
 
     # Set invalid tbs and weather-filtered values
-    conc = apply_invalid_tbs_mask(conc, spi_tbs)
-    conc = apply_weather_filter(conc, ratios, gr_thresholds)
+    invalid_tb_mask = get_invalid_tbs_mask(spi_tbs)
+    conc[invalid_tb_mask] = DEFAULT_FLAG_VALUES.missing
+    weather_filter_mask = get_weather_filter_mask(
+        ratios=ratios, gr_thresholds=gr_thresholds
+    )
+    conc[weather_filter_mask] = 0
 
     conc_int16 = conc.astype(np.int16)
 
@@ -395,11 +381,9 @@ def nasateam(
     # conc_int16.tofile('conc_raw_py.dat')
 
     # Apply NT-land spillover filter
-    conc_spill = apply_nt_spillover(
-        conc_int16=conc_int16, shoremap=shoremap, minic=minic
-    )
+    conc = apply_nt_spillover(conc_int16=conc_int16, shoremap=shoremap, minic=minic)
     # Apply SST-threshold
-    conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
+    conc[invalid_ice_mask] = 0
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
