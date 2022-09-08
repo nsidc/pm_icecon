@@ -150,6 +150,13 @@ def get_au_si25_bt_conc(
     diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
     bt_conc = nt_conc + diff
 
+    # change the AU_SI flags to our defaults
+    # and make polehole/missing values match ours missing value (110)
+    # missing
+    bt_conc = bt_conc.where(bt_conc != 110, DEFAULT_FLAG_VALUES.missing / 10)
+    # land
+    bt_conc = bt_conc.where(bt_conc != 120, DEFAULT_FLAG_VALUES.land / 10)
+
     return bt_conc
 
 
@@ -358,7 +365,7 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     )
 
 
-def compare_amsr_nt_to_sii(
+def compare_amsr_nt_to_sii(  # noqa
     *, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS
 ) -> None:
     # date = dt.date(2022, 8, 1)
@@ -393,14 +400,14 @@ def compare_amsr_nt_to_sii(
 
 
 if __name__ == '__main__':
-    # do_comparisons_au_si_bt(
-    #     hemisphere='north',
-    #     date=dt.date(2022, 8, 1),
-    #     resolution='12',
-    # )
-    for hemisphere in ('north', 'south'):
-        # compare_original_nt_to_sii(hemisphere=hemisphere)
-        compare_amsr_nt_to_sii(
-            hemisphere=hemisphere,  # type: ignore[arg-type]
-            resolution='12',  # type: ignore[arg-type]
-        )
+    do_comparisons_au_si_bt(
+        hemisphere='north',
+        date=dt.date(2022, 8, 1),
+        resolution='12',
+    )
+    # for hemisphere in ('north', 'south'):
+    #     # compare_original_nt_to_sii(hemisphere=hemisphere)
+    #     compare_amsr_nt_to_sii(
+    #         hemisphere=hemisphere,  # type: ignore[arg-type]
+    #         resolution='12',  # type: ignore[arg-type]
+    #     )
