@@ -42,6 +42,9 @@ def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
             get_ps25_grid_shape(hemisphere=hemisphere)
         )
 
+        # Scale down by 10. The original alg. dealt w/ concentrations scaled by 10.
+        minic = minic / 10
+
         return minic
 
     date = dt.date(2018, 1, 1)
@@ -109,6 +112,9 @@ def amsr2_nasateam(
         ),
         dtype=np.int16,
     ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
+
+    # Scale down by 10. The original alg. dealt w/ concentrations scaled by 10.
+    minic = minic / 10
 
     # TODO: this function is currently defined in the bootstrap-specific masks
     # module. Should it be moved to the top-level masks? Originally split masks

@@ -254,9 +254,9 @@ def compute_nt_conc(
     # Because we have not excluded missing-tb and weather-filtered points,
     # it is possible for denominator 'dd' to have value of zero.  Remove
     # this for division
-    dd[dd == 0] = 0.001  # This causes the denominator to become 1.0
+    dd[dd == 0] = 0.01  # This causes the denominator to become 1.0
 
-    conc = (fy + my) / dd * 1000.0
+    conc = (fy + my) / dd * 100.0
 
     conc[conc < 0] = 0
 
@@ -264,10 +264,10 @@ def compute_nt_conc(
 
 
 def apply_nt_spillover(
-    *, conc_int16: npt.NDArray[np.int16], shoremap: npt.NDArray, minic: npt.NDArray
+    *, conc: npt.NDArray, shoremap: npt.NDArray, minic: npt.NDArray
 ) -> npt.NDArray[np.int16]:
     """Apply the NASA Team land spillover routine."""
-    newice = conc_int16.copy()
+    newice = conc.copy()
 
     # Set land/coast flag values.
     # TODO: do we want the coast to be 'land' as it is in bootstrap?
@@ -282,19 +282,20 @@ def apply_nt_spillover(
     is_near_coast = shoremap == 4
     is_far_coastal = shoremap == 3
 
-    minic[is_at_coast & (minic > 200)] = 200
-    minic[is_near_coast & (minic > 400)] = 400
-    minic[is_far_coastal & (minic > 600)] = 600
+    mod_minic = minic.copy()
+    mod_minic[is_at_coast & (minic > 20)] = 20
+    mod_minic[is_near_coast & (minic > 40)] = 40
+    mod_minic[is_far_coastal & (minic > 60)] = 60
 
     # Count number of nearby low ice conc
-    n_low = np.zeros_like(conc_int16, dtype=np.uint8)
+    n_low = np.zeros_like(conc, dtype=np.uint8)
 
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
 
-            rolled = np.roll(conc_int16, (joff, ioff), axis=(0, 1))
-            is_rolled_low = (rolled < 150) & (rolled >= 0)
+            rolled = np.roll(conc, (joff, ioff), axis=(0, 1))
+            is_rolled_low = (rolled < 15) & (rolled >= 0)
 
             if offmax <= 1:
                 n_low[is_rolled_low & is_at_coast] += 1
@@ -309,14 +310,14 @@ def apply_nt_spillover(
     # because the spatial interpolation is not identical along the border
 
     where_reduce_ice = (n_low >= 3) & (shoremap > 2)
-    newice[where_reduce_ice] -= minic[where_reduce_ice]
+    newice[where_reduce_ice] -= mod_minic[where_reduce_ice]
 
-    where_ice_overreduced = (conc_int16 >= 0) & (newice < 0) & (shoremap > 2)
+    where_ice_overreduced = (conc >= 0) & (newice < 0) & (shoremap > 2)
     newice[where_ice_overreduced] = 0
 
     # Preserve missing data (conc value of -10)
-    where_missing = (conc_int16 < 0) & where_reduce_ice & (shoremap > 2)
-    newice[where_missing] = conc_int16[where_missing]
+    where_missing = (conc < 0) & where_reduce_ice & (shoremap > 2)
+    newice[where_missing] = conc[where_missing]
 
     return newice
 
@@ -371,16 +372,8 @@ def nasateam(
     )
     conc[invalid_tb_mask | weather_filter_mask] = 0
 
-    conc_int16 = conc.astype(np.int16)
-
-    # This "conc_int16" field is identical to that saved to:
-    #    ../nt_orig/system/new_2_iceconcentrations/
-    #  eg
-    #    nssss1d17tcon2018001
-    # conc_int16.tofile('conc_raw_py.dat')
-
     # Apply NT-land spillover filter
-    conc = apply_nt_spillover(conc_int16=conc_int16, shoremap=shoremap, minic=minic)
+    conc = apply_nt_spillover(conc=conc, shoremap=shoremap, minic=minic)
     # Apply SST-threshold
     conc[invalid_ice_mask] = 0
 
