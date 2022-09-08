@@ -35,7 +35,7 @@ def _get_area_def(*, hemisphere: Hemisphere, shape: tuple[int, int]) -> AreaDefi
     # (lower_left_x, lower_left_y, upper_right_x, upper_right_y)
     area_extent = {
         'north': (-3850000.0, -5350000.0, 3750000.0, 5850000.0),
-        'south': (-3950000.000, -3950000.000, 3950000.000, 4350000.000),
+        'south': (-3950000.0, -3950000.0, 3950000.0, 4350000.0),
     }[hemisphere]
 
     area_def = AreaDefinition(
