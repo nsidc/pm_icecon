@@ -7,6 +7,7 @@ visualization code.
 """
 import datetime as dt
 from pathlib import Path
+from typing import get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -378,7 +379,7 @@ def compare_amsr_nt_to_sii(  # noqa
 
 
 if __name__ == '__main__':
-    for hemisphere in ('north', 'south'):
+    for hemisphere in get_args(Hemisphere):
         do_comparisons_au_si_bt(
             hemisphere=hemisphere,
             date=dt.date(2022, 8, 1),
