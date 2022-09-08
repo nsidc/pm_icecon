@@ -18,7 +18,7 @@ def _hack_flag_vals(conc):
     # make coastlines into 'land' for now.
     hacked[hacked == -9998] = DEFAULT_FLAG_VALUES.land
     hacked[hacked == -50] = DEFAULT_FLAG_VALUES.pole_hole
-    hacked[hacked == -10] = DEFAULT_FLAG_VALUES.missing
+    hacked[hacked == -10] = 0
 
     return hacked
 

@@ -366,11 +366,10 @@ def nasateam(
 
     # Set invalid tbs and weather-filtered values
     invalid_tb_mask = get_invalid_tbs_mask(spi_tbs)
-    conc[invalid_tb_mask] = DEFAULT_FLAG_VALUES.missing
     weather_filter_mask = get_weather_filter_mask(
         ratios=ratios, gr_thresholds=gr_thresholds
     )
-    conc[weather_filter_mask] = 0
+    conc[invalid_tb_mask | weather_filter_mask] = 0
 
     conc_int16 = conc.astype(np.int16)
 
