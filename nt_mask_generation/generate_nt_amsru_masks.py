@@ -107,6 +107,7 @@ is_land = {}
 
 # NH
 is_land['godd_nh25'] = (goddard_land['nh25'] == 1) | (goddard_land['nh25'] == 2)  # noqa
+# TODO: use defaults.
 is_land['amsru_nh25'] = conc['nh25'] == 120
 is_land['amsru_nh12'] = conc['nh12'] == 120
 
@@ -177,7 +178,17 @@ for key in [key for key in is_land.keys() if 'amsru' in key]:
     up = shift(field, (-1, 0), order=0, mode='nearest')
     down = shift(field, (1, 0), order=0, mode='nearest')
 
-    is_coast = (field == 1) & ((left == 0) | (right == 0) | (up == 0) | (down == 0))
+    # fmt: off
+    is_coast = (
+        (field == 1)
+        & (
+            (left == 0)
+            | (right == 0)
+            | (up == 0)
+            | (down == 0)
+        )
+    )
+    # fmt: on
     field[is_coast] = 2
 
     # Now, expand
