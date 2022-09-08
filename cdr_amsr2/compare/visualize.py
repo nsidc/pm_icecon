@@ -368,14 +368,14 @@ def compare_amsr_nt_to_sii(  # noqa
 
 
 if __name__ == '__main__':
-    do_comparisons_au_si_bt(
-        hemisphere='north',
-        date=dt.date(2022, 8, 1),
-        resolution='12',
-    )
-    # for hemisphere in ('north', 'south'):
-    #     # compare_original_nt_to_sii(hemisphere=hemisphere)
-    #     compare_amsr_nt_to_sii(
-    #         hemisphere=hemisphere,  # type: ignore[arg-type]
-    #         resolution='12',  # type: ignore[arg-type]
-    #     )
+    # do_comparisons_au_si_bt(
+    #     hemisphere='north',
+    #     date=dt.date(2022, 8, 1),
+    #     resolution='12',
+    # )
+    for hemisphere in ('north', 'south'):
+        # compare_original_nt_to_sii(hemisphere=hemisphere)
+        compare_amsr_nt_to_sii(
+            hemisphere=hemisphere,  # type: ignore[arg-type]
+            resolution='12',  # type: ignore[arg-type]
+        )

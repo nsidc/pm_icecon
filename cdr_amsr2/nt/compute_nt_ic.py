@@ -337,17 +337,6 @@ def apply_invalid_icemask(
     return masked_conc
 
 
-def apply_polehole(
-    *, conc: npt.NDArray[np.int16], pole_hole_mask: npt.NDArray[np.bool_]
-) -> npt.NDArray[np.int16]:
-    """Apply the pole hole."""
-    new_conc = conc.copy()
-
-    new_conc[pole_hole_mask] = DEFAULT_FLAG_VALUES.pole_hole
-
-    return new_conc
-
-
 def nasateam(
     *,
     tbs: dict[str, npt.NDArray],
@@ -357,7 +346,6 @@ def nasateam(
     minic: npt.NDArray,
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
-    pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ):
     spi_tbs = nt_spatint(tbs)
 
@@ -410,10 +398,6 @@ def nasateam(
     )
     # Apply SST-threshold
     conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
-
-    # Apply pole hole if in the northern hemi
-    if hemisphere == 'north' and pole_hole_mask is not None:
-        conc = apply_polehole(conc=conc, pole_hole_mask=pole_hole_mask)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
