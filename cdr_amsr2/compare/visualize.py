@@ -18,6 +18,7 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.compare.ref_data import get_sea_ice_index
+from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
@@ -50,8 +51,8 @@ COLORS = [
     '#D0ECFE',  # 85-90
     '#E4F4FE',  # 90-95
     '#F7FCFF',  # 95-100
-    '#e9cb00',  # 110missing
-    '#777777',  # 120land
+    '#777777',  # 254land
+    '#e9cb00',  # 255missing
 ]
 
 COLORBOUNDS = [
@@ -76,8 +77,8 @@ COLORBOUNDS = [
     90.0,
     95.0,
     100.0001,
-    110.001,
-    120.001,
+    254.001,
+    255.001,
 ]
 
 
@@ -159,7 +160,7 @@ def _mask_data(
     invalid_icemask,
     pole_hole_mask=None,
 ):
-    aui_si25_conc_masked = data.where(data != 110, 0)
+    aui_si25_conc_masked = data.where(data != DEFAULT_FLAG_VALUES.missing, 0)
 
     # Mask out invalid ice (the AU_SI products have conc values in lakes. We
     # don't include those in our valid ice masks.
@@ -167,7 +168,7 @@ def _mask_data(
 
     if hemisphere == 'north' and pole_hole_mask is not None:
         aui_si25_conc_masked = aui_si25_conc_masked.where(
-            cond=~pole_hole_mask, other=110
+            cond=~pole_hole_mask, other=DEFAULT_FLAG_VALUES.missing / 10
         )
 
     return aui_si25_conc_masked
@@ -331,8 +332,6 @@ def _fix_nt_outputs(conc_ds):
     conc_ds['conc'] = xr.where(
         (conc_ds.conc > 100) & (conc_ds.conc < 200), 100, conc_ds.conc
     )
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 25, 120)
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 252, 110)
 
     return conc_ds
 

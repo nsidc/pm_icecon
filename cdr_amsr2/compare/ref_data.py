@@ -102,15 +102,4 @@ def get_sea_ice_index(
     # create xr datasets.
     conc_ds = conc_ds.reindex(y=conc_ds.y[::-1], x=conc_ds.x)
 
-    # Change the seaice land values to look like ours (120)
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 254, 120)
-    # Do the same for coast values
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 253, 120)
-
-    # and make polehole/missing values match ours missing value (110)
-    # polehole
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 251, 110)
-    # missing
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 255, 110)
-
     return conc_ds
