@@ -13,7 +13,7 @@ import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
 
-import cdr_amsr2.nt.api as np_api
+import cdr_amsr2.nt.api as nt_api
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
@@ -339,7 +339,7 @@ def _fix_nt_outputs(conc_ds):
 
 def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     """Compare original examples from Goddard for nasateam."""
-    our_conc_ds = _fix_nt_outputs(np_api.original_example(hemisphere=hemisphere))
+    our_conc_ds = _fix_nt_outputs(nt_api.original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
     sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
@@ -369,7 +369,7 @@ def compare_amsr_nt_to_sii(
         hemisphere=hemisphere, date=date, resolution=resolution
     )
     our_conc_ds = _fix_nt_outputs(
-        np_api.amsr2_nasateam(
+        nt_api.amsr2_nasateam(
             date=date,
             hemisphere=hemisphere,
             resolution=resolution,
