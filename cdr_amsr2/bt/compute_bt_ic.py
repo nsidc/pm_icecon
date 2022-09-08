@@ -968,7 +968,7 @@ def calc_bt_ice(
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_mask] = 0.0
-    ic[tb_mask] = missval
+    ic[tb_mask] = 0.0
     ic[land_mask] = landval
 
     return ic

@@ -143,7 +143,7 @@ def _mask_data(
 
     if hemisphere == 'north' and pole_hole_mask is not None:
         aui_si25_conc_masked = aui_si25_conc_masked.where(
-            cond=~pole_hole_mask, other=DEFAULT_FLAG_VALUES.missing / 10
+            cond=~pole_hole_mask, other=0
         )
 
     return aui_si25_conc_masked
