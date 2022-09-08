@@ -1,26 +1,12 @@
 from typing import get_args
 
 import numpy as np
+from numpy.testing import assert_equal
 
 from cdr_amsr2._types import Hemisphere
-from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
 from cdr_amsr2.util import get_ps25_grid_shape
-
-# from numpy.testing import assert_equal
-
-
-def _hack_flag_vals(conc):
-
-    hacked = conc.copy()
-    hacked[hacked == -9999] = DEFAULT_FLAG_VALUES.land
-    # make coastlines into 'land' for now.
-    hacked[hacked == -9998] = DEFAULT_FLAG_VALUES.land
-    hacked[hacked == -50] = DEFAULT_FLAG_VALUES.pole_hole
-    hacked[hacked == -10] = 0
-
-    return hacked
 
 
 def test_nt_f17_regressions():
@@ -35,14 +21,7 @@ def test_nt_f17_regressions():
 
         actual_ds = original_example(hemisphere=hemisphere)
 
-        hacked = _hack_flag_vals(regression_data)
-
-        # after removing the pole hole flag from nasateam, this should be the
-        # only difference.
-        not_eq = hacked != actual_ds.conc.data
-        assert np.all(hacked[not_eq] == DEFAULT_FLAG_VALUES.pole_hole)
-
-        # assert_equal(
-        #     regression_data,
-        #     actual_ds.conc.data,
-        # )
+        assert_equal(
+            regression_data,
+            actual_ds.conc.data,
+        )
