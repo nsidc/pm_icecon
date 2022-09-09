@@ -1,7 +1,7 @@
 from typing import Optional
 
-import numpy.typing as npt
 import numpy as np
+import numpy.typing as npt
 
 
 # TODO: should we keep this function around?
