@@ -4,6 +4,7 @@ import numpy.typing as npt
 import numpy as np
 
 
+# TODO: should we keep this function around?
 def spatial_interp_conc(  # noqa
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
