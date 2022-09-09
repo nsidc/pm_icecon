@@ -297,22 +297,6 @@ def nasateam(
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
 ):
-    # Here, the tbs are identical to the output of the Goddard code
-
-    # TODO: is this already implemented? Do we need this comment?
-    # TODO: what is this 'next step to implement'?
-    # The next step is to implement:
-    #   seaice5con 001 2018 001 2018 TOT_CON ssmif17 n
-    #
-    # icetype   = TOT_CON
-    # type      = "tcon"
-    # titletype = "Team Ice Concentration"
-    # col = 304
-    # row = 448
-    # pole[0] = 'n'
-    # ipole = 0
-
-    # Calls: team( 1, 1, missing, brtemps, scale )
     tiepoints = get_tiepoints(satellite=sat, hemisphere=hemisphere)
     print(f'tiepoints: {tiepoints}')
 
