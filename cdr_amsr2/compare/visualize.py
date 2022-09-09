@@ -19,7 +19,6 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_sea_ice_index
-from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
@@ -86,9 +85,7 @@ COLORBOUNDS = [
 def _flip(input_conc_ds):
     flipped = input_conc_ds.copy()
     # flip the image to be 'right-side' up
-    flipped = flipped.reindex(
-        y=input_conc_ds.y[::-1], x=input_conc_ds.x
-    )
+    flipped = flipped.reindex(y=input_conc_ds.y[::-1], x=input_conc_ds.x)
 
     return flipped
 

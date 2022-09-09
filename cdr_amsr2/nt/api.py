@@ -114,7 +114,7 @@ def amsr2_nasateam(
     ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
 
     # Scale down by 10. The original alg. dealt w/ concentrations scaled by 10.
-    minic = minic / 10
+    minic = minic / 10  # type: ignore[assignment]
 
     # TODO: this function is currently defined in the bootstrap-specific masks
     # module. Should it be moved to the top-level masks? Originally split masks
