@@ -258,7 +258,9 @@ def compute_nt_conc(
 
     conc = (fy + my) / dd * 100.0
 
+    # Clamp concentrations to be between 0-100
     conc[conc < 0] = 0
+    conc[conc > 100] = 100
 
     return conc
 
