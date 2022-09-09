@@ -5,7 +5,6 @@ import numpy as np
 
 
 def spatial_interp_conc(  # noqa
-    sat,  # TODO: type of 'sat'
     ice: npt.NDArray[np.float32],  # TODO: conc?
     missval: float,
     landval: float,
@@ -41,19 +40,6 @@ def spatial_interp_conc(  # noqa
         replace_locs = replace_locs & ~pole_mask
 
     iceout[replace_locs] = replace_vals[replace_locs]
-
-    # Now, replace pole if e2n6.25
-    if sat == 'a2l1c':
-        # TODO: This pole hole function needs some work(!)
-        print('Setting pole hole for a2l1c')
-
-        iceout_nearpole = iceout[820:860, 820:860]
-
-        is_pole = iceout_nearpole == 0
-
-        iceout_nearpole[is_pole] = 110
-
-        print(f'Replaced {np.sum(np.where(is_pole, 1, 0))} values at pole')
 
     return iceout
 
