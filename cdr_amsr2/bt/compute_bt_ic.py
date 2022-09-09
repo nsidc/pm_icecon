@@ -9,7 +9,7 @@ import calendar
 import copy
 import datetime as dt
 from functools import reduce
-from typing import Optional, Sequence
+from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -537,56 +537,6 @@ def sst_clean_sb2(*, iceout, missval, landval, invalid_ice_mask: npt.NDArray[np.
     return ice_sst
 
 
-def spatial_interp(
-    sat,  # TODO: type of 'sat'
-    ice: npt.NDArray[np.float32],  # TODO: conc?
-    missval: float,
-    landval: float,
-    pole_mask: Optional[npt.NDArray[np.bool_]],
-) -> npt.NDArray[np.float32]:
-    iceout = ice.copy()
-    # implement fortran's spatial_interp() routine
-    # Use -200 as a not-valid ocean sentinel value
-    # so that it works with np.roll
-    oceanvals = iceout.copy()
-
-    total = np.zeros_like(oceanvals, dtype=np.float32)
-    count = np.zeros_like(oceanvals, dtype=np.int32)
-    for joff in range(-1, 2):
-        for ioff in range(-1, 2):
-            # TODO: consider using `scipy.ndimage.shift` instead of `np.roll`
-            # here and elsewhere in the code.
-            rolled = np.roll(oceanvals, (joff, ioff), axis=(1, 0))
-            not_land_nor_miss = (rolled != landval) & (rolled != missval)
-            total[not_land_nor_miss] += rolled[not_land_nor_miss]
-            count[not_land_nor_miss] += 1
-
-    count[count == 0] = 1
-    replace_vals = fdiv(total, count)
-
-    replace_locs = (oceanvals == missval) & (count >= 1)
-
-    if pole_mask is not None:
-        replace_locs = replace_locs & ~pole_mask
-
-    iceout[replace_locs] = replace_vals[replace_locs]
-
-    # Now, replace pole if e2n6.25
-    if sat == 'a2l1c':
-        # TODO: This pole hole function needs some work(!)
-        print('Setting pole hole for a2l1c')
-
-        iceout_nearpole = iceout[820:860, 820:860]
-
-        is_pole = iceout_nearpole == 0
-
-        iceout_nearpole[is_pole] = 110
-
-        print(f'Replaced {np.sum(np.where(is_pole, 1, 0))} values at pole')
-
-    return iceout
-
-
 def coastal_fix(arr, missval, landval, minic):
     # Apply coastal_fix() routine per Bootstrap
 
@@ -1041,15 +991,6 @@ def bootstrap(
         missval=DEFAULT_FLAG_VALUES.missing,
         landval=DEFAULT_FLAG_VALUES.land,
         invalid_ice_mask=params.invalid_ice_mask,
-    )
-
-    # *** Do spatial interp ***
-    iceout_sst = spatial_interp(
-        params.sat,
-        iceout_sst,
-        DEFAULT_FLAG_VALUES.missing,
-        DEFAULT_FLAG_VALUES.land,
-        params.pole_mask,
     )
 
     # *** Do spatial interp ***
