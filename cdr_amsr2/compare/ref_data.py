@@ -133,8 +133,8 @@ def get_au_si_bt_conc(
     # change the AU_SI flags to our defaults
     # and make polehole/missing values match ours missing value (110)
     # missing
-    bt_conc = bt_conc.where(bt_conc != 110, DEFAULT_FLAG_VALUES.missing / 10)
+    bt_conc = bt_conc.where(bt_conc != 110, DEFAULT_FLAG_VALUES.missing)
     # land
-    bt_conc = bt_conc.where(bt_conc != 120, DEFAULT_FLAG_VALUES.land / 10)
+    bt_conc = bt_conc.where(bt_conc != 120, DEFAULT_FLAG_VALUES.land)
 
     return bt_conc
