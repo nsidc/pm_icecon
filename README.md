@@ -89,12 +89,67 @@ Available tasks:
   test.vulture                 Use `vulture` to detect dead code.
 ```
 
+## Running the tests
+
+All of the tests (Unit, lint, typechecker, regression) can be run:
+
+```
+$ inv test
+```
+
+If a linting error occurs, the `format` task might fix the issue via the `black`
+formatter:
+
+```
+inv format
+```
 
 # Running the python code
 
-## Bootstrap
+## CLI
 
-### Scripting
+There is a command line interface defined using common defaults for testing
+purposes at NSIDC.
+
+NOTE: the CLI relies on hard-coded paths to mask files on NSIDC's virtual
+machine infrastructure. This CLI will not currently work for those outside of
+NSIDC. We plan to change this in the future.
+
+The CLI can be interacted with via `scripts/cli.sh`:
+
+```
+$ ./scripts/cli.sh --help
+Usage: python -m cdr_amsr2.cli [OPTIONS] COMMAND [ARGS]...
+
+  Run the nasateam or bootstrap algorithm.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  bootstrap  Run the bootstrap algorithm.
+  nasateam   Run the nasateam algorithm.
+```
+
+E.g., to create a NetCDF file with a `conc` variable containing concentration
+values from AU_SI12 from the bootstrap algorithm:
+
+```
+$ ./scripts/cli.sh bootstrap amsr2 --date 2022-08-01 --hemisphere north --output-dir /tmp/ --resolution 12
+2022-09-12 15:21:44.482 | INFO     | cdr_amsr2.bt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/bt_NH_20220801_u2_12km.nc
+```
+
+E.g., to create a NetCDF file with a `conc` variable containing concentration
+values from AU_SI25 from the nasateam algorithm:
+
+```
+$ ./scripts/cli.sh nasateam amsr2 --date 2022-08-01 --hemisphere south --output-dir /tmp/ --resolution 25
+2022-09-12 15:23:34.993 | INFO     | cdr_amsr2.nt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/nt_SH_20220801_u2_25km.nc
+```
+
+## Scripting
+### Bootstrap
+
 
 Users can write a script using the functions provided in this repo to run the
 bootstrap algorithm. The main entrypoint to the bootstrap algorithm is the
@@ -109,39 +164,12 @@ hard-coded defaults for testing purposes at NSIDC. This includes paths to data
 on NSIDC infrastructure that are not available to the public.
 
 
-### CLI
+### Nasateam
 
-There is a command line interface defined for the Bootstrap algoirthm using
-common defaults for testing purposes at NSIDC.
+The main entrypoint to running the nasateam code on input Tbs is the `nasateam`
+function defined in `cdr_amsr2/nt/compute_nt_ic.py`.
 
-NOTE: the CLI relies on hard-coded paths to mask files on NSIDC's virtual
-machine infrastructure. This CLI will not currently work for those outside of
-NSIDC. We plan to change this in the future.
-
-The CLI can be interacted with via `scripts/cli.sh`:
-
-```
-$ ./scripts/cli.sh --help
-Usage: python -m cdr_amsr2.bt.cli [OPTIONS] COMMAND [ARGS]...
-
-  Run the bootstrap algorithm.
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  a2l1c  Run the bootstrap algorithm with 'a2l1c' data.
-  amsr2  Run the bootstrap algorithm with ASMR2 data.
-```
-
-E.g., to create a NetCDF file with a `conc` variable containing concentration
-values from AU_SI12 data:
-
-```
-$ ./scripts/cli.sh amsr2 --date 2022-08-01 --hemisphere north --output-dir /tmp/ --resolution 12
-2022-08-29 13:34:49.344 | INFO     | __main__:amsr2:78 - Wrote AMSR2 concentration field: /tmp/bt_NH_20220801_u2_12km.nc
-```
-
-## Nasateam
-
-This is a work in progress. More details to come...
+An API has also been defined for common use cases. See `cdr_amsr/nt/api.py` for
+more information. NOTE: the API is currently defined with hard-coded defaults
+that expect access to NSIDC's virtual machine infrastructure and should be used
+with caution.
