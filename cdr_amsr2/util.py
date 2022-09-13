@@ -1,4 +1,6 @@
-from cdr_amsr2._types import Hemisphere
+import datetime as dt
+
+from cdr_amsr2._types import Hemisphere, ValidSatellites
 
 
 def get_ps25_grid_shape(*, hemisphere: Hemisphere) -> tuple[int, int]:
@@ -29,3 +31,22 @@ def get_ps_grid_shape(*, hemisphere: Hemisphere, resolution: str) -> tuple[int, 
         return get_ps12_grid_shape(hemisphere=hemisphere)
     else:
         raise NotImplementedError(f'No shape defined for {resolution=}')
+
+
+def standard_output_filename(
+    *,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    sat: ValidSatellites,
+    resolution: str,
+    algorithm: str,
+    extension: str = '.nc',
+) -> str:
+    """Return a string representing the standard filename for bootstrap."""
+    assert (
+        extension[0] == '.'
+    ), f'extension must contain `.`. Did you mean ".{extension}"?'
+    return (
+        f'{algorithm}_{hemisphere[0].upper()}H'
+        f'_{date:%Y%m%d}_{sat}_{resolution}{extension}'
+    )
