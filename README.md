@@ -1,112 +1,58 @@
-CDR_AMSR2
+![NSIDC logo](/images/NSIDC_logo_2018_poster-1.png)
+![NOAA logo](/images/noaa_at_nsidc.jpg)
+![NASA logo](/images/nasa_color-1.gif)
+
+NSIDC Sea Ice Concentrations from Passive Microwave Data
 ---
 
 This code package is in development and the API is subject to change without
 notice. There is no guarantee that this code works as expected. The addition of
 tests and verification of outputs is still in progress.
 
-The code here creates sea ice concentration estimates for the NOAA CDR using
-code adapted from Goddard's Bootstrap and NASA Team algorithms.
+The code here creates sea ice concentration estimates from passive microwave
+data using code adapted from NASA Goddard's Bootstrap and NASA Team algorithms.
+
+For more informaton about Bootstrap and NASA Team algorithms, see [Descriptions
+of and Differences between the NASA Team and Bootstrap
+Algorithms](https://nsidc.org/data/user-resources/help-center/descriptions-and-differences-between-nasa-team-and-bootstrap)
 
 
-# Directory contents:
+## Level of Support (TODO)
 
-## `./cdr_amsr2/bt/`
+_(Choose one of the following bullets to describe USO Level of Support, then
+delete this instructional message along with the unchosen support bullet)_
 
-Here are python routines which replace Goddard's original Fortran code
-for production sea ice concentration.
+* This repository is fully supported by NSIDC. If you discover any problems or
+  bugs, please submit an Issue. If you would like to contribute to this
+  repository, you may fork the repository and submit a pull request.
+* This repository is not actively supported by NSIDC but we welcome issue
+  submissions and pull requests in order to foster community contribution.
 
-## `./cdr_amsr2/nt/`
+See the [LICENSE](LICENSE) for details on permissions and warranties. Please
+contact nsidc@nsidc.org for more information.
 
-Python code related to the nasateam algorithm.
+## Requirements
 
+This code relies on the python packages defined in the included
+`environment.yml` file.
 
-## `./legacy/SB2_NRT_programs/`
-
-This directory contains modifications of the original Bootstrap Fortran code
-and should yield exactly the same results as Goddard produces, given identical
-input and proper (hard-coded?) local file names.
-
-## `./legacy/nt_orig`
-
-Contains original nasateam code.
-
-## `./cdr_testdata/`  <-- symbolic link
-
-This symbolic link points to a local file system which contains large files
-used with the code, either as ancillary input or to verify proper operation
-of the code.
-
-Creating this symbolic link allows codes to "hard-code" the relative directory
-name without forcing that directory to be maintained in version control.
-
-E.g,:
+Use [conda](https://docs.conda.io/en/latest/) to install the requirements:
 
 ```
-$ ln -s /share/apps/amsr2-cdr/cdr_testdata /path/to/cdr_amsr2/repo/
+$ conda env create
 ```
 
+## Installation
 
-# Setting up for initial run:
-
-First, create and activate the `cdr_amsr2` conda environment:
-
-    conda env create
-    conda activate cdr_amsr2
-
-Create symbolic links for original ancillary, input, and output directories.
-
-In ./legacy/SB2_NRT_programs/, create:
-
-    ln -sfn ../../cdr_testdata/bt_goddard_ANCILLARY/ ANCILLARY
-
-    ln -sfn ../../cdr_testdata/bt_goddard_orig_input_tbs/ orig_input_tbs
-
-    ln -sfn ../../cdr_testdata/bt_goddard_orig_output/ orig_output
-
-Generate the fortran output:
-
-in ./legacy/SB2_NRT_programs/, execute:
-
-    ./gen_sample_nh_ic_for.sh
-
-
-# Misc. Development notes
-
-This project uses `invoke` as a task runner. To see all of the available tasks:
+First, Activate the conda environment:
 
 ```
-$ invoke -l
-Available tasks:
-
-  format.format (format)       Apply formatting standards to the codebase.
-  test.all (test)              Run all of the tests.
-  test.ci                      Run tests in CircleCI.
-  test.lint (test.flake8)      Run flake8 linting.
-  test.regression              Run regression tests.
-  test.typecheck (test.mypy)   Run mypy typechecking.
-  test.unit                    Run unit tests.
-  test.vulture                 Use `vulture` to detect dead code.
+$ conda activate cdr_amsr2
 ```
 
-## Running the tests
+## Usage
 
-All of the tests (Unit, lint, typechecker, regression) can be run:
-
-```
-$ inv test
-```
-
-If a linting error occurs, the `format` task might fix the issue via the `black`
-formatter:
-
-```
-inv format
-```
-
-# Running the python code
-
-## CLI
+### CLI
 
 There is a command line interface defined using common defaults for testing
 purposes at NSIDC.
@@ -147,8 +93,8 @@ $ ./scripts/cli.sh nasateam amsr2 --date 2022-08-01 --hemisphere south --output-
 2022-09-12 15:23:34.993 | INFO     | cdr_amsr2.nt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/nt_SH_20220801_u2_25km.nc
 ```
 
-## Scripting
-### Bootstrap
+### Scripting
+#### Bootstrap
 
 
 Users can write a script using the functions provided in this repo to run the
@@ -164,7 +110,7 @@ hard-coded defaults for testing purposes at NSIDC. This includes paths to data
 on NSIDC infrastructure that are not available to the public.
 
 
-### Nasateam
+#### Nasateam
 
 The main entrypoint to running the nasateam code on input Tbs is the `nasateam`
 function defined in `cdr_amsr2/nt/compute_nt_ic.py`.
@@ -173,3 +119,35 @@ An API has also been defined for common use cases. See `cdr_amsr/nt/api.py` for
 more information. NOTE: the API is currently defined with hard-coded defaults
 that expect access to NSIDC's virtual machine infrastructure and should be used
 with caution.
+
+
+### Misc. Development notes
+
+This project uses `invoke` as a task runner. To see all of the available tasks:
+
+```
+$ invoke -l
+Available tasks:
+
+  format.format (format)       Apply formatting standards to the codebase.
+  test.all (test)              Run all of the tests.
+  test.ci                      Run tests in CircleCI.
+  test.lint (test.flake8)      Run flake8 linting.
+  test.regression              Run regression tests.
+  test.typecheck (test.mypy)   Run mypy typechecking.
+  test.unit                    Run unit tests.
+  test.vulture                 Use `vulture` to detect dead code.
+```
+
+## License
+
+See [LICENSE](LICENSE).
+
+## Code of Conduct
+
+See [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Credit (TODO: credit Goddard. Specific language for NOAA?)
+
+This software was developed by the National Snow and Ice Data Center with
+funding from multiple sources.
