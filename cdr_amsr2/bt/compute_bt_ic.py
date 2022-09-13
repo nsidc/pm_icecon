@@ -856,34 +856,6 @@ def coastal_fix(arr, missval, landval, minic):
     return arr2
 
 
-def fix_output_gdprod(conc, minval, maxval) -> npt.NDArray[np.int16]:
-    """Scale the given concentration field by 10.
-
-    TODO:
-      * Do we want to scale the output by 10? If not, get rid of this? Maybe
-        make this optional?
-      * Is there ever a case where the valid conc range isn't going to be 0-100?
-        If we just need to set neg values to 0 and cap out concs at 100, then we
-        can get rid of the 'minval' and 'maxval' parameters. This is the only
-        place they're used.
-    """
-    fixout = conc.copy()
-    scaling_factor = 10.0
-
-    is_seaice = (conc >= minval) & (conc <= maxval)
-    is_pos_seaice = is_seaice & (conc > 0)
-    fixout[is_pos_seaice] = fadd(fmul(conc[is_pos_seaice], scaling_factor), 0.5).astype(
-        np.int16
-    )
-
-    is_neg_seaice = is_seaice & (conc <= 0)
-    fixout[is_neg_seaice] = fsub(fmul(conc[is_neg_seaice], scaling_factor), 0.5).astype(
-        np.int16
-    )
-
-    return fixout
-
-
 def calc_bt_ice(
     *,
     missval,
@@ -1086,13 +1058,6 @@ def bootstrap(
     )
     iceout_fix[iceout_fix < params.minic] = 0
 
-    # *** Do fix_output ***
-    fixout = fix_output_gdprod(
-        iceout_fix,
-        params.minval,
-        params.maxval,
-    )
-
-    ds = xr.Dataset({'conc': (('y', 'x'), fixout)})
+    ds = xr.Dataset({'conc': (('y', 'x'), iceout_fix)})
 
     return ds

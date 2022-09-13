@@ -80,13 +80,6 @@ class BootstrapParams(ConfigBaseModel):
     maxtb: float = 320.0
     """The maximum valid brightness temperature value."""
 
-    # TODO: do we really need minval/maxval specified? See note in
-    # `bt.compute_bt_ic.fix_output_gdprod`.
-    minval: float = 0
-    """The minimum valid sea ice concentration."""
-    maxval: float = 100
-    """The maximum valid sea ice concentration."""
-
     # TODO: consider just adding this as an argument to the bootstrap alg
     # entrypoint?
     sat: ValidSatellites

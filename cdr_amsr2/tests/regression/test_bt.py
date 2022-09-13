@@ -2,7 +2,7 @@ import datetime as dt
 
 import numpy as np
 import xarray as xr
-from numpy.testing import assert_equal
+from numpy.testing import assert_almost_equal
 
 from cdr_amsr2.bt.api import amsr2_bootstrap, original_f18_example
 from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
@@ -29,9 +29,10 @@ def test_bt_amsr2_regression():
             REGRESSION_DATA_DIR / 'bt_amsru_regression' / filename
         )
 
-        assert_equal(
-            regression_ds.conc.data,
+        assert_almost_equal(
+            regression_ds.conc.data / 10,
             actual_ds.conc.data,
+            decimal=1,
         )
 
 
@@ -43,7 +44,8 @@ def test_bt_f18_regression():
         dtype=np.int16,
     ).reshape((448, 304))
 
-    assert_equal(
-        regression_data,
+    assert_almost_equal(
+        regression_data / 10,
         actual_ds.conc.data,
+        decimal=1,
     )

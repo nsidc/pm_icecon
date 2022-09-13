@@ -1,7 +1,7 @@
 from typing import get_args
 
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_almost_equal
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.nt.api import original_example
@@ -21,7 +21,4 @@ def test_nt_f17_regressions():
 
         actual_ds = original_example(hemisphere=hemisphere)
 
-        assert_equal(
-            regression_data,
-            actual_ds.conc.data,
-        )
+        assert_almost_equal(regression_data / 10, actual_ds.conc.data, decimal=1)

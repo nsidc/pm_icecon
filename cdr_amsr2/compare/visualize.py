@@ -19,7 +19,6 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_sea_ice_index
-from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
@@ -83,20 +82,12 @@ COLORBOUNDS = [
 ]
 
 
-def _flip_and_scale(input_conc_ds):
-    flipped_and_scaled = input_conc_ds.copy()
+def _flip(input_conc_ds):
+    flipped = input_conc_ds.copy()
     # flip the image to be 'right-side' up
-    flipped_and_scaled = flipped_and_scaled.reindex(
-        y=input_conc_ds.y[::-1], x=input_conc_ds.x
-    )
+    flipped = flipped.reindex(y=input_conc_ds.y[::-1], x=input_conc_ds.x)
 
-    # scale the data by 10 and convert to int
-    flipped_and_scaled['conc'] = flipped_and_scaled.conc / 10
-
-    # Round the data as integers.
-    flipped_and_scaled['conc'] = (flipped_and_scaled.conc + 0.5).astype(np.uint8)
-
-    return flipped_and_scaled
+    return flipped
 
 
 # TODO: rename this func.
@@ -113,7 +104,7 @@ def get_example_output(
         hemisphere=hemisphere,
         resolution=resolution,  # type: ignore[arg-type]
     )
-    example_ds = _flip_and_scale(example_ds)
+    example_ds = _flip(example_ds)
 
     return example_ds
 
@@ -136,16 +127,16 @@ def _mask_data(
     invalid_icemask,
     pole_hole_mask=None,
 ):
-    aui_si25_conc_masked = data.where(data != DEFAULT_FLAG_VALUES.missing, 0)
+    masked = data.copy()
 
     # Mask out invalid ice (the AU_SI products have conc values in lakes. We
     # don't include those in our valid ice masks.
-    aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~invalid_icemask, other=0)
+    masked = masked.where(cond=~invalid_icemask, other=0)
 
     if hemisphere == 'north' and pole_hole_mask is not None:
-        aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~pole_hole_mask, other=0)
+        masked = masked.where(cond=~pole_hole_mask, other=0)
 
-    return aui_si25_conc_masked
+    return masked
 
 
 def do_comparisons(
@@ -314,7 +305,7 @@ def do_comparisons_au_si_bt(  # noqa
 
 
 def _fix_nt_outputs(conc_ds):
-    conc_ds = _flip_and_scale(conc_ds)
+    conc_ds = _flip(conc_ds)
     conc_ds['conc'] = xr.where(
         (conc_ds.conc > 100) & (conc_ds.conc < 200), 100, conc_ds.conc
     )
