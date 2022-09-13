@@ -19,6 +19,7 @@ import xarray as xr
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.nt.tiepoints import get_tiepoints
 
 
@@ -199,35 +200,28 @@ def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]
     return gr_thresholds
 
 
-def apply_weather_filter(
-    conc: npt.NDArray, ratios: dict[str, npt.NDArray], thres: dict[str, float]
-) -> npt.NDArray:
-    """Return a copy of `conc` masked by the weather filter."""
+def get_weather_filter_mask(
+    *, ratios: dict[str, npt.NDArray], gr_thresholds: dict[str, float]
+) -> npt.NDArray[np.bool_]:
     # Determine where array is weather-filtered
-    print(f'thres 2219: {thres["2219"]}')
-    print(f'thres 3719: {thres["3719"]}')
+    print(f'gr_thresholds 2219: {gr_thresholds["2219"]}')
+    print(f'gr_thresholds 3719: {gr_thresholds["3719"]}')
 
-    filtered = (ratios['gr_2219'] > thres['2219']) | (ratios['gr_3719'] > thres['3719'])
+    # fmt: off
+    weather_filter_mask = (
+        (ratios['gr_2219'] > gr_thresholds['2219'])
+        | (ratios['gr_3719'] > gr_thresholds['3719'])
+    )
+    # fmt: on
 
-    filtered_conc = conc.copy()
-    filtered_conc[filtered] = 0
-
-    return filtered_conc
+    return weather_filter_mask
 
 
-def apply_invalid_tbs_mask(
-    conc: npt.NDArray, tbs: dict[str, npt.NDArray]
-) -> npt.NDArray:
-    """Return a copy of `conc` masked where TBs are invalid.
-
-    Invalid elements are set to a value of -10 in the concentration field.
-    """
+def get_invalid_tbs_mask(tbs: dict[str, npt.NDArray]) -> npt.NDArray[np.bool_]:
     is_valid_tbs = (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
+    invalid_tbs = ~is_valid_tbs
 
-    filtered_conc = conc.copy()
-    filtered_conc[~is_valid_tbs] = -10
-
-    return filtered_conc
+    return invalid_tbs
 
 
 def compute_nt_conc(
@@ -275,10 +269,14 @@ def apply_nt_spillover(
     """Apply the NASA Team land spillover routine."""
     newice = conc_int16.copy()
 
-    # TODO: what do these represent? Missing data? Later (in vis code) we cast
-    # to uint8, which results in these values being clamped to 0.
-    newice[shoremap == 1] = -9999
-    newice[shoremap == 2] = -9998
+    # Set land/coast flag values.
+    # TODO: do we want the coast to be 'land' as it is in bootstrap?
+    # 1 == land
+    newice[shoremap == 1] = DEFAULT_FLAG_VALUES.land
+    # 2 == coast
+    # TODO: re-add this flag. For now, making the flags for nt consistent w/ bt.
+    # newice[shoremap == 2] = DEFAULT_FLAG_VALUES.coast
+    newice[shoremap == 2] = DEFAULT_FLAG_VALUES.land
 
     is_at_coast = shoremap == 5
     is_near_coast = shoremap == 4
@@ -323,26 +321,6 @@ def apply_nt_spillover(
     return newice
 
 
-def apply_invalid_icemask(
-    *, conc: npt.NDArray[np.int16], invalid_ice_mask: npt.NDArray[np.bool_]
-) -> npt.NDArray[np.int16]:
-    """Replace all `True` elements in the invalid ice mask with 0."""
-    masked_conc = np.where(invalid_ice_mask, 0, conc.copy())
-
-    return masked_conc
-
-
-def apply_polehole(
-    *, conc: npt.NDArray[np.int16], pole_hole_mask: npt.NDArray[np.bool_]
-) -> npt.NDArray[np.int16]:
-    """Apply the pole hole."""
-    new_conc = conc.copy()
-
-    new_conc[pole_hole_mask] = -50
-
-    return new_conc
-
-
 def nasateam(
     *,
     tbs: dict[str, npt.NDArray],
@@ -352,7 +330,6 @@ def nasateam(
     minic: npt.NDArray,
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
-    pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ):
     spi_tbs = nt_spatint(tbs)
 
@@ -388,8 +365,11 @@ def nasateam(
     conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
 
     # Set invalid tbs and weather-filtered values
-    conc = apply_invalid_tbs_mask(conc, spi_tbs)
-    conc = apply_weather_filter(conc, ratios, gr_thresholds)
+    invalid_tb_mask = get_invalid_tbs_mask(spi_tbs)
+    weather_filter_mask = get_weather_filter_mask(
+        ratios=ratios, gr_thresholds=gr_thresholds
+    )
+    conc[invalid_tb_mask | weather_filter_mask] = 0
 
     conc_int16 = conc.astype(np.int16)
 
@@ -400,15 +380,9 @@ def nasateam(
     # conc_int16.tofile('conc_raw_py.dat')
 
     # Apply NT-land spillover filter
-    conc_spill = apply_nt_spillover(
-        conc_int16=conc_int16, shoremap=shoremap, minic=minic
-    )
+    conc = apply_nt_spillover(conc_int16=conc_int16, shoremap=shoremap, minic=minic)
     # Apply SST-threshold
-    conc = apply_invalid_icemask(conc=conc_spill, invalid_ice_mask=invalid_ice_mask)
-
-    # Apply pole hole if in the northern hemi
-    if hemisphere == 'north' and pole_hole_mask is not None:
-        conc = apply_polehole(conc=conc, pole_hole_mask=pole_hole_mask)
+    conc[invalid_ice_mask] = 0
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 

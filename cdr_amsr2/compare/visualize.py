@@ -7,6 +7,7 @@ visualization code.
 """
 import datetime as dt
 from pathlib import Path
+from typing import get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +18,8 @@ import cdr_amsr2.nt.api as nt_api
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
-from cdr_amsr2.compare.ref_data import get_sea_ice_index
+from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_sea_ice_index
+from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
@@ -50,8 +52,8 @@ COLORS = [
     '#D0ECFE',  # 85-90
     '#E4F4FE',  # 90-95
     '#F7FCFF',  # 95-100
-    '#e9cb00',  # 110missing
-    '#777777',  # 120land
+    '#777777',  # 254land
+    '#e9cb00',  # 255missing
 ]
 
 COLORBOUNDS = [
@@ -76,8 +78,8 @@ COLORBOUNDS = [
     90.0,
     95.0,
     100.0001,
-    110.001,
-    120.001,
+    254.001,
+    255.001,
 ]
 
 
@@ -127,31 +129,6 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
     )
 
 
-def get_au_si25_bt_conc(
-    *,
-    date: dt.date,
-    hemisphere: Hemisphere,
-    resolution: au_si.AU_SI_RESOLUTIONS,
-) -> xr.DataArray:
-    ds = au_si._get_au_si_data_fields(
-        # TODO: DRY out base dir defualt. No need to pass this around...
-        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
-        date=date,
-        hemisphere=hemisphere,
-        resolution=resolution,  # type: ignore[arg-type]
-    )
-
-    # flip the image to be 'right-side' up
-    ds = ds.reindex(YDim=ds.YDim[::-1], XDim=ds.XDim)
-    ds = ds.rename({'YDim': 'y', 'XDim': 'x'})
-
-    nt_conc = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICECON_DAY')
-    diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
-    bt_conc = nt_conc + diff
-
-    return bt_conc
-
-
 def _mask_data(
     data,
     hemisphere: Hemisphere,
@@ -159,16 +136,14 @@ def _mask_data(
     invalid_icemask,
     pole_hole_mask=None,
 ):
-    aui_si25_conc_masked = data.where(data != 110, 0)
+    aui_si25_conc_masked = data.where(data != DEFAULT_FLAG_VALUES.missing, 0)
 
     # Mask out invalid ice (the AU_SI products have conc values in lakes. We
     # don't include those in our valid ice masks.
     aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~invalid_icemask, other=0)
 
     if hemisphere == 'north' and pole_hole_mask is not None:
-        aui_si25_conc_masked = aui_si25_conc_masked.where(
-            cond=~pole_hole_mask, other=110
-        )
+        aui_si25_conc_masked = aui_si25_conc_masked.where(cond=~pole_hole_mask, other=0)
 
     return aui_si25_conc_masked
 
@@ -227,6 +202,18 @@ def do_comparisons(
         pole_hole_mask=pole_hole_mask,
     )
 
+    # Exclude areas that are not valid concentrations in both fields (exlude
+    # mismatches between land masks)
+    cdr_amsr2_conc_validice = (cdr_amsr2_conc >= 0) & (cdr_amsr2_conc <= 100)
+    # fmt: off
+    comparison_conc_validice = (
+        (comparison_conc_masked >= 0)
+        & (comparison_conc_masked <= 100)
+    )
+    # fmt: on
+    common_validice = cdr_amsr2_conc_validice & comparison_conc_validice
+    cdr_amsr2_conc = cdr_amsr2_conc.where(common_validice, 0)
+    comparison_conc_masked = comparison_conc_masked.where(common_validice, 0)
     diff = cdr_amsr2_conc - comparison_conc_masked
     _ax = ax[1][0]
     _ax.title.set_text('Python minus comparison conc')
@@ -254,9 +241,9 @@ def do_comparisons(
         '\n'
         f'{percent_different:.3}% of pixels are different.'
         '\n'
-        f'Min difference: {diff_excluding_0.min():.3}.'
+        f'Min difference: {diff_excluding_0.min():.6}.'
         '\n'
-        f'Max difference: {diff_excluding_0.max():.3}.'
+        f'Max difference: {diff_excluding_0.max():.6}.'
     )
     _ax.hist(
         diff_excluding_0,
@@ -291,7 +278,7 @@ def do_comparisons_au_si_bt(  # noqa
     resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> None:
     """Create figure showing comparison for AU_SI{25|12}."""
-    au_si25_conc = get_au_si25_bt_conc(
+    au_si25_conc = get_au_si_bt_conc(
         date=date, hemisphere=hemisphere, resolution=resolution
     )
 
@@ -331,8 +318,6 @@ def _fix_nt_outputs(conc_ds):
     conc_ds['conc'] = xr.where(
         (conc_ds.conc > 100) & (conc_ds.conc < 200), 100, conc_ds.conc
     )
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 25, 120)
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 252, 110)
 
     return conc_ds
 
@@ -359,11 +344,11 @@ def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     )
 
 
-def compare_amsr_nt_to_sii(
+def compare_amsr_nt_to_sii(  # noqa
     *, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS
 ) -> None:
-    # date = dt.date(2022, 8, 1)
-    date = dt.date(2018, 1, 1)
+    date = dt.date(2022, 8, 1)
+    # date = dt.date(2018, 1, 1)
 
     sii_conc_ds = get_sea_ice_index(
         hemisphere=hemisphere, date=date, resolution=resolution
@@ -394,14 +379,14 @@ def compare_amsr_nt_to_sii(
 
 
 if __name__ == '__main__':
-    # do_comparisons_au_si_bt(
-    #     hemisphere='north',
-    #     date=dt.date(2022, 8, 1),
-    #     resolution='12',
-    # )
-    for hemisphere in ('north', 'south'):
-        # compare_original_nt_to_sii(hemisphere=hemisphere)
-        compare_amsr_nt_to_sii(
-            hemisphere=hemisphere,  # type: ignore[arg-type]
-            resolution='12',  # type: ignore[arg-type]
+    for hemisphere in get_args(Hemisphere):
+        do_comparisons_au_si_bt(
+            hemisphere=hemisphere,
+            date=dt.date(2022, 8, 1),
+            resolution='12',
         )
+    #     # compare_original_nt_to_sii(hemisphere=hemisphere)
+    #     compare_amsr_nt_to_sii(
+    #         hemisphere=hemisphere,  # type: ignore[arg-type]
+    #         resolution='12',  # type: ignore[arg-type]
+    #     )

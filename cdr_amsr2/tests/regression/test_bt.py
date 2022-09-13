@@ -19,14 +19,14 @@ def test_bt_amsr2_regression():
     algorithm.
     """
     for date in (dt.date(2020, 1, 1), dt.date(2022, 5, 4)):
-        filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
-        regression_ds = xr.open_dataset(
-            REGRESSION_DATA_DIR / 'bt_amsru_regression' / filename
-        )
         actual_ds = amsr2_bootstrap(
             date=date,
             hemisphere='north',
             resolution='25',
+        )
+        filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
+        regression_ds = xr.open_dataset(
+            REGRESSION_DATA_DIR / 'bt_amsru_regression' / filename
         )
 
         assert_equal(
@@ -37,12 +37,11 @@ def test_bt_amsr2_regression():
 
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
+    actual_ds = original_f18_example()
     regression_data = np.fromfile(
         REGRESSION_DATA_DIR / 'bt_f18_regression/NH_20180217_py_NRT_f18.ic',
         dtype=np.int16,
     ).reshape((448, 304))
-
-    actual_ds = original_f18_example()
 
     assert_equal(
         regression_data,

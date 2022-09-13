@@ -23,6 +23,7 @@ from cdr_amsr2.config.models.bt import (
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
+from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 
@@ -855,7 +856,7 @@ def coastal_fix(arr, missval, landval, minic):
     return arr2
 
 
-def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.int16]:
+def fix_output_gdprod(conc, minval, maxval) -> npt.NDArray[np.int16]:
     """Scale the given concentration field by 10.
 
     TODO:
@@ -866,7 +867,7 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.
         can get rid of the 'minval' and 'maxval' parameters. This is the only
         place they're used.
     """
-    fixout = np.zeros_like(conc, dtype=np.int16)
+    fixout = conc.copy()
     scaling_factor = 10.0
 
     is_seaice = (conc >= minval) & (conc <= maxval)
@@ -879,12 +880,6 @@ def fix_output_gdprod(conc, minval, maxval, landval, missval) -> npt.NDArray[np.
     fixout[is_neg_seaice] = fsub(fmul(conc[is_neg_seaice], scaling_factor), 0.5).astype(
         np.int16
     )
-
-    is_land = conc == landval
-    fixout[is_land] = fmul(conc[is_land], scaling_factor).astype(np.int16)
-
-    is_missing = conc == missval
-    fixout[is_missing] = fmul(conc[is_missing], scaling_factor).astype(np.int16)
 
     return fixout
 
@@ -973,7 +968,7 @@ def calc_bt_ice(
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
 
     ic[water_mask] = 0.0
-    ic[tb_mask] = missval
+    ic[tb_mask] = 0.0
     ic[land_mask] = landval
 
     return ic
@@ -1051,8 +1046,8 @@ def bootstrap(
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(
-        missval=params.missval,
-        landval=params.landval,
+        missval=DEFAULT_FLAG_VALUES.missing,
+        landval=DEFAULT_FLAG_VALUES.land,
         maxic=params.maxic,
         vh37=vh37,
         adoff=adoff,
@@ -1071,8 +1066,8 @@ def bootstrap(
     print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
         iceout=iceout,
-        missval=params.missval,
-        landval=params.landval,
+        missval=DEFAULT_FLAG_VALUES.missing,
+        landval=DEFAULT_FLAG_VALUES.land,
         invalid_ice_mask=params.invalid_ice_mask,
     )
 
@@ -1080,13 +1075,15 @@ def bootstrap(
     iceout_sst = spatial_interp(
         params.sat,
         iceout_sst,
-        params.missval,
-        params.landval,
+        DEFAULT_FLAG_VALUES.missing,
+        DEFAULT_FLAG_VALUES.land,
         params.pole_mask,
     )
 
     # *** Do spatial interp ***
-    iceout_fix = coastal_fix(iceout_sst, params.missval, params.landval, params.minic)
+    iceout_fix = coastal_fix(
+        iceout_sst, DEFAULT_FLAG_VALUES.missing, DEFAULT_FLAG_VALUES.land, params.minic
+    )
     iceout_fix[iceout_fix < params.minic] = 0
 
     # *** Do fix_output ***
@@ -1094,8 +1091,6 @@ def bootstrap(
         iceout_fix,
         params.minval,
         params.maxval,
-        params.landval,
-        params.missval,
     )
 
     ds = xr.Dataset({'conc': (('y', 'x'), fixout)})

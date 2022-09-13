@@ -70,12 +70,6 @@ class BootstrapParams(ConfigBaseModel):
     add1: float = 0.0
     add2: float = -2.0
 
-    # Flags
-    landval: float = 120.0
-    """Flag value for cells representing land."""
-    missval: float = 110.0
-    """Flag value for cells representing missing data."""
-
     # TODO: what do these represent?
     minic: float = 10.0
     maxic: float = 1.0

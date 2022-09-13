@@ -53,9 +53,10 @@ def vulture(ctx):
             f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/nt_tiepoint_generation'
             # ignore `_types.py` because vulture doesn't understand typed dicts.
             f',{PROJECT_DIR}/cdr_amsr2/bt/_types.py'
-            # ignore `base_model.py` because vulture flags config options as
+            # ignore some models because vulture flags config options as
             # unused variables/class.
             f',{PROJECT_DIR}/cdr_amsr2/config/models/base_model.py'
+            f',{PROJECT_DIR}/cdr_amsr2/config/models/__init__.py'
             f' {PROJECT_DIR}'
         ),
         pty=True,

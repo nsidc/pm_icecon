@@ -4,6 +4,7 @@ For comparison and validation purposes, it is useful to compare the outputs from
 our code against other sea ice concentration products.
 """
 import datetime as dt
+from pathlib import Path
 
 import xarray as xr
 from pyresample import AreaDefinition
@@ -12,6 +13,8 @@ from seaice.data.api import concentration_daily
 from seaice.nasateam import NORTH, SOUTH
 
 from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
+from cdr_amsr2.fetch import au_si
 from cdr_amsr2.util import get_ps12_grid_shape, get_ps25_grid_shape
 
 
@@ -102,15 +105,36 @@ def get_sea_ice_index(
     # create xr datasets.
     conc_ds = conc_ds.reindex(y=conc_ds.y[::-1], x=conc_ds.x)
 
-    # Change the seaice land values to look like ours (120)
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 254, 120)
-    # Do the same for coast values
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 253, 120)
-
-    # and make polehole/missing values match ours missing value (110)
-    # polehole
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 251, 110)
-    # missing
-    conc_ds['conc'] = conc_ds.conc.where(conc_ds.conc != 255, 110)
-
     return conc_ds
+
+
+def get_au_si_bt_conc(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+) -> xr.DataArray:
+    ds = au_si._get_au_si_data_fields(
+        # TODO: DRY out base dir defualt. No need to pass this around...
+        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,  # type: ignore[arg-type]
+    )
+
+    # flip the image to be 'right-side' up
+    ds = ds.reindex(YDim=ds.YDim[::-1], XDim=ds.XDim)
+    ds = ds.rename({'YDim': 'y', 'XDim': 'x'})
+
+    nt_conc = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICECON_DAY')
+    diff = getattr(ds, f'SI_{resolution}km_{hemisphere[0].upper()}H_ICEDIFF_DAY')
+    bt_conc = nt_conc + diff
+
+    # change the AU_SI flags to our defaults
+    # and make polehole/missing values match ours missing value (110)
+    # missing
+    bt_conc = bt_conc.where(bt_conc != 110, DEFAULT_FLAG_VALUES.missing / 10)
+    # land
+    bt_conc = bt_conc.where(bt_conc != 120, DEFAULT_FLAG_VALUES.land / 10)
+
+    return bt_conc
