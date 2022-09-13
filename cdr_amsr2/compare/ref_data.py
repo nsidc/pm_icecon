@@ -186,12 +186,29 @@ def get_cdr(
     """Get CDR (G02202 and G10016) concentration field."""
     cdr_fp = _find_cdr(date=date, hemisphere=hemisphere)
 
-    if resolution == '12':
-        raise NotImplementedError('TODO: interpolate data to 12.5 km resolution.')
-
     cdr_ds = xr.open_dataset(cdr_fp)
     # Scale the data by 100. Concentrations given as fractions from 0-1.
     cdr_data = cdr_ds['cdr_seaice_conc'].data[0, :, :] * 100
+
+    if resolution == '12':
+        src_area = _get_area_def(
+            hemisphere=hemisphere, shape=get_ps25_grid_shape(hemisphere=hemisphere)
+        )
+        dst_area = _get_area_def(
+            hemisphere=hemisphere,
+            shape=get_ps12_grid_shape(hemisphere=hemisphere),
+        )
+
+        cdr_data = (
+            ImageContainerNearest(
+                cdr_data,
+                src_area,
+                radius_of_influence=25000,
+            )
+            .resample(dst_area)
+            .image_data
+        )
+
 
     conc_ds = xr.Dataset({'conc': (('y', 'x'), cdr_data)})
 
