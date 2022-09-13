@@ -221,9 +221,10 @@ def compute_nt_conc(
 
     conc = (fy + my) / dd * 100.0
 
-    # Clamp concentrations to be between 0-100
+    # Clamp concentrations to be above 0. Later (after applying the spillover
+    # algorithm), concentrations will be clamped to 100 at the upper end. At
+    # this point, concentrations may be > 100.
     conc[conc < 0] = 0
-    conc[conc > 100] = 100
 
     return conc
 
@@ -233,15 +234,6 @@ def apply_nt_spillover(
 ) -> npt.NDArray[np.int16]:
     """Apply the NASA Team land spillover routine."""
     newice = conc.copy()
-
-    # Set land/coast flag values.
-    # TODO: do we want the coast to be 'land' as it is in bootstrap?
-    # 1 == land
-    newice[shoremap == 1] = DEFAULT_FLAG_VALUES.land
-    # 2 == coast
-    # TODO: re-add this flag. For now, making the flags for nt consistent w/ bt.
-    # newice[shoremap == 2] = DEFAULT_FLAG_VALUES.coast
-    newice[shoremap == 2] = DEFAULT_FLAG_VALUES.land
 
     is_at_coast = shoremap == 5
     is_near_coast = shoremap == 4
@@ -287,6 +279,31 @@ def apply_nt_spillover(
     return newice
 
 
+def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
+    """Clap concentrations to a max of 100 and apply flag values.
+
+    Currently just sets a land value. TODO: add coast flag value.
+
+    We clamp concentrations to a max of 100 at this step instead of in
+    `compute_nt_conc` because the original algorithm implemented clamping only
+    after the land spillover correction is applied.
+    """
+    flagged_conc = conc.copy()
+    # Clamp concentrations above 100 to 100.
+    flagged_conc[flagged_conc > 100] = 100
+    # Set flag values
+    # Set land/coast flag values.
+    # TODO: do we want the coast to be 'land' as it is in bootstrap?
+    # 1 == land
+    flagged_conc[shoremap == 1] = DEFAULT_FLAG_VALUES.land
+    # 2 == coast
+    # TODO: re-add this flag. For now, making the flags for nt consistent w/ bt.
+    # newice[shoremap == 2] = DEFAULT_FLAG_VALUES.coast
+    flagged_conc[shoremap == 2] = DEFAULT_FLAG_VALUES.land
+
+    return flagged_conc
+
+
 def nasateam(
     *,
     tbs: dict[str, npt.NDArray],
@@ -323,6 +340,8 @@ def nasateam(
     conc = apply_nt_spillover(conc=conc, shoremap=shoremap, minic=minic)
     # Apply SST-threshold
     conc[invalid_ice_mask] = 0
+
+    conc = _clamp_conc_and_set_flags(shoremap=shoremap, conc=conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
