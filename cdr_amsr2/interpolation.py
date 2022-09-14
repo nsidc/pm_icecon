@@ -64,6 +64,10 @@ def spatial_interp_tbs(tbs):  # noqa
 
         interp_locs = np.isnan(orig) | (orig <= 0)
 
+        # continue to the next tb field if there's nothing to interpolate.
+        if not np.any(interp_locs):
+            continue
+
         for offset in ((0, 1), (0, -1), (1, 0), (-1, 0)):
             rolled = np.roll(orig, offset, axis=(0, 1))
             has_vals = (rolled > 0) & (interp_locs)
