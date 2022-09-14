@@ -159,7 +159,6 @@ def _find_cdr(
     final_dir = base_dir / 'G02202_V4'
     nrt_dir = base_dir / 'G10016_V2'
 
-    # TODO: icdr has a slightly different fn...
     expected_fn_pattern = f'seaice_conc_daily*_{hemisphere[0]}h_{date:%Y%m%d}_*.nc'
     for data_dir in (final_dir, nrt_dir):
         expected_dir = data_dir / hemisphere / 'daily' / str(date.year)
