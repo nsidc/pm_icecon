@@ -31,3 +31,39 @@ def test_spatial_interp_tbs():
     actual = spatial_interp_tbs({'chan': example_data})['chan']
 
     assert_almost_equal(expected, actual, decimal=6)
+
+
+def test_spatial_interp_tbs_edge():
+    example_data = np.array([
+        [3, 2, 1],
+        [1, 9, 0],
+        [3, 2, 3],
+    ], dtype=np.float32)
+
+    adjacent = np.array([1, 9, 3,])
+    diagonal = np.array([
+        2,
+        2,
+        # These next two values are actually adjacent to the Tbs but due to the
+        # 'nearest' method used in the algorithm, get used as 'adjacent'.
+        1,
+        3,
+    ])
+    diagonal_weighted = diagonal * 0.707
+
+    count = len(adjacent) + (len(diagonal) * 0.707)
+
+    expected_value = (
+        np.concatenate([adjacent, diagonal_weighted]).sum()
+        / count
+    )
+
+    expected = np.array([
+        [3, 2, 1],
+        [1, 9, expected_value],
+        [3, 2, 3],
+    ], dtype=np.float32)
+
+    actual = spatial_interp_tbs({'chan': example_data})['chan']
+
+    assert_almost_equal(expected, actual, decimal=6)
