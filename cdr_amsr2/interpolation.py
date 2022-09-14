@@ -49,6 +49,8 @@ def spatial_interp_tbs(tbs):  # noqa
     """Perform spatial interpolation on input tbs.
 
     Originally used by and defined for the nasateam algorithm.
+
+    Attempts to interpolate Tbs that are `np.nan` or less than or equal to 0.
     """
     # Implement spatial interpolation scheme of SpatialInt_np.c
     # and SpatialInt_sp.c
@@ -60,7 +62,7 @@ def spatial_interp_tbs(tbs):  # noqa
         total = np.zeros_like(orig, dtype=np.float32)
         count = np.zeros_like(orig, dtype=np.float32)
 
-        interp_locs = orig <= 0
+        interp_locs = np.isnan(orig) | (orig <= 0)
 
         for offset in ((0, 1), (0, -1), (1, 0), (-1, 0)):
             rolled = np.roll(orig, offset, axis=(0, 1))
