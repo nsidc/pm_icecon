@@ -5,47 +5,6 @@ import numpy.typing as npt
 from scipy import ndimage
 
 
-# TODO: should we keep this function around?
-def spatial_interp_conc(  # noqa
-    ice: npt.NDArray[np.float32],  # TODO: conc?
-    missval: float,
-    landval: float,
-    pole_mask: Optional[npt.NDArray[np.bool_]],
-) -> npt.NDArray[np.float32]:
-    """Perform spatial interpolation on a concentration field.
-
-    Originally used by the bootstrap algorithm.
-    """
-    iceout = ice.copy()
-    # implement fortran's spatial_interp() routine
-    # Use -200 as a not-valid ocean sentinel value
-    # so that it works with np.roll
-    oceanvals = iceout.copy()
-
-    total = np.zeros_like(oceanvals, dtype=np.float32)
-    count = np.zeros_like(oceanvals, dtype=np.int32)
-    for joff in range(-1, 2):
-        for ioff in range(-1, 2):
-            # TODO: consider using `scipy.ndimage.shift` instead of `np.roll`
-            # here and elsewhere in the code.
-            rolled = np.roll(oceanvals, (joff, ioff), axis=(1, 0))
-            not_land_nor_miss = (rolled != landval) & (rolled != missval)
-            total[not_land_nor_miss] += rolled[not_land_nor_miss]
-            count[not_land_nor_miss] += 1
-
-    count[count == 0] = 1
-    replace_vals = total / count
-
-    replace_locs = (oceanvals == missval) & (count >= 1)
-
-    if pole_mask is not None:
-        replace_locs = replace_locs & ~pole_mask
-
-    iceout[replace_locs] = replace_vals[replace_locs]
-
-    return iceout
-
-
 def spatial_interp_tbs(tbs):  # noqa
     """Perform spatial interpolation on input tbs.
 
