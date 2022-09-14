@@ -1,7 +1,4 @@
-from typing import Optional
-
 import numpy as np
-import numpy.typing as npt
 from scipy import ndimage
 
 
@@ -25,7 +22,7 @@ def spatial_interp_tbs(tbs):  # noqa
         # NaN values do not work with `ndimage.shift`, so set them to 0.
         orig[np.isnan(orig)] = 0
 
-        interp_locs = (orig <= 0)
+        interp_locs = orig <= 0
 
         # continue to the next tb field if there's nothing to interpolate.
         if not np.any(interp_locs):
