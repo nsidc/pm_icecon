@@ -18,13 +18,17 @@ import xarray as xr
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.nt.api import amsr2_nasateam
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
+from cdr_amsr2.nt.api import amsr2_nasateam
 
 
-def amsr2_cdr(*, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS) -> xr.Dataset:
+def amsr2_cdr(
+    *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
+) -> xr.Dataset:
     """Create a CDR-like concentration field from AMSR2 data."""
-    bt_conc_ds = amsr2_bootstrap(date=date, hemisphere=hemisphere, resolution=resolution)
+    bt_conc_ds = amsr2_bootstrap(
+        date=date, hemisphere=hemisphere, resolution=resolution
+    )
     nt_conc_ds = amsr2_nasateam(date=date, hemisphere=hemisphere, resolution=resolution)
 
     bt_conc = bt_conc_ds.conc.data

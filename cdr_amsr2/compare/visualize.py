@@ -18,12 +18,11 @@ import cdr_amsr2.nt.api as nt_api
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
-from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_sea_ice_index
+from cdr_amsr2.cdr import amsr2_cdr
+from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_cdr, get_sea_ice_index
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
-from cdr_amsr2.compare.ref_data import get_cdr
-from cdr_amsr2.cdr import amsr2_cdr
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -374,11 +373,16 @@ def compare_amsr_nt_to_sii(  # noqa
 
 
 def compare_cdr(
-        *, hemisphere: Hemisphere, resolution: au_si.AU_SI_RESOLUTIONS, date: dt.date,
+    *,
+    hemisphere: Hemisphere,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+    date: dt.date,
 ):
     cdr_ds = get_cdr(date=date, hemisphere=hemisphere, resolution=resolution)
 
-    our_cdr_ds = _flip(amsr2_cdr(date=date, hemisphere=hemisphere, resolution=resolution))
+    our_cdr_ds = _flip(
+        amsr2_cdr(date=date, hemisphere=hemisphere, resolution=resolution)
+    )
 
     do_comparisons(
         cdr_amsr2_conc=our_cdr_ds.conc,
@@ -412,8 +416,4 @@ if __name__ == '__main__':
         #     hemisphere=hemisphere,  # type: ignore[arg-type]
         #     resolution='12',  # type: ignore[arg-type]
         # )
-        compare_cdr(
-            hemisphere=hemisphere,
-            resolution='25',
-            date=dt.date(2021, 8, 1)
-        )
+        compare_cdr(hemisphere=hemisphere, resolution='12', date=dt.date(2021, 8, 1))

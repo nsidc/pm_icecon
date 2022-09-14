@@ -171,9 +171,7 @@ def _find_cdr(
                 f'Unexpected number of NC files found for {expected_fn_pattern}'
             )
 
-    raise FileNotFoundError(
-        f'No CDR data found for {date=}, {hemisphere=}.'
-    )
+    raise FileNotFoundError(f'No CDR data found for {date=}, {hemisphere=}.')
 
 
 def get_cdr(
@@ -207,7 +205,6 @@ def get_cdr(
             .resample(dst_area)
             .image_data
         )
-
 
     conc_ds = xr.Dataset({'conc': (('y', 'x'), cdr_data)})
 
