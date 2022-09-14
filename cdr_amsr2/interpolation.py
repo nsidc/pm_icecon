@@ -2,6 +2,7 @@ from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
+from scipy import ndimage
 
 
 # TODO: should we keep this function around?
@@ -62,20 +63,23 @@ def spatial_interp_tbs(tbs):  # noqa
         total = np.zeros_like(orig, dtype=np.float32)
         count = np.zeros_like(orig, dtype=np.float32)
 
-        interp_locs = np.isnan(orig) | (orig <= 0)
+        # NaN values do not work with `ndimage.shift`, so set them to 0.
+        orig[np.isnan(orig)] = 0
+
+        interp_locs = (orig <= 0)
 
         # continue to the next tb field if there's nothing to interpolate.
         if not np.any(interp_locs):
             continue
 
         for offset in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-            rolled = np.roll(orig, offset, axis=(0, 1))
+            rolled = ndimage.shift(orig, offset, mode='grid-wrap', order=0)
             has_vals = (rolled > 0) & (interp_locs)
             total[has_vals] += rolled[has_vals]
             count[has_vals] += 1.0
 
         for offset in ((1, 1), (1, -1), (-1, -1), (-1, 1)):
-            rolled = np.roll(orig, offset, axis=(0, 1))
+            rolled = ndimage.shift(orig, offset, mode='grid-wrap', order=0)
             has_vals = (rolled > 0) & (interp_locs)
             total[has_vals] += 0.707 * rolled[has_vals]
             count[has_vals] += 0.707
