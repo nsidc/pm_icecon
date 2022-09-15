@@ -6,14 +6,10 @@ import click
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.cli.util import datetime_to_date
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.nt.api import amsr2_nasateam
 from cdr_amsr2.util import standard_output_filename
-
-
-def _datetime_to_date(_ctx, _param, value: dt.datetime) -> dt.date:
-    """Click callback that takes a `dt.datetime` and returns `dt.date`."""
-    return value.date()
 
 
 # Click definitions for "amsr2" which uses AU25
@@ -23,7 +19,7 @@ def _datetime_to_date(_ctx, _param, value: dt.datetime) -> dt.date:
     '--date',
     required=True,
     type=click.DateTime(formats=('%Y-%m-%d',)),
-    callback=_datetime_to_date,
+    callback=datetime_to_date,
 )
 @click.option(
     '-h',
