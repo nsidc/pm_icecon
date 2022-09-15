@@ -141,17 +141,22 @@ def _mask_data(
     return masked
 
 
-def _get_projection(*, hemisphere: Hemisphere) -> ccrs.CRS:
+def _get_projection(*, hemisphere: Hemisphere) -> tuple[ccrs.CRS, list[float]]:
     proj = ccrs.Stereographic(
         central_latitude=90.0 if hemisphere == 'north' else -90.0,
-        central_longitude=45.0 if hemisphere == 'north' else 0,
+        central_longitude=-45.0 if hemisphere == 'north' else 0,
         false_easting=0.0,
         false_northing=0.0,
         true_scale_latitude=70 if hemisphere == 'north' else -70,
         globe=None,
     )
 
-    return proj
+    extent = {
+        'north': [-3850000.0, 3750000.0, -5350000.0, 5850000.0],
+        'south': [-3950000.0, 3950000.0, -3950000.0, 4350000.0],
+    }[hemisphere]
+
+    return proj, extent
 
 
 def do_comparisons(
@@ -171,7 +176,7 @@ def do_comparisons(
     pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ) -> None:
     """Create figure showing comparison between concentration fields."""
-    map_proj = _get_projection(hemisphere=hemisphere)
+    map_proj, extent = _get_projection(hemisphere=hemisphere)
 
     fig = plt.figure(figsize=(20, 16), tight_layout=True)
     _ax = fig.add_subplot(2, 2, 1, projection=map_proj)
@@ -225,11 +230,15 @@ def do_comparisons(
     _ax.title.set_text('Python minus comparison conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
-    diff.plot.imshow(
-        ax=_ax,
-        add_colorbar=True,
-        add_labels=False,
+    _ax.coastlines()
+    plt.imshow(
+        diff.data,
+        cmap='RdBu',
+        extent=extent,
+        vmin=-100,
+        vmax=100,
     )
+    plt.colorbar()
 
     # Histogram
     diff = diff.data.flatten()
@@ -274,6 +283,8 @@ def do_comparisons(
         bbox_inches='tight',
         pad_inches=0.05,
     )
+
+    plt.clf()
 
 
 def do_comparisons_au_si_bt(  # noqa
