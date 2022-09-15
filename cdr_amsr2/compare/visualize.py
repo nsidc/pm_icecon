@@ -261,7 +261,7 @@ def do_comparisons(
         '\n'
         f'Max difference: {diff_excluding_0.max():.6}.'
     )
-    _ax.hist(
+    plt.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),
         log=True,
