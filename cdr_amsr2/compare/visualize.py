@@ -119,6 +119,7 @@ def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> 
         levels=COLORBOUNDS,
         add_colorbar=False,
         add_labels=False,
+        interpolation='nearest',
     )
 
 
