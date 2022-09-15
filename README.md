@@ -65,7 +65,7 @@ The CLI can be interacted with via `scripts/cli.sh`:
 
 ```
 $ ./scripts/cli.sh --help
-Usage: python -m cdr_amsr2.cli [OPTIONS] COMMAND [ARGS]...
+Usage: python -m cdr_amsr2.cli.entrypoint [OPTIONS] COMMAND [ARGS]...
 
   Run the nasateam or bootstrap algorithm.
 
@@ -74,6 +74,7 @@ Options:
 
 Commands:
   bootstrap  Run the bootstrap algorithm.
+  cdr        Run the CDR algorithm with AMSR2 data.
   nasateam   Run the nasateam algorithm.
 ```
 
@@ -120,6 +121,30 @@ more information. NOTE: the API is currently defined with hard-coded defaults
 that expect access to NSIDC's virtual machine infrastructure and should be used
 with caution.
 
+
+#### CDR
+
+The `cdr_amsr2/cdr.py` module provides code related to creating a CDR-like
+concentration field from the outputs of bootstrap and nasateam algorithms.
+
+The `amsr2_cdr` function is the primary entrypoint that can be used to generate
+concentrations programatically:
+
+```
+import datetime as dt
+
+from cdr_amsr2.cdr import amsr2_cdr
+
+
+nh_cdr_20210101 = amsr2_cdr(
+    date=dt.date(2021, 1, 1),
+    hemisphere='north',
+    resolution='12',
+)
+```
+
+NOTE: the CDR code is currently defined with hard-coded defaults that expect
+access to NSIDC's virtual machine infrastructure.
 
 ### Misc. Development notes
 
