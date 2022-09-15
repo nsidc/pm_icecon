@@ -8,6 +8,7 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from cdr_amsr2.interpolation import spatial_interp_tbs
 from cdr_amsr2.nt.compute_nt_ic import nasateam
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
 from cdr_amsr2.util import get_ps25_grid_shape, get_ps_grid_shape
@@ -67,6 +68,9 @@ def original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
 
     invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
 
+    # interpolate tbs
+    tbs = spatial_interp_tbs(tbs)
+
     conc_ds = nasateam(
         tbs=tbs,
         sat='17_final',
@@ -97,6 +101,9 @@ def amsr2_nasateam(
         'h37': xr_tbs['h36'].data,
         'v37': xr_tbs['v36'].data,
     }
+
+    # interpolate tbs
+    tbs = spatial_interp_tbs(tbs)
 
     shoremap = np.fromfile(
         (

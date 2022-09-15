@@ -15,6 +15,7 @@ from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from cdr_amsr2.interpolation import spatial_interp_tbs
 from cdr_amsr2.masks import (
     get_e2n625_land_mask,
     get_ps_land_mask,
@@ -55,6 +56,9 @@ def amsr2_bootstrap(
         'h37': xr_tbs['h36'].data,
         'v22': xr_tbs['v23'].data,
     }
+
+    # interpolate tbs
+    tbs = spatial_interp_tbs(tbs)
 
     conc_ds = bt.bootstrap(
         tbs=tbs,
@@ -98,6 +102,9 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         'h37': xr_tbs['h36'].data,
         'v22': xr_tbs['v23'].data,
     }
+
+    # interpolate tbs
+    tbs = spatial_interp_tbs(tbs)
 
     conc_ds = bt.bootstrap(
         tbs=tbs,
@@ -166,8 +173,11 @@ def original_f18_example() -> xr.Dataset:
             ).resolve()
         )
 
+    # interpolate tbs
+    tbs = spatial_interp_tbs(otbs)
+
     conc_ds = bt.bootstrap(
-        tbs=otbs,
+        tbs=tbs,
         params=params,
         date=date,
         hemisphere=hemisphere,

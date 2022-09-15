@@ -152,3 +152,15 @@ subtract the thresholded minimum ice concentration value if appropriate, then
 ensure that this does not result in an ice concentration less than zero. For
 this reason, we have made the behavior consistent between the two hemispheres
 unless our correspondence with NASA Goddard determines otherwise.
+
+
+# Spatial Interpolation
+
+The nasateam and bootstrap algorithms originally performed spatial interpolation:
+
+* nasateam did spatial interpolation of input Tbs.
+* bootstrap did spatial interpolation of the concentration field.
+
+We have decided to remove the interpolation steps from both of the algoirthms so
+that calling code can determine how it wants to perform interpolation of the
+input Tbs and/or resulting concentration field.

@@ -27,43 +27,6 @@ def fdiv(a, b):
     return np.divide(a, b, dtype=np.float32)
 
 
-def nt_spatint(tbs):
-    # Implement spatial interpolation scheme of SpatialInt_np.c
-    # and SpatialInt_sp.c
-    # Weighting scheme is: orthogonally adjacent weighted 1.0
-    #                      diagonally adjacent weighted 0.707
-    interp_tbs = {}
-    for tb in tbs.keys():
-        orig = tbs[tb].copy()
-        total = np.zeros_like(orig, dtype=np.float32)
-        count = np.zeros_like(orig, dtype=np.float32)
-
-        interp_locs = orig <= 0
-
-        for offset in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-            rolled = np.roll(orig, offset, axis=(0, 1))
-            has_vals = (rolled > 0) & (interp_locs)
-            total[has_vals] += rolled[has_vals]
-            count[has_vals] += 1.0
-
-        for offset in ((1, 1), (1, -1), (-1, -1), (-1, 1)):
-            rolled = np.roll(orig, offset, axis=(0, 1))
-            has_vals = (rolled > 0) & (interp_locs)
-            total[has_vals] += 0.707 * rolled[has_vals]
-            count[has_vals] += 0.707
-
-        replace_locs = interp_locs & (count > 1.2)
-        count[count == 0] = 1
-        average = np.divide(total, count, dtype=np.float32)
-
-        interp = orig.copy()
-        interp[replace_locs] = average[replace_locs]
-
-        interp_tbs[tb] = interp
-
-    return interp_tbs
-
-
 def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]:
     """Compute coefficients for the NT algorithm.
 
@@ -351,24 +314,6 @@ def nasateam(
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
 ):
-    spi_tbs = nt_spatint(tbs)
-
-    # Here, the tbs are identical to the output of the Goddard code
-
-    # TODO: is this already implemented? Do we need this comment?
-    # TODO: what is this 'next step to implement'?
-    # The next step is to implement:
-    #   seaice5con 001 2018 001 2018 TOT_CON ssmif17 n
-    #
-    # icetype   = TOT_CON
-    # type      = "tcon"
-    # titletype = "Team Ice Concentration"
-    # col = 304
-    # row = 448
-    # pole[0] = 'n'
-    # ipole = 0
-
-    # Calls: team( 1, 1, missing, brtemps, scale )
     tiepoints = get_tiepoints(satellite=sat, hemisphere=hemisphere)
     print(f'tiepoints: {tiepoints}')
 
@@ -380,12 +325,12 @@ def nasateam(
     gr_thresholds = get_gr_thresholds(sat, hemisphere)
     print(f'gr_thresholds:\n{gr_thresholds}')
 
-    ratios = compute_ratios(spi_tbs, nt_coefficients)
+    ratios = compute_ratios(tbs, nt_coefficients)
 
-    conc = compute_nt_conc(spi_tbs, nt_coefficients, ratios)
+    conc = compute_nt_conc(tbs, nt_coefficients, ratios)
 
     # Set invalid tbs and weather-filtered values
-    invalid_tb_mask = get_invalid_tbs_mask(spi_tbs)
+    invalid_tb_mask = get_invalid_tbs_mask(tbs)
     weather_filter_mask = get_weather_filter_mask(
         ratios=ratios, gr_thresholds=gr_thresholds
     )
