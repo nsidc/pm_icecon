@@ -60,11 +60,11 @@ def amsr2_cdr_for_date_range(
 def extent_from_conc(
     *, conc: xr.DataArray, area_grid: npt.NDArray, extent_threshold=15
 ) -> xr.DataArray:
-    """Returns extents in mkm2"""
+    """Return extents in mkm2."""
     has_ice = (conc >= extent_threshold) & (conc <= 100)
     extents = (has_ice.astype(int) * area_grid).sum(dim=('y', 'x'))
     extents = extents / 1_000_000
-    extents.name = 'extent'
+    extents.name = 'extent'  # noqa
 
     return extents
 
@@ -72,12 +72,12 @@ def extent_from_conc(
 def area_from_conc(
     *, conc: xr.DataArray, area_grid: npt.NDArray, area_threshold=15
 ) -> xr.DataArray:
-    """Returns areas in mkm2"""
+    """Return areas in mkm2."""
     has_ice = (conc >= area_threshold) & (conc <= 100)
     conc = conc.where(has_ice, other=0)
     areas = ((conc / 100) * area_grid).sum(dim=('y', 'x'))
     areas = areas / 1_000_000
-    areas.name = 'area'
+    areas.name = 'area'  # noqa
 
     return areas
 

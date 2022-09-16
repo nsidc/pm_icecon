@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import get_args
 
 import click
-import pandas as pd
 import xarray as xr
 from loguru import logger
 
