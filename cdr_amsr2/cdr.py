@@ -26,7 +26,7 @@ from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.cli.util import datetime_to_date
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.nt.api import amsr2_nasateam
-from cdr_amsr2.util import standard_output_filename
+from cdr_amsr2.util import date_range, standard_output_filename
 
 
 def amsr2_cdr(
@@ -81,9 +81,9 @@ def create_cdr_for_date_range(
     resolution: AU_SI_RESOLUTIONS,
     output_dir: Path,
 ) -> None:
-    for pd_timestamp in pd.date_range(start=start_date, end=end_date, freq='D'):
+    for date in date_range(start_date=start_date, end_date=end_date):
         make_cdr_netcdf(
-            date=pd_timestamp.date(),
+            date=date,
             hemisphere=hemisphere,
             resolution=resolution,
             output_dir=output_dir,

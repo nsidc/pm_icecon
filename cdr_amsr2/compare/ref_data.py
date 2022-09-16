@@ -6,6 +6,7 @@ our code against other sea ice concentration products.
 import datetime as dt
 from pathlib import Path
 
+import pandas as pd
 import xarray as xr
 from pyresample import AreaDefinition
 from pyresample.image import ImageContainerNearest
@@ -15,7 +16,7 @@ from seaice.nasateam import NORTH, SOUTH
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
 from cdr_amsr2.fetch import au_si
-from cdr_amsr2.util import get_ps12_grid_shape, get_ps25_grid_shape
+from cdr_amsr2.util import date_range, get_ps12_grid_shape, get_ps25_grid_shape
 
 
 def _get_area_def(*, hemisphere: Hemisphere, shape: tuple[int, int]) -> AreaDefinition:
@@ -214,3 +215,25 @@ def get_cdr(
     conc_ds = conc_ds.reindex(y=conc_ds.y[::-1], x=conc_ds.x)
 
     return conc_ds
+
+
+def cdr_for_date_range(
+    *,
+    start_date: dt.date,
+    end_date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: au_si.AU_SI_RESOLUTIONS,
+):
+    conc_datasets = []
+    conc_dates = []
+    for date in date_range(start_date=start_date, end_date=end_date):
+        conc_ds = get_cdr(date=date, hemisphere=hemisphere, resolution=resolution)
+        conc_datasets.append(conc_ds)
+        conc_dates.append(date)
+
+    merged = xr.concat(
+        conc_datasets,
+        pd.DatetimeIndex(conc_dates, name='date'),
+    )
+
+    return merged
