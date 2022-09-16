@@ -1,5 +1,6 @@
 import datetime as dt
 from pathlib import Path
+from functools import cache
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +19,7 @@ OUTPUT_DIR = Path('/tmp/compare_cdr/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+@cache
 def amsr2_cdr_for_date_range(
     *,
     start_date: dt.date,
@@ -65,8 +67,20 @@ def extent_from_conc(
 
     return extents
 
+def area_from_conc(
+    *, conc: xr.DataArray, area_grid: npt.NDArray, area_threshold=15
+) -> xr.DataArray:
+    """Returns areas in mkm2"""
+    has_ice = (conc >= area_threshold) & (conc <= 100)
+    conc = conc.where(has_ice, other=0)
+    areas = ((conc / 100) * area_grid).sum(dim=('y', 'x'))
+    areas = areas / 1_000_000
+    areas.name = 'area'
 
-if __name__ == '__main__':
+    return areas
+
+
+def compare_timeseries(*, kind):
     hemisphere = 'north'
     start_date = dt.date(2021, 1, 1)
     end_date = dt.date(2021, 12, 31)
@@ -79,11 +93,6 @@ if __name__ == '__main__':
         hemisphere=hemisphere,
     )
 
-    amsr2_cdr_extent = extent_from_conc(
-        conc=amsr2_cdr.conc,
-        area_grid=NORTH_AREA_GRID if hemisphere == 'north' else SOUTH_AREA_GRID,
-    )
-
     cdr = cdr_for_date_range(
         start_date=start_date,
         end_date=end_date,
@@ -91,10 +100,27 @@ if __name__ == '__main__':
         resolution=resolution,
     )
 
-    cdr_extent = extent_from_conc(
-        conc=cdr.conc,
-        area_grid=NORTH_AREA_GRID if hemisphere == 'north' else SOUTH_AREA_GRID,
-    )
+    if kind == 'extent':
+        amsr2_cdr_timeseries = extent_from_conc(
+            conc=amsr2_cdr.conc,
+            area_grid=NORTH_AREA_GRID if hemisphere == 'north' else SOUTH_AREA_GRID,
+        )
+        cdr_timeseries = extent_from_conc(
+            conc=cdr.conc,
+            area_grid=NORTH_AREA_GRID if hemisphere == 'north' else SOUTH_AREA_GRID,
+        )
+    elif kind == 'area':
+        amsr2_cdr_timeseries = area_from_conc(
+            conc=amsr2_cdr.conc,
+            area_grid=NORTH_AREA_GRID if hemisphere == 'north' else SOUTH_AREA_GRID,
+        )
+        cdr_timeseries = area_from_conc(
+            conc=cdr.conc,
+            area_grid=NORTH_AREA_GRID if hemisphere == 'north' else SOUTH_AREA_GRID,
+        )
+
+    else:
+        raise NotImplementedError('')
 
     fig, ax = plt.subplots(
         nrows=2, ncols=1, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
@@ -103,36 +129,43 @@ if __name__ == '__main__':
     _ax = ax[0]
 
     _ax.plot(
-        amsr2_cdr_extent.date,
-        amsr2_cdr_extent.data,
+        amsr2_cdr_timeseries.date,
+        amsr2_cdr_timeseries.data,
         label=f'AMSR2 (AU_SI{resolution}) CDR',
     )
-    _ax.plot(cdr_extent.date, cdr_extent.data, label='CDR')
-    max_extent = np.max([cdr_extent.max(), amsr2_cdr_extent.max()])
+    _ax.plot(cdr_timeseries.date, cdr_timeseries.data, label='CDR')
+    max_value = np.max([cdr_timeseries.max(), amsr2_cdr_timeseries.max()])
     _ax.set(
         xlabel='date',
-        ylabel='Extent (Millions of square kilometers)',
-        title='Extent',
-        xlim=(cdr_extent.date.min(), cdr_extent.date.max()),
-        yticks=np.arange(0, float(max_extent) + 2, 2),
+        ylabel=f'{kind.capitalize()} (Millions of square kilometers)',
+        title=kind.capitalize(),
+        xlim=(cdr_timeseries.date.min(), cdr_timeseries.date.max()),
+        yticks=np.arange(0, float(max_value) + 2, 2),
     )
     _ax.legend()
     _ax.grid()
 
     _ax = ax[1]
-    diff = amsr2_cdr_extent - cdr_extent
+    diff = amsr2_cdr_timeseries - cdr_timeseries
     _ax.plot(diff.date, diff.data)
     _ax.set(
         xlabel='date',
-        ylabel='Extent (Millions of square kilometers)',
-        title='AMSR2 CDR minus CDR extent',
+        ylabel=f'{kind.capitalize()} (Millions of square kilometers)',
+        title=f'AMSR2 CDR minus CDR {kind}',
         xlim=(diff.date.min(), diff.date.max()),
     )
     _ax.grid()
 
     fig.set_size_inches(w=25, h=16)
     fig.savefig(
-        OUTPUT_DIR / f'{start_date:%Y%m%d}_{end_date:%Y%m%d}_extent_comparison.png',
+        OUTPUT_DIR / f'{start_date:%Y%m%d}_{end_date:%Y%m%d}_{kind}_comparison.png',
         bbox_inches='tight',
         pad_inches=0.05,
     )
+
+    plt.clf()
+
+
+if __name__ == '__main__':
+    compare_timeseries(kind='extent')
+    compare_timeseries(kind='area')

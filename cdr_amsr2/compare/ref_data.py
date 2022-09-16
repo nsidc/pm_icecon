@@ -5,6 +5,7 @@ our code against other sea ice concentration products.
 """
 import datetime as dt
 from pathlib import Path
+from functools import cache
 
 import pandas as pd
 import xarray as xr
@@ -217,6 +218,7 @@ def get_cdr(
     return conc_ds
 
 
+@cache
 def cdr_for_date_range(
     *,
     start_date: dt.date,
