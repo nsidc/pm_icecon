@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import get_args
 
 import click
+import pandas as pd
 import xarray as xr
 from loguru import logger
 
@@ -45,6 +46,48 @@ def amsr2_cdr(
     cdr_conc_ds = bt_conc_ds.where(~use_nt_values, nt_conc_ds)
 
     return cdr_conc_ds
+
+
+def make_cdr_netcdf(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: AU_SI_RESOLUTIONS,
+    output_dir: Path,
+) -> None:
+    conc_ds = amsr2_cdr(
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,
+    )
+
+    output_fn = standard_output_filename(
+        hemisphere=hemisphere,
+        date=date,
+        sat='u2',
+        algorithm='cdr',
+        resolution=f'{resolution}km',
+    )
+    output_path = output_dir / output_fn
+    conc_ds.to_netcdf(output_path)
+    logger.info(f'Wrote AMSR2 CDR concentration field: {output_path}')
+
+
+def create_cdr_for_date_range(
+    *,
+    hemisphere: Hemisphere,
+    start_date: dt.date,
+    end_date: dt.date,
+    resolution: AU_SI_RESOLUTIONS,
+    output_dir: Path,
+) -> None:
+    for pd_timestamp in pd.date_range(start=start_date, end=end_date, freq='D'):
+        make_cdr_netcdf(
+            date=pd_timestamp.date(),
+            hemisphere=hemisphere,
+            resolution=resolution,
+            output_dir=output_dir,
+        )
 
 
 @click.command(name='cdr')
@@ -88,19 +131,21 @@ def cli(
     resolution: AU_SI_RESOLUTIONS,
 ) -> None:
     """Run the CDR algorithm with AMSR2 data."""
-    conc_ds = amsr2_cdr(
-        date=date,
+    create_cdr_for_date_range(
+        start_date=date,
+        end_date=date,
         hemisphere=hemisphere,
         resolution=resolution,
+        output_dir=output_dir,
     )
 
-    output_fn = standard_output_filename(
-        hemisphere=hemisphere,
-        date=date,
-        sat='u2',
-        algorithm='cdr',
-        resolution=f'{resolution}km',
-    )
-    output_path = output_dir / output_fn
-    conc_ds.to_netcdf(output_path)
-    logger.info(f'Wrote AMSR2 CDR concentration field: {output_path}')
+
+if __name__ == '__main__':
+    for hemisphere in get_args(Hemisphere):
+        create_cdr_for_date_range(
+            start_date=dt.date(2021, 1, 1),
+            end_date=dt.date(2021, 12, 31),
+            hemisphere=hemisphere,
+            resolution='25',
+            output_dir=Path('/home/vagrant/cdr_data/'),
+        )
