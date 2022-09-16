@@ -111,16 +111,21 @@ def get_example_output(
     return example_ds
 
 
-def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
+def save_conc_image(*, extent, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
     """Create an image representing the conc field."""
-    conc_array.plot.imshow(  # type: ignore[attr-defined]
-        ax=ax,
-        colors=COLORS,
-        levels=COLORBOUNDS,
-        add_colorbar=False,
-        add_labels=False,
-        interpolation='nearest',
+    plt.imshow(
+        conc_array.data,
+        extent=extent,
     )
+    # conc_array.plot.imshow(  # type: ignore[attr-defined]
+    #     ax=ax,
+    #     colors=COLORS,
+    #     levels=COLORBOUNDS,
+    #     add_colorbar=False,
+    #     add_labels=False,
+    #     interpolation='nearest',
+    #     extent=extent,
+    # )
 
 
 def _mask_data(
@@ -179,7 +184,7 @@ def do_comparisons(
     """Create figure showing comparison between concentration fields."""
     map_proj, extent = _get_projection(hemisphere=hemisphere)
 
-    fig = plt.figure(figsize=(20, 16), tight_layout=True)
+    fig = plt.figure(figsize=(20, 16))
     _ax = fig.add_subplot(2, 2, 1, projection=map_proj)
 
     # Visualize the comparison conc.
@@ -190,6 +195,7 @@ def do_comparisons(
         conc_array=comparison_conc,
         hemisphere=hemisphere,
         ax=_ax,
+        extent=extent,
     )
 
     _ax = fig.add_subplot(2, 2, 2, projection=map_proj)
@@ -203,6 +209,7 @@ def do_comparisons(
         conc_array=cdr_amsr2_conc,
         hemisphere=hemisphere,
         ax=_ax,
+        extent=extent,
     )
 
     # Do a difference between the two images.
