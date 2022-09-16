@@ -4,8 +4,8 @@ For comparison and validation purposes, it is useful to compare the outputs from
 our code against other sea ice concentration products.
 """
 import datetime as dt
-from pathlib import Path
 from functools import cache
+from pathlib import Path
 
 import pandas as pd
 import xarray as xr

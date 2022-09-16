@@ -1,6 +1,7 @@
 import datetime as dt
-from pathlib import Path
 from functools import cache
+from pathlib import Path
+from typing import get_args
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,6 +68,7 @@ def extent_from_conc(
 
     return extents
 
+
 def area_from_conc(
     *, conc: xr.DataArray, area_grid: npt.NDArray, area_threshold=15
 ) -> xr.DataArray:
@@ -80,8 +82,7 @@ def area_from_conc(
     return areas
 
 
-def compare_timeseries(*, kind):
-    hemisphere = 'north'
+def compare_timeseries(*, kind, hemisphere: Hemisphere):
     start_date = dt.date(2021, 1, 1)
     end_date = dt.date(2021, 12, 31)
     resolution = '25'
@@ -157,8 +158,10 @@ def compare_timeseries(*, kind):
     _ax.grid()
 
     fig.set_size_inches(w=25, h=16)
+    fig.suptitle(f'{hemisphere} {kind}')
     fig.savefig(
-        OUTPUT_DIR / f'{start_date:%Y%m%d}_{end_date:%Y%m%d}_{kind}_comparison.png',
+        OUTPUT_DIR
+        / f'{hemisphere}_{start_date:%Y%m%d}_{end_date:%Y%m%d}_{kind}_comparison.png',
         bbox_inches='tight',
         pad_inches=0.05,
     )
@@ -167,5 +170,6 @@ def compare_timeseries(*, kind):
 
 
 if __name__ == '__main__':
-    compare_timeseries(kind='extent')
-    compare_timeseries(kind='area')
+    for hemisphere in get_args(Hemisphere):
+        compare_timeseries(kind='extent', hemisphere=hemisphere)
+        compare_timeseries(kind='area', hemisphere=hemisphere)
