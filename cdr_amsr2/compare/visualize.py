@@ -113,19 +113,19 @@ def get_example_output(
 
 def save_conc_image(*, extent, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
     """Create an image representing the conc field."""
-    plt.imshow(
-        conc_array.data,
-        extent=extent,
-    )
-    # conc_array.plot.imshow(  # type: ignore[attr-defined]
-    #     ax=ax,
-    #     colors=COLORS,
-    #     levels=COLORBOUNDS,
-    #     add_colorbar=False,
-    #     add_labels=False,
-    #     interpolation='nearest',
+    # plt.imshow(
+    #     conc_array.data,
     #     extent=extent,
     # )
+    conc_array.plot.imshow(  # type: ignore[attr-defined]
+        ax=ax,
+        colors=COLORS,
+        levels=COLORBOUNDS,
+        add_colorbar=False,
+        add_labels=False,
+        interpolation='nearest',
+        extent=extent,
+    )
 
 
 def _mask_data(
