@@ -9,6 +9,7 @@ import datetime as dt
 from pathlib import Path
 from typing import get_args
 
+import cartopy.crs as ccrs
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
@@ -110,14 +111,25 @@ def get_example_output(
     return example_ds
 
 
-def save_conc_image(*, conc_array: xr.DataArray, hemisphere: Hemisphere, ax) -> None:
+def save_conc_image(
+        *,
+        extent,
+        conc_array: xr.DataArray,
+        hemisphere: Hemisphere,
+        ax) -> None:
     """Create an image representing the conc field."""
+    # plt.imshow(
+    #     conc_array.data,
+    #     extent=extent,
+    # )
     conc_array.plot.imshow(  # type: ignore[attr-defined]
         ax=ax,
         colors=COLORS,
         levels=COLORBOUNDS,
         add_colorbar=False,
         add_labels=False,
+        interpolation='nearest',
+        extent=extent,
     )
 
 
@@ -140,6 +152,24 @@ def _mask_data(
     return masked
 
 
+def _get_projection(*, hemisphere: Hemisphere) -> tuple[ccrs.CRS, list[float]]:
+    proj = ccrs.Stereographic(
+        central_latitude=90.0 if hemisphere == 'north' else -90.0,
+        central_longitude=-45.0 if hemisphere == 'north' else 0,
+        false_easting=0.0,
+        false_northing=0.0,
+        true_scale_latitude=70 if hemisphere == 'north' else -70,
+        globe=None,
+    )
+
+    extent = {
+        'north': [-3850000.0, 3750000.0, -5350000.0, 5850000.0],
+        'south': [-3950000.0, 3950000.0, -3950000.0, 4350000.0],
+    }[hemisphere]
+
+    return proj, extent
+
+
 def do_comparisons(
     *,
     # concentration field produced by our code
@@ -157,12 +187,12 @@ def do_comparisons(
     pole_hole_mask: npt.NDArray[np.bool_] | None = None,
 ) -> None:
     """Create figure showing comparison between concentration fields."""
-    fig, ax = plt.subplots(
-        nrows=2, ncols=2, subplot_kw={'aspect': 'auto', 'autoscale_on': True}
-    )
+    map_proj, extent = _get_projection(hemisphere=hemisphere)
+
+    fig = plt.figure(figsize=(20, 16))
+    _ax = fig.add_subplot(2, 2, 1, projection=map_proj)
 
     # Visualize the comparison conc.
-    _ax = ax[0][0]
     _ax.title.set_text(f'{comparison_dataproduct} provided conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
@@ -170,9 +200,10 @@ def do_comparisons(
         conc_array=comparison_conc,
         hemisphere=hemisphere,
         ax=_ax,
+        extent=extent,
     )
 
-    _ax = ax[0][1]
+    _ax = fig.add_subplot(2, 2, 2, projection=map_proj)
     _ax.title.set_text(
         f'Python calculated conc from {cdr_amsr2_dataproduct}'
         f' using the {cdr_amsr2_algorithm} algorithm.'
@@ -183,6 +214,7 @@ def do_comparisons(
         conc_array=cdr_amsr2_conc,
         hemisphere=hemisphere,
         ax=_ax,
+        extent=extent,
     )
 
     # Do a difference between the two images.
@@ -207,15 +239,19 @@ def do_comparisons(
     cdr_amsr2_conc = cdr_amsr2_conc.where(common_validice, 0)
     comparison_conc_masked = comparison_conc_masked.where(common_validice, 0)
     diff = cdr_amsr2_conc - comparison_conc_masked
-    _ax = ax[1][0]
+    _ax = fig.add_subplot(2, 2, 3, projection=map_proj)
     _ax.title.set_text('Python minus comparison conc')
     _ax.set_xticks([])
     _ax.set_yticks([])
-    diff.plot.imshow(
-        ax=_ax,
-        add_colorbar=True,
-        add_labels=False,
+    _ax.coastlines()
+    plt.imshow(
+        diff.data,
+        cmap='RdBu',
+        extent=extent,
+        vmin=-100,
+        vmax=100,
     )
+    plt.colorbar()
 
     # Histogram
     diff = diff.data.flatten()
@@ -227,7 +263,7 @@ def do_comparisons(
     total_pixels = len(diff)
     percent_different = (pixels_different / total_pixels) * 100
 
-    _ax = ax[1][1]
+    _ax = fig.add_subplot(2, 2, 4)
     _ax.title.set_text(
         'Histogram of non-zero differences'
         '\n'
@@ -237,7 +273,7 @@ def do_comparisons(
         '\n'
         f'Max difference: {diff_excluding_0.max():.6}.'
     )
-    _ax.hist(
+    plt.hist(
         diff_excluding_0,
         bins=list(range(-100, 120, 5)),
         log=True,
@@ -249,7 +285,6 @@ def do_comparisons(
         f'{cdr_amsr2_dataproduct} vs {comparison_dataproduct}'
         f' {hemisphere[0].upper()}H {date:%Y-%m-%d}'
     )
-    fig.set_size_inches(w=20, h=16)
     fig.savefig(
         (
             OUTPUT_DIR
@@ -261,6 +296,8 @@ def do_comparisons(
         bbox_inches='tight',
         pad_inches=0.05,
     )
+
+    plt.clf()
 
 
 def do_comparisons_au_si_bt(  # noqa
