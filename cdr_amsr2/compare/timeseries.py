@@ -82,7 +82,14 @@ def area_from_conc(
     return areas
 
 
-def compare_timeseries(*, kind, hemisphere: Hemisphere, start_date: dt.date, end_date: dt.date, resolution: AU_SI_RESOLUTIONS):
+def compare_timeseries(
+        *,
+        kind,
+        hemisphere: Hemisphere,
+        start_date: dt.date,
+        end_date: dt.date,
+        resolution: str):  # Note: can't use AU_SI_RESOLUTIONS because need str
+
     amsr2_cdr = amsr2_cdr_for_date_range(
         start_date=start_date,
         end_date=end_date,
@@ -99,7 +106,8 @@ def compare_timeseries(*, kind, hemisphere: Hemisphere, start_date: dt.date, end
 
     if resolution != '25':
         raise NotImplementedError(
-            'Still need to implement 12.5 km support (update code below to use new area grids)'
+            'Still need to implement 12.5 km support'
+            + ' (update code below to use new area grids)'
         )
 
     if kind == 'extent':
@@ -176,5 +184,9 @@ if __name__ == '__main__':
     resolution = '25'
 
     for hemisphere in get_args(Hemisphere):
-        compare_timeseries(kind='extent', hemisphere=hemisphere, start_date=start_date, end_date=end_date, resolution=resolution)
-        compare_timeseries(kind='area', hemisphere=hemisphere, start_date=start_date, end_date=end_date, resolution=resolution)
+        compare_timeseries(
+            kind='extent', hemisphere=hemisphere,
+            start_date=start_date, end_date=end_date, resolution=resolution)
+        compare_timeseries(
+            kind='area', hemisphere=hemisphere,
+            start_date=start_date, end_date=end_date, resolution=resolution)
