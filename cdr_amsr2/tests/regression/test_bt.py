@@ -28,12 +28,22 @@ def test_bt_amsr2_regression():
         regression_ds = xr.open_dataset(
             REGRESSION_DATA_DIR / 'bt_amsru_regression' / filename
         )
-
-        assert_almost_equal(
-            regression_ds.conc.data / 10,
-            actual_ds.conc.data,
-            decimal=1,
-        )
+        try:
+            assert_almost_equal(
+                # regression_ds.conc.data / 10,
+                regression_ds.conc.data,
+                actual_ds.conc.data,
+                decimal=1,
+            )
+        except AssertionError as e:
+            print('Failed test_bt_amsr2_regression')
+            print(f'  date: {date}')
+            print(f'  arg to xr: {REGRESSION_DATA_DIR / "bt_amsru_regression" / filename}')  # noqa
+            print(f'Type of actual_ds: {type(actual_ds)}')
+            # ofn = f'replacement_ds_{date}.nc'
+            # actual_ds.to_netcdf(ofn)
+            # print(f'  Wrote "actual_ds" to: {ofn}')
+            raise e
 
 
 def test_bt_f18_regression():
@@ -44,8 +54,11 @@ def test_bt_f18_regression():
         dtype=np.int16,
     ).reshape((448, 304))
 
-    assert_almost_equal(
-        regression_data / 10,
-        actual_ds.conc.data,
-        decimal=1,
-    )
+    try:
+        assert_almost_equal(
+            regression_data / 10,
+            actual_ds.conc.data,
+            decimal=1,
+        )
+    except AssertionError:
+        print('Failed test_bt_f18_regression')
