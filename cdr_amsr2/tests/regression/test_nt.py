@@ -1,12 +1,10 @@
 from typing import get_args
 
-import numpy as np
 from numpy.testing import assert_almost_equal
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
-from cdr_amsr2.util import get_ps25_grid_shape
 import xarray as xr
 
 
@@ -24,7 +22,6 @@ def test_nt_f17_regressions():
         actual_ds = original_example(hemisphere=hemisphere)
         actual_data = actual_ds.conc.data
 
-        diff = np.abs(regression_data - actual_data)
         assert_almost_equal(
             regression_data,
             actual_data,
