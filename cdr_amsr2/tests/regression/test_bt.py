@@ -1,6 +1,5 @@
 import datetime as dt
 
-import numpy as np
 import xarray as xr
 from numpy.testing import assert_almost_equal
 
@@ -28,9 +27,8 @@ def test_bt_amsr2_regression():
         regression_ds = xr.open_dataset(
             REGRESSION_DATA_DIR / 'bt_amsru_regression' / filename
         )
-
         assert_almost_equal(
-            regression_ds.conc.data / 10,
+            regression_ds.conc.data,
             actual_ds.conc.data,
             decimal=1,
         )
@@ -39,13 +37,12 @@ def test_bt_amsr2_regression():
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     actual_ds = original_f18_example()
-    regression_data = np.fromfile(
-        REGRESSION_DATA_DIR / 'bt_f18_regression/NH_20180217_py_NRT_f18.ic',
-        dtype=np.int16,
-    ).reshape((448, 304))
+    regression_ds = xr.open_dataset(
+        REGRESSION_DATA_DIR / 'bt_f18_regression/NH_20180217_NRT_f18_regression.nc',
+    )
 
     assert_almost_equal(
-        regression_data / 10,
+        regression_ds.conc.data,
         actual_ds.conc.data,
         decimal=1,
     )
