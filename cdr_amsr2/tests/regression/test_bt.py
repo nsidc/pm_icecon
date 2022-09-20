@@ -30,7 +30,6 @@ def test_bt_amsr2_regression():
         )
         try:
             assert_almost_equal(
-                # regression_ds.conc.data / 10,
                 regression_ds.conc.data,
                 actual_ds.conc.data,
                 decimal=1,
@@ -49,16 +48,29 @@ def test_bt_amsr2_regression():
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     actual_ds = original_f18_example()
+    """
     regression_data = np.fromfile(
         REGRESSION_DATA_DIR / 'bt_f18_regression/NH_20180217_py_NRT_f18.ic',
         dtype=np.int16,
     ).reshape((448, 304))
+    """
+    regression_ds = xr.open_dataset(
+        REGRESSION_DATA_DIR / 'bt_f18_regression/NH_20180217_NRT_f18_regression.nc',
+    )
 
     try:
         assert_almost_equal(
-            regression_data / 10,
+            # regression_data / 10,
+            regression_ds.conc.data,
             actual_ds.conc.data,
             decimal=1,
         )
-    except AssertionError:
+    except AssertionError as e:
         print('Failed test_bt_f18_regression')
+        print(f'  arg to xr: {REGRESSION_DATA_DIR / "bt_f18_regression/NH_20180217_py_NRT_f18.ic"}')  # noqa
+        print(f'Type of actual_ds: {type(actual_ds)}')
+        # ofn = f'replacement_ds_for_bt_f18.nc'
+        # actual_ds.to_netcdf(ofn)
+        # print(f'  Wrote "actual_ds" to: {ofn}')
+        print(f'{e}')
+        raise e
