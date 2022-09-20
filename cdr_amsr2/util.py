@@ -1,4 +1,7 @@
 import datetime as dt
+from typing import Iterator
+
+import pandas as pd
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 
@@ -50,3 +53,9 @@ def standard_output_filename(
         f'{algorithm}_{hemisphere[0].upper()}H'
         f'_{date:%Y%m%d}_{sat}_{resolution}{extension}'
     )
+
+
+def date_range(*, start_date: dt.date, end_date: dt.date) -> Iterator[dt.date]:
+    """Yield a dt.date object representing each day between start_date and end_date."""
+    for pd_timestamp in pd.date_range(start=start_date, end=end_date, freq='D'):
+        yield pd_timestamp.date()

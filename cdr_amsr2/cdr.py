@@ -25,7 +25,7 @@ from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.cli.util import datetime_to_date
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.nt.api import amsr2_nasateam
-from cdr_amsr2.util import standard_output_filename
+from cdr_amsr2.util import date_range, standard_output_filename
 
 
 def amsr2_cdr(
@@ -45,6 +45,48 @@ def amsr2_cdr(
     cdr_conc_ds = bt_conc_ds.where(~use_nt_values, nt_conc_ds)
 
     return cdr_conc_ds
+
+
+def make_cdr_netcdf(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: AU_SI_RESOLUTIONS,
+    output_dir: Path,
+) -> None:
+    conc_ds = amsr2_cdr(
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,
+    )
+
+    output_fn = standard_output_filename(
+        hemisphere=hemisphere,
+        date=date,
+        sat='u2',
+        algorithm='cdr',
+        resolution=f'{resolution}km',
+    )
+    output_path = output_dir / output_fn
+    conc_ds.to_netcdf(output_path)
+    logger.info(f'Wrote AMSR2 CDR concentration field: {output_path}')
+
+
+def create_cdr_for_date_range(
+    *,
+    hemisphere: Hemisphere,
+    start_date: dt.date,
+    end_date: dt.date,
+    resolution: AU_SI_RESOLUTIONS,
+    output_dir: Path,
+) -> None:
+    for date in date_range(start_date=start_date, end_date=end_date):
+        make_cdr_netcdf(
+            date=date,
+            hemisphere=hemisphere,
+            resolution=resolution,
+            output_dir=output_dir,
+        )
 
 
 @click.command(name='cdr')
@@ -88,19 +130,21 @@ def cli(
     resolution: AU_SI_RESOLUTIONS,
 ) -> None:
     """Run the CDR algorithm with AMSR2 data."""
-    conc_ds = amsr2_cdr(
-        date=date,
+    create_cdr_for_date_range(
+        start_date=date,
+        end_date=date,
         hemisphere=hemisphere,
         resolution=resolution,
+        output_dir=output_dir,
     )
 
-    output_fn = standard_output_filename(
-        hemisphere=hemisphere,
-        date=date,
-        sat='u2',
-        algorithm='cdr',
-        resolution=f'{resolution}km',
-    )
-    output_path = output_dir / output_fn
-    conc_ds.to_netcdf(output_path)
-    logger.info(f'Wrote AMSR2 CDR concentration field: {output_path}')
+
+if __name__ == '__main__':
+    for hemisphere in get_args(Hemisphere):
+        create_cdr_for_date_range(
+            start_date=dt.date(2021, 1, 1),
+            end_date=dt.date(2021, 12, 31),
+            hemisphere=hemisphere,
+            resolution='25',
+            output_dir=Path('/home/vagrant/cdr_data/'),
+        )
