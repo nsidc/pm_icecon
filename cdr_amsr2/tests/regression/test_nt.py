@@ -25,7 +25,6 @@ def test_nt_f17_regressions():
         actual_data = actual_ds.conc.data
 
         diff = np.abs(regression_data - actual_data)
-        meaningful_diff = diff > 0.1
         assert_almost_equal(
             regression_data,
             actual_data,
