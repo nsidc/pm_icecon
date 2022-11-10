@@ -112,11 +112,12 @@ def get_example_output(
 
 
 def save_conc_image(
-        *,
-        extent,
-        conc_array: xr.DataArray,
-        hemisphere: Hemisphere,
-        ax) -> None:
+    *,
+    extent,
+    conc_array: xr.DataArray,
+    hemisphere: Hemisphere,
+    ax,
+) -> None:
     """Create an image representing the conc field."""
     # plt.imshow(
     #     conc_array.data,
