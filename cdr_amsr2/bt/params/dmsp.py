@@ -1,6 +1,8 @@
 """Parameters for DMSP satellites.
 
 Defense Meteorological Satellite Program. E.g, f17, f18.
+
+All parameters pulled from `ret_parameters_sb2.f`.
 """
 from cdr_amsr2.config.models.bt import (
     TbSetParams,

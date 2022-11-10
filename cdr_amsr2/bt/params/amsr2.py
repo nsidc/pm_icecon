@@ -1,3 +1,7 @@
+"""Params for AMSR2.
+
+All parameters pulled from `ret_parameters_amsru2.f`.
+"""
 from cdr_amsr2.config.models.bt import (
     TbSetParams,
     WeatherFilterParams,

@@ -1,4 +1,7 @@
-"""Params for SMMR (`sat='00'`)."""
+"""Params for SMMR (`sat='00'`).
+
+All parameters pulled from `ret_parameters_sb2.f`.
+"""
 from cdr_amsr2.bt.params.dmsp import (
     dmsp_north_v1937_params,
     dmsp_north_vh37_params,

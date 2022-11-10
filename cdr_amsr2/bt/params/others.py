@@ -7,6 +7,8 @@ should be used for.
 
 TODO: look back over the Goddard code to see which sats these params are
 actually used for.
+
+All parameters pulled from `ret_parameters_sb2.f`.
 """
 from cdr_amsr2.bt.params.dmsp import dmsp_north_v1937_params, dmsp_north_vh37_params
 from cdr_amsr2.config.models.bt import WeatherFilterParams, WeatherFilterParamsForSeason
