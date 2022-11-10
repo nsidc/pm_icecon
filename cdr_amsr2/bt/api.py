@@ -12,6 +12,7 @@ from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 from cdr_amsr2.bt.params.goddard_class import SSMIS_NORTH_PARAMS
 from cdr_amsr2.config.models.bt import BootstrapParams
+from cdr_amsr2.constants import BOOTSTRAP_MASKS_DIR, CDR_TESTDATA_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from cdr_amsr2.interpolation import spatial_interp_tbs
@@ -80,9 +81,7 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         hemisphere='north',
     )
 
-    sst_fn = Path(
-        f'/share/apps/amsr2-cdr/bootstrap_masks/valid_seaice_e2n6.25_{date:%m}.dat'
-    )
+    sst_fn = BOOTSTRAP_MASKS_DIR / f'valid_seaice_e2n6.25_{date:%m}.dat'
     sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     is_high_sst = sst_mask == 50
 
@@ -150,9 +149,7 @@ def original_f18_example() -> xr.Dataset:
     otbs: dict[str, npt.NDArray[np.float32]] = {}
 
     # TODO: read this data from a fetch operation.
-    orig_input_tbs_dir = Path(
-        '/share/apps/amsr2-cdr/cdr_testdata/bt_goddard_orig_input_tbs/'
-    )
+    orig_input_tbs_dir = CDR_TESTDATA_DIR / 'bt_goddard_orig_input_tbs/'
     raw_fns = {
         'v19': 'tb_f18_20180217_nrt_n19v.bin',
         'h37': 'tb_f18_20180217_nrt_n37h.bin',

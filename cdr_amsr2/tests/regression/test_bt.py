@@ -4,7 +4,7 @@ import xarray as xr
 from numpy.testing import assert_almost_equal
 
 from cdr_amsr2.bt.api import amsr2_bootstrap, original_f18_example
-from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
+from cdr_amsr2.constants import CDR_TESTDATA_DIR
 
 
 def test_bt_amsr2_regression():
@@ -25,7 +25,7 @@ def test_bt_amsr2_regression():
         )
         filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
         regression_ds = xr.open_dataset(
-            REGRESSION_DATA_DIR / 'bt_amsru_regression' / filename
+            CDR_TESTDATA_DIR / 'bt_amsru_regression' / filename
         )
         assert_almost_equal(
             regression_ds.conc.data,
@@ -38,7 +38,7 @@ def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     actual_ds = original_f18_example()
     regression_ds = xr.open_dataset(
-        REGRESSION_DATA_DIR / 'bt_f18_regression/NH_20180217_NRT_f18_regression.nc',
+        CDR_TESTDATA_DIR / 'bt_f18_regression/NH_20180217_NRT_f18_regression.nc',
     )
 
     assert_almost_equal(
