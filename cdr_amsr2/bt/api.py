@@ -10,7 +10,7 @@ from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
-from cdr_amsr2.bt.params.dmsp import F17_F18_NORTH_PARAMS
+from cdr_amsr2.bt.params.goddard_class import SSMIS_NORTH_PARAMS
 from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
@@ -145,7 +145,7 @@ def original_f18_example() -> xr.Dataset:
             date=date,
             resolution=resolution,  # type: ignore[arg-type]
         ),
-        **F17_F18_NORTH_PARAMS,
+        **SSMIS_NORTH_PARAMS,
     )
 
     otbs: dict[str, npt.NDArray[np.float32]] = {}
