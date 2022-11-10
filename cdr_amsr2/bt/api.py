@@ -12,7 +12,6 @@ from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from cdr_amsr2.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 from cdr_amsr2.bt.params.goddard_class import SSMIS_NORTH_PARAMS
 from cdr_amsr2.config.models.bt import BootstrapParams
-from cdr_amsr2.constants import PACKAGE_DIR
 from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from cdr_amsr2.interpolation import spatial_interp_tbs
@@ -151,11 +150,14 @@ def original_f18_example() -> xr.Dataset:
     otbs: dict[str, npt.NDArray[np.float32]] = {}
 
     # TODO: read this data from a fetch operation.
+    orig_input_tbs_dir = Path(
+        '/share/apps/amsr2-cdr/cdr_testdata/bt_goddard_orig_input_tbs/'
+    )
     raw_fns = {
-        'v19': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n19v.bin',
-        'h37': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37h.bin',
-        'v37': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n37v.bin',
-        'v22': '../SB2_NRT_programs/orig_input_tbs/tb_f18_20180217_nrt_n22v.bin',
+        'v19': 'tb_f18_20180217_nrt_n19v.bin',
+        'h37': 'tb_f18_20180217_nrt_n37h.bin',
+        'v37': 'tb_f18_20180217_nrt_n37v.bin',
+        'v22': 'tb_f18_20180217_nrt_n22v.bin',
     }
 
     def _read_tb_field(tbfn: Path) -> npt.NDArray[np.float32]:
@@ -167,9 +169,7 @@ def original_f18_example() -> xr.Dataset:
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = _read_tb_field(
             (
-                PACKAGE_DIR
-                / '../legacy/SB2_NRT_programs'
-                / raw_fns[tb]  # type: ignore [literal-required]
+                orig_input_tbs_dir / raw_fns[tb]  # type: ignore [literal-required]
             ).resolve()
         )
 

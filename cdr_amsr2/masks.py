@@ -15,7 +15,7 @@ import numpy as np
 import numpy.typing as npt
 
 from cdr_amsr2._types import Hemisphere
-from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.constants import BT_GODDARD_ANCILLARY_DIR
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.util import get_ps25_grid_shape
 
@@ -26,11 +26,7 @@ def get_ps_pole_hole_mask(*, resolution: AU_SI_RESOLUTIONS) -> npt.NDArray[np.bo
     if resolution == '25':
         pole_mask_psn = (
             np.fromfile(
-                (
-                    PACKAGE_DIR
-                    / '../legacy/SB2_NRT_programs'
-                    / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-                ).resolve(),
+                (BT_GODDARD_ANCILLARY_DIR / 'np_holemask.ssmi_f17').resolve(),
                 dtype=np.int16,
             ).reshape(448, 304)
             == 1
@@ -80,10 +76,9 @@ def get_ps_land_mask(
         shape = get_ps25_grid_shape(hemisphere=hemisphere)
         _land_coast_array = np.fromfile(
             (
-                PACKAGE_DIR
-                / '../legacy/SB2_NRT_programs'
+                BT_GODDARD_ANCILLARY_DIR
                 / (
-                    f'../SB2_NRT_programs/ANCILLARY/{hemisphere}_land_25'
+                    f'{hemisphere}_land_25'
                     # NOTE: According to scotts, the 'r' in the southern hemisphere
                     # filename probably stands for “revised“.
                     f"{'r' if hemisphere == 'south' else ''}"
