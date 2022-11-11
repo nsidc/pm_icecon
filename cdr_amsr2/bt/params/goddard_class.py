@@ -37,7 +37,7 @@ south_v1937_params = TbSetParams(
 )
 
 # NOTE: The Goddard code specifically indicated that these parameters were for
-# F17 and F18. However, ew think that because F16 is a SSMIS instrument, these
+# F17 and F18. However, we think that because F16 is a SSMIS instrument, these
 # parameters should work for it as well.
 SSMIS_NORTH_PARAMS = dict(
     vh37_params=north_vh37_params,
@@ -69,7 +69,7 @@ SSMIS_NORTH_PARAMS = dict(
 )
 
 # NOTE: The Goddard code specifically indicated that these parameters were for
-# F17 and F18. However, ew think that because F16 is a SSMIS instrument, these
+# F17 and F18. However, we think that because F16 is a SSMIS instrument, these
 # parameters should work for it as well.
 SSMIS_SOUTH_PARAMS = dict(  # noqa
     vh37_params=south_vh37_params,
