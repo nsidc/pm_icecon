@@ -1,16 +1,16 @@
-from typing import get_args
 import datetime as dt
+from typing import get_args
 
+import numpy as np
 import xarray as xr
 from numpy.testing import assert_almost_equal
-import numpy as np
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import CDR_TESTDATA_DIR
+from cdr_amsr2.interpolation import spatial_interp_tbs
+from cdr_amsr2.nt.compute_nt_ic import nasateam
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
 from cdr_amsr2.util import get_ps25_grid_shape
-from cdr_amsr2.nt.compute_nt_ic import nasateam
-from cdr_amsr2.interpolation import spatial_interp_tbs
 
 
 def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
