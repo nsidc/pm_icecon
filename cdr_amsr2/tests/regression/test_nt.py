@@ -1,11 +1,11 @@
 from typing import get_args
 
+import xarray as xr
 from numpy.testing import assert_almost_equal
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.nt.api import original_example
 from cdr_amsr2.tests.regression.util import REGRESSION_DATA_DIR
-import xarray as xr
 
 
 def test_nt_f17_regressions():

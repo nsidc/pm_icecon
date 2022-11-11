@@ -145,6 +145,6 @@ if __name__ == '__main__':
             start_date=dt.date(2021, 1, 1),
             end_date=dt.date(2021, 12, 31),
             hemisphere=hemisphere,
-            resolution='25',
-            output_dir=Path('/home/vagrant/cdr_data/'),
+            resolution='12',
+            output_dir=Path('/share/apps/amsr2-cdr/cdr_data'),
         )

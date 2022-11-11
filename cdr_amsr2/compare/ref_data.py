@@ -4,7 +4,8 @@ For comparison and validation purposes, it is useful to compare the outputs from
 our code against other sea ice concentration products.
 """
 import datetime as dt
-from functools import cache
+from functools import cache, partial
+from multiprocessing import Pool
 from pathlib import Path
 
 import pandas as pd
@@ -218,6 +219,10 @@ def get_cdr(
     return conc_ds
 
 
+def _get_cdr(hemisphere, resolution, date):
+    return get_cdr(date=date, hemisphere=hemisphere, resolution=resolution)
+
+
 @cache
 def cdr_for_date_range(
     *,
@@ -226,12 +231,12 @@ def cdr_for_date_range(
     hemisphere: Hemisphere,
     resolution: au_si.AU_SI_RESOLUTIONS,
 ):
-    conc_datasets = []
-    conc_dates = []
-    for date in date_range(start_date=start_date, end_date=end_date):
-        conc_ds = get_cdr(date=date, hemisphere=hemisphere, resolution=resolution)
-        conc_datasets.append(conc_ds)
-        conc_dates.append(date)
+    p_func = partial(_get_cdr, hemisphere, resolution)
+
+    conc_dates = list(date_range(start_date=start_date, end_date=end_date))
+
+    with Pool(6) as p:
+        conc_datasets = p.map(p_func, conc_dates)
 
     merged = xr.concat(
         conc_datasets,
