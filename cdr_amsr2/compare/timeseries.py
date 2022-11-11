@@ -12,10 +12,10 @@ from loguru import logger
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.compare.ref_data import cdr_for_date_range
+from cdr_amsr2.constants import CDR_DATA_DIR
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.util import date_range, standard_output_filename
 
-CDR_DATA_DIR = Path('/share/apps/amsr2-cdr/cdr_data')
 OUTPUT_DIR = Path('/tmp/compare_cdr/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

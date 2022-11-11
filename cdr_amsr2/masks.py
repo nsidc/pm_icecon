@@ -9,13 +9,16 @@ configurable for the user. Perhaps these should me moved into the `params`
 subpackage (e.g., `bt.params`)
 """
 import datetime as dt
-from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 
 from cdr_amsr2._types import Hemisphere
-from cdr_amsr2.constants import PACKAGE_DIR
+from cdr_amsr2.constants import (
+    BOOTSTRAP_MASKS_DIR,
+    BT_GODDARD_ANCILLARY_DIR,
+    CDR_TESTDATA_DIR,
+)
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.util import get_ps25_grid_shape
 
@@ -26,11 +29,7 @@ def get_ps_pole_hole_mask(*, resolution: AU_SI_RESOLUTIONS) -> npt.NDArray[np.bo
     if resolution == '25':
         pole_mask_psn = (
             np.fromfile(
-                (
-                    PACKAGE_DIR
-                    / '../legacy/SB2_NRT_programs'
-                    / '../SB2_NRT_programs/ANCILLARY/np_holemask.ssmi_f17'
-                ).resolve(),
+                (BT_GODDARD_ANCILLARY_DIR / 'np_holemask.ssmi_f17').resolve(),
                 dtype=np.int16,
             ).reshape(448, 304)
             == 1
@@ -38,10 +37,7 @@ def get_ps_pole_hole_mask(*, resolution: AU_SI_RESOLUTIONS) -> npt.NDArray[np.bo
     elif resolution == '12':
         pole_mask_psn = (
             np.fromfile(
-                Path(
-                    '/share/apps/amsr2-cdr/cdr_testdata/btequiv_psn12.5/'
-                    'bt_poleequiv_psn12.5km.dat'
-                ),
+                CDR_TESTDATA_DIR / 'btequiv_psn12.5/bt_poleequiv_psn12.5km.dat',
                 dtype=np.int16,
             ).reshape(896, 608)
             == 1
@@ -61,9 +57,7 @@ def get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.int
         * 24 == invalid ice
         * 32 == coast.
     """
-    fn = Path(
-        '/share/apps/amsr2-cdr/bootstrap_masks' f'/bt_valid_pss12.5_int16_{date:%m}.dat'
-    )
+    fn = BOOTSTRAP_MASKS_DIR / f'bt_valid_pss12.5_int16_{date:%m}.dat'
     validice_land_coast = np.fromfile(fn, dtype=np.int16).reshape(664, 632)
 
     return validice_land_coast
@@ -80,10 +74,9 @@ def get_ps_land_mask(
         shape = get_ps25_grid_shape(hemisphere=hemisphere)
         _land_coast_array = np.fromfile(
             (
-                PACKAGE_DIR
-                / '../legacy/SB2_NRT_programs'
+                BT_GODDARD_ANCILLARY_DIR
                 / (
-                    f'../SB2_NRT_programs/ANCILLARY/{hemisphere}_land_25'
+                    f'{hemisphere}_land_25'
                     # NOTE: According to scotts, the 'r' in the southern hemisphere
                     # filename probably stands for “revised“.
                     f"{'r' if hemisphere == 'south' else ''}"
@@ -106,10 +99,7 @@ def get_ps_land_mask(
             land_mask = np.logical_or(_land_coast_array == 0, _land_coast_array == 32)
         else:
             _land_coast_array = np.fromfile(
-                Path(
-                    '/share/apps/amsr2-cdr/cdr_testdata/btequiv_psn12.5/'
-                    'bt_landequiv_psn12.5km.dat'
-                ),
+                CDR_TESTDATA_DIR / 'btequiv_psn12.5/bt_landequiv_psn12.5km.dat',
                 dtype=np.int16,
             ).reshape(896, 608)
 
@@ -135,7 +125,7 @@ def get_e2n625_land_mask() -> npt.NDArray[np.bool_]:
       all others ->
     """
     _land_coast_array_e2n625 = np.fromfile(
-        Path('/share/apps/amsr2-cdr/bootstrap_masks/locli_e2n6.25_1680x1680.dat'),
+        BOOTSTRAP_MASKS_DIR / 'locli_e2n6.25_1680x1680.dat',
         dtype=np.uint8,
     ).reshape(1680, 1680)
 

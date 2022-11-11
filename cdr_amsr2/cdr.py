@@ -23,6 +23,7 @@ from loguru import logger
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
 from cdr_amsr2.cli.util import datetime_to_date
+from cdr_amsr2.constants import CDR_DATA_DIR
 from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
 from cdr_amsr2.nt.api import amsr2_nasateam
 from cdr_amsr2.util import date_range, standard_output_filename
@@ -146,5 +147,5 @@ if __name__ == '__main__':
             end_date=dt.date(2021, 12, 31),
             hemisphere=hemisphere,
             resolution='12',
-            output_dir=Path('/share/apps/amsr2-cdr/cdr_data'),
+            output_dir=CDR_DATA_DIR,
         )
