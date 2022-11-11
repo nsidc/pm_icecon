@@ -1,10 +1,21 @@
 import datetime as dt
+from pathlib import Path
 
+import numpy as np
 import xarray as xr
 from numpy.testing import assert_almost_equal
+from numpy.typing import NDArray
 
-from cdr_amsr2.bt.api import amsr2_bootstrap, original_f18_example
+import cdr_amsr2.bt.compute_bt_ic as bt
+from cdr_amsr2._types import Hemisphere
+from cdr_amsr2.bt.api import amsr2_bootstrap
+from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
+from cdr_amsr2.bt.params.goddard_class import SSMIS_NORTH_PARAMS
+from cdr_amsr2.config.models.bt import BootstrapParams
 from cdr_amsr2.constants import CDR_TESTDATA_DIR
+from cdr_amsr2.fetch.au_si import AU_SI_RESOLUTIONS
+from cdr_amsr2.interpolation import spatial_interp_tbs
+from cdr_amsr2.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 
 def test_bt_amsr2_regression():
@@ -34,9 +45,77 @@ def test_bt_amsr2_regression():
         )
 
 
+def _original_f18_example() -> xr.Dataset:
+    """Return concentration field example for f18_20180217.
+
+    This example data does not perfectly match the outputs given by Goddard's
+    code, but it is very close. A total of 4 cells differ 1.
+
+    ```
+    >>> exact[not_eq]
+    array([984, 991, 975, 830], dtype=int16)
+    >>> not_eq = exact != not_exact
+    >>> not_exact[not_eq]
+    array([983, 992, 974, 829], dtype=int16)
+    ```
+
+    the exact grid produced by the fortran code is in
+    `legacy/SB2_NRT_programs/NH_20180217_SB2_NRT_f18.ic`
+    """
+    resolution: AU_SI_RESOLUTIONS = '25'
+    date = dt.date(2018, 2, 17)
+    hemisphere: Hemisphere = 'north'
+    params = BootstrapParams(
+        sat='18_class',
+        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+        pole_mask=get_ps_pole_hole_mask(resolution=resolution),
+        invalid_ice_mask=get_ps_invalid_ice_mask(
+            hemisphere=hemisphere,
+            date=date,
+            resolution=resolution,  # type: ignore[arg-type]
+        ),
+        **SSMIS_NORTH_PARAMS,
+    )
+
+    otbs: dict[str, NDArray[np.float32]] = {}
+
+    orig_input_tbs_dir = CDR_TESTDATA_DIR / 'bt_goddard_orig_input_tbs/'
+    raw_fns = {
+        'v19': 'tb_f18_20180217_nrt_n19v.bin',
+        'h37': 'tb_f18_20180217_nrt_n37h.bin',
+        'v37': 'tb_f18_20180217_nrt_n37v.bin',
+        'v22': 'tb_f18_20180217_nrt_n22v.bin',
+    }
+
+    def _read_tb_field(tbfn: Path) -> NDArray[np.float32]:
+        # Read int16 scaled by 10 and return float32 unscaled
+        raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
+
+        return bt.fdiv(raw.astype(np.float32), 10)
+
+    for tb in ('v19', 'h37', 'v37', 'v22'):
+        otbs[tb] = _read_tb_field(
+            (
+                orig_input_tbs_dir / raw_fns[tb]  # type: ignore [literal-required]
+            ).resolve()
+        )
+
+    # interpolate tbs
+    tbs = spatial_interp_tbs(otbs)
+
+    conc_ds = bt.bootstrap(
+        tbs=tbs,
+        params=params,
+        date=date,
+        hemisphere=hemisphere,
+    )
+
+    return conc_ds
+
+
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
-    actual_ds = original_f18_example()
+    actual_ds = _original_f18_example()
     regression_ds = xr.open_dataset(
         CDR_TESTDATA_DIR / 'bt_f18_regression/NH_20180217_NRT_f18_regression.nc',
     )
