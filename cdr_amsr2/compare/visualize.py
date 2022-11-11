@@ -24,6 +24,7 @@ from cdr_amsr2.compare.ref_data import get_au_si_bt_conc, get_cdr, get_sea_ice_i
 from cdr_amsr2.fetch import au_si
 from cdr_amsr2.masks import get_ps_pole_hole_mask
 from cdr_amsr2.nt.masks import get_ps25_sst_mask
+from cdr_amsr2.tests.regression import test_nt
 
 OUTPUT_DIR = Path('/tmp/diffs/')
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -354,7 +355,7 @@ def _fix_nt_outputs(conc_ds):
 
 def compare_original_nt_to_sii(*, hemisphere: Hemisphere) -> None:  # noqa
     """Compare original examples from Goddard for nasateam."""
-    our_conc_ds = _fix_nt_outputs(nt_api.original_example(hemisphere=hemisphere))
+    our_conc_ds = _fix_nt_outputs(test_nt._original_example(hemisphere=hemisphere))
 
     date = dt.date(2018, 1, 1)
     sii_conc_ds = get_sea_ice_index(hemisphere=hemisphere, date=date)
