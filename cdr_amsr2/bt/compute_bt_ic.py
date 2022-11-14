@@ -61,7 +61,14 @@ def tb_data_mask(
     return is_bad_tb
 
 
-def xfer_tbs_nrt(v37, h37, v19, v22, sat) -> dict[str, npt.NDArray[np.float32]]:
+def xfer_tbs_nrt(
+    *,
+    v37: npt.NDArray,
+    h37: npt.NDArray,
+    v19: npt.NDArray,
+    v22: npt.NDArray,
+    sat: str,
+) -> dict[str, npt.NDArray[np.float32]]:
     # NRT regressions
     if sat == '17_class':
         v37 = fadd(fmul(1.0170066, v37), -4.9383355)
@@ -819,7 +826,9 @@ def calc_bt_ice(
     wtp2,
     itp,
     itp2,
-    tbs,
+    tb_v37: npt.NDArray,
+    tb_h37: npt.NDArray,
+    tb_v19: npt.NDArray,
     land_mask: npt.NDArray[np.bool_],
     water_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
@@ -842,17 +851,17 @@ def calc_bt_ice(
     radlen2 = rad_coeffs['radlen2']
 
     # main calc_bt_ice() block
-    vh37chk = vh37[0] - adoff + vh37[1] * tbs['v37']
+    vh37chk = vh37[0] - adoff + vh37[1] * tb_v37
 
     # Compute radchk1
-    is_check1 = tbs['h37'] > vh37chk
-    is_h37_lt_rc1 = tbs['h37'] < (radslp1 * tbs['v37'] + radoff1)
+    is_check1 = tb_h37 > vh37chk
+    is_h37_lt_rc1 = tb_h37 < (radslp1 * tb_v37 + radoff1)
 
-    iclen1 = np.sqrt(np.square(tbs['v37'] - wtp[0]) + np.square(tbs['h37'] - wtp[1]))
+    iclen1 = np.sqrt(np.square(tb_v37 - wtp[0]) + np.square(tb_h37 - wtp[1]))
     is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1 = ret_ic_32(
-        tbs['v37'],
-        tbs['h37'],
+        tb_v37,
+        tb_h37,
         wtp[0],
         wtp[1],
         vh37[0],
@@ -865,13 +874,13 @@ def calc_bt_ice(
     icpix1[is_condition1] = iclen1[is_condition1] / radlen1
 
     # Compute radchk2
-    is_v19_lt_rc2 = tbs['v19'] < (radslp2 * tbs['v37'] + radoff2)
+    is_v19_lt_rc2 = tb_v19 < (radslp2 * tb_v37 + radoff2)
 
-    iclen2 = np.sqrt(np.square(tbs['v37'] - wtp2[0]) + np.square(tbs['v19'] - wtp2[1]))
+    iclen2 = np.sqrt(np.square(tb_v37 - wtp2[0]) + np.square(tb_v19 - wtp2[1]))
     is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2 = ret_ic_32(
-        tbs['v37'],
-        tbs['v19'],
+        tb_v37,
+        tb_v19,
         wtp2[0],
         wtp2[1],
         v1937[0],
@@ -908,30 +917,39 @@ def bootstrap(
     hemisphere: Hemisphere,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
-    tbs: dict[str, npt.NDArray] = dict(
-        v37=tb_v37,
-        h37=tb_h37,
-        v19=tb_v19,
-        v22=tb_v22,
-    )
     tb_mask = tb_data_mask(
         tbs=(
-            tbs['v37'],
-            tbs['h37'],
-            tbs['v19'],
-            tbs['v22'],
+            tb_v37,
+            tb_h37,
+            tb_v19,
+            tb_v22,
         ),
         min_tb=params.mintb,
         max_tb=params.maxtb,
     )
 
-    tbs = xfer_tbs_nrt(tbs['v37'], tbs['h37'], tbs['v19'], tbs['v22'], params.sat)
+    # TODO: reconsider this approach. Perhaps this function should take a
+    # dataset or 'tb_set' object and return the same? Ideally this function
+    # should not exist in the bootstrap code itself anyway - it should be the
+    # caller's responsibility to decide if Tbs need a transformation in order to
+    # be e.g., consistent with a timeseries with different platforms.
+    tbs = xfer_tbs_nrt(
+        v37=tb_v37,
+        h37=tb_h37,
+        v19=tb_v19,
+        v22=tb_v22,
+        sat=params.sat,
+    )
+    tb_v37 = tbs['v37']
+    tb_h37 = tbs['h37']
+    tb_v19 = tbs['v19']
+    tb_v22 = tbs['v22']
 
     water_mask = ret_water_ssmi(
-        v37=tbs['v37'],
-        h37=tbs['h37'],
-        v22=tbs['v22'],
-        v19=tbs['v19'],
+        v37=tb_v37,
+        h37=tb_h37,
+        v22=tb_v22,
+        v19=tb_v19,
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         ln1=params.vh37_params.lnline,
@@ -942,8 +960,8 @@ def bootstrap(
     vh37 = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
-        tbx=tbs['v37'],
-        tby=tbs['h37'],
+        tbx=tb_v37,
+        tby=tb_h37,
         lnline=params.vh37_params.lnline,
         add=params.add1,
         water_mask=water_mask,
@@ -951,9 +969,9 @@ def bootstrap(
 
     wtp, wtp2 = get_water_tiepoints(
         water_mask=water_mask,
-        tb_v37=tbs['v37'],
-        tb_h37=tbs['h37'],
-        tb_v19=tbs['v19'],
+        tb_v37=tb_v37,
+        tb_h37=tb_h37,
+        tb_v19=tb_v19,
         wtp1_default=params.vh37_params.water_tie_point,
         wtp2_default=params.v1937_params.water_tie_point,
     )
@@ -964,12 +982,12 @@ def bootstrap(
     v1937 = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
-        tbx=tbs['v37'],
-        tby=tbs['v19'],
+        tbx=tb_v37,
+        tby=tb_v19,
         lnline=params.v1937_params.lnline,
         add=params.add2,
         water_mask=water_mask,
-        tba=tbs['h37'],
+        tba=tb_h37,
         iceline=vh37,
         adoff=adoff,
     )
@@ -986,7 +1004,9 @@ def bootstrap(
         wtp=wtp,
         wtp2=wtp2,
         v1937=v1937,
-        tbs=tbs,
+        tb_v37=tb_v37,
+        tb_h37=tb_h37,
+        tb_v19=tb_v19,
         land_mask=params.land_mask,
         water_mask=water_mask,
         tb_mask=tb_mask,
