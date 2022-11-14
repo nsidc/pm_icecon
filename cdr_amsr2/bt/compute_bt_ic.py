@@ -898,12 +898,21 @@ def calc_bt_ice(
 
 def bootstrap(
     *,
-    tbs: dict[str, npt.NDArray],
+    tb_v37: npt.NDArray,
+    tb_h37: npt.NDArray,
+    tb_v19: npt.NDArray,
+    tb_v22: npt.NDArray,
     params: BootstrapParams,
     date: dt.date,
     hemisphere: Hemisphere,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
+    tbs: dict[str, npt.NDArray] = dict(
+        v37=tb_v37,
+        h37=tb_h37,
+        v19=tb_v19,
+        v22=tb_v22,
+    )
     tb_mask = tb_data_mask(
         tbs=(
             tbs['v37'],

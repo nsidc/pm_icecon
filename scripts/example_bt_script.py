@@ -26,18 +26,9 @@ if __name__ == '__main__':
         hemisphere=hemisphere,
     )
 
-    # The bootstrap algorithm expects channels v19, v37, h37, and v22. Adapt
-    # a2l1c data for this.
-    tbs = {
-        'v19': xr_tbs['v18'].data,
-        'v37': xr_tbs['v36'].data,
-        'h37': xr_tbs['h36'].data,
-        'v22': xr_tbs['v23'].data,
-    }
-
     # Define required masks
     # NOTE/TODO: replace these with 'real' masks!
-    _data_shape = tbs['v19'].shape
+    _data_shape = xr_tbs['v18'].shape
     land_mask = np.zeros(_data_shape).astype(bool)
     pole_mask = np.zeros(_data_shape).astype(bool)
     invalid_ice_mask = np.zeros(_data_shape).astype(bool)
@@ -54,7 +45,10 @@ if __name__ == '__main__':
 
     # Run the bootstrap algoirthm and get the result back as an xarray dataset.
     conc_ds = bootstrap(
-        tbs=tbs,
+        tb_v37=xr_tbs['v36'].data,
+        tb_h37=xr_tbs['h36'].data,
+        tb_v19=xr_tbs['v18'].data,
+        tb_v22=xr_tbs['v23'].data,
         params=bootstrap_params,
         date=date,
         hemisphere=hemisphere,

@@ -56,15 +56,14 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     grid_shape = get_ps25_grid_shape(hemisphere=hemisphere)
     for tb in raw_fns.keys():
         tbfn = raw_fns[tb]
-        tbs[tb] = np.fromfile(
-            orig_input_tbs_dir / tbfn,
-            dtype=np.int16,
-        ).reshape(grid_shape)
+        tbs[tb] = spatial_interp_tbs(
+            np.fromfile(
+                orig_input_tbs_dir / tbfn,
+                dtype=np.int16,
+            ).reshape(grid_shape)
+        )
 
     invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
-
-    # interpolate tbs
-    tbs = spatial_interp_tbs(tbs)
 
     conc_ds = nasateam(
         tbs=tbs,

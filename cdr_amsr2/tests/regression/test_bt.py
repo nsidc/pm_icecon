@@ -100,11 +100,11 @@ def _original_f18_example() -> xr.Dataset:
             ).resolve()
         )
 
-    # interpolate tbs
-    tbs = spatial_interp_tbs(otbs)
-
     conc_ds = bt.bootstrap(
-        tbs=tbs,
+        tb_v37=spatial_interp_tbs(otbs['v37']),
+        tb_h37=spatial_interp_tbs(otbs['h37']),
+        tb_v19=spatial_interp_tbs(otbs['v19']),
+        tb_v22=spatial_interp_tbs(otbs['v22']),
         params=params,
         date=date,
         hemisphere=hemisphere,
