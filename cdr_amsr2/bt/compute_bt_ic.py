@@ -32,6 +32,7 @@ def f(num):
     return np.float32(num)
 
 
+# TODO: this function very similar to `get_invalid_tbs_mask` in `compute_nt_ic`.
 def tb_data_mask(
     *,
     tbs: Sequence[npt.NDArray[np.float32]],

@@ -118,7 +118,14 @@ def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]
     return coefs
 
 
-def compute_ratios(tbs, coefs) -> dict[str, npt.NDArray]:
+def compute_ratios(
+    *,
+    tb_h19: npt.NDArray,
+    tb_v19: npt.NDArray,
+    tb_v22: npt.NDArray,
+    tb_v37: npt.NDArray,
+    coefs,
+) -> dict[str, npt.NDArray]:
     """Return calculated gradient ratios.
 
     TODO: make this function more generic. There should be a func for computing
@@ -126,18 +133,18 @@ def compute_ratios(tbs, coefs) -> dict[str, npt.NDArray]:
     """
     ratios = {}
 
-    dif_37v19v = tbs['v37'] - tbs['v19']
-    sum_37v19v = tbs['v37'] + tbs['v19']
+    dif_37v19v = tb_v37 - tb_v19
+    sum_37v19v = tb_v37 + tb_v19
     sum_37v19v[sum_37v19v == 0] = 1  # Avoid div by zero
     ratios['gr_3719'] = np.divide(dif_37v19v, sum_37v19v)
 
-    dif_22v19v = tbs['v22'] - tbs['v19']
-    sum_22v19v = tbs['v22'] + tbs['v19']
+    dif_22v19v = tb_v22 - tb_v19
+    sum_22v19v = tb_v22 + tb_v19
     sum_22v19v[sum_22v19v == 0] = 1  # Avoid div by zero
     ratios['gr_2219'] = np.divide(dif_22v19v, sum_22v19v)
 
-    dif_19v19h = tbs['v19'] - tbs['h19']
-    sum_19v19h = tbs['v19'] + tbs['h19']
+    dif_19v19h = tb_v19 - tb_h19
+    sum_19v19h = tb_v19 + tb_h19
     sum_19v19h[sum_19v19h == 0] = 1  # Avoid div by zero
     ratios['pr_1919'] = np.divide(dif_19v19h, sum_19v19h)
 
@@ -180,15 +187,23 @@ def get_weather_filter_mask(
     return weather_filter_mask
 
 
-def get_invalid_tbs_mask(tbs: dict[str, npt.NDArray]) -> npt.NDArray[np.bool_]:
-    is_valid_tbs = (tbs['v19'] > 0) & (tbs['h19'] > 0) & (tbs['v37'] > 0)
+# TODO: this function very similar to `tb_data_mask` in `compute_bt_ic`.
+def get_invalid_tbs_mask(
+    *,
+    tb_v19: npt.NDArray,
+    tb_h19: npt.NDArray,
+    tb_v37: npt.NDArray,
+) -> npt.NDArray[np.bool_]:
+    is_valid_tbs = (tb_v19 > 0) & (tb_h19 > 0) & (tb_v37 > 0)
     invalid_tbs = ~is_valid_tbs
 
     return invalid_tbs
 
 
 def compute_nt_conc(
-    tbs: dict[str, npt.NDArray], coefs: dict[str, float], ratios: dict[str, npt.NDArray]
+    *,
+    coefs: dict[str, float],
+    ratios: dict[str, npt.NDArray],
 ) -> npt.NDArray:
     """Compute NASA Team sea ice concentration estimate."""
     pr_gr_product = ratios['pr_1919'] * ratios['gr_3719']
@@ -306,7 +321,10 @@ def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
 
 def nasateam(
     *,
-    tbs: dict[str, npt.NDArray],
+    tb_v19: npt.NDArray,
+    tb_v37: npt.NDArray,
+    tb_v22: npt.NDArray,
+    tb_h19: npt.NDArray,
     sat: ValidSatellites,
     hemisphere: Hemisphere,
     shoremap: npt.NDArray,
@@ -325,12 +343,25 @@ def nasateam(
     gr_thresholds = get_gr_thresholds(sat, hemisphere)
     print(f'gr_thresholds:\n{gr_thresholds}')
 
-    ratios = compute_ratios(tbs, nt_coefficients)
+    ratios = compute_ratios(
+        tb_h19=tb_h19,
+        tb_v19=tb_v19,
+        tb_v22=tb_v22,
+        tb_v37=tb_v37,
+        coefs=nt_coefficients,
+    )
 
-    conc = compute_nt_conc(tbs, nt_coefficients, ratios)
+    conc = compute_nt_conc(
+        coefs=nt_coefficients,
+        ratios=ratios,
+    )
 
     # Set invalid tbs and weather-filtered values
-    invalid_tb_mask = get_invalid_tbs_mask(tbs)
+    invalid_tb_mask = get_invalid_tbs_mask(
+        tb_v19=tb_v19,
+        tb_h19=tb_h19,
+        tb_v37=tb_v37,
+    )
     weather_filter_mask = get_weather_filter_mask(
         ratios=ratios, gr_thresholds=gr_thresholds
     )

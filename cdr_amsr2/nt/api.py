@@ -1,7 +1,6 @@
 import datetime as dt
 
 import numpy as np
-import numpy.typing as npt
 
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
@@ -21,18 +20,6 @@ def amsr2_nasateam(
         hemisphere=hemisphere,
         resolution=resolution,
     )
-
-    tbs: dict[str, npt.NDArray] = {
-        'h19': xr_tbs['h18'].data,
-        'v19': xr_tbs['v18'].data,
-        'v22': xr_tbs['v23'].data,
-        'h37': xr_tbs['h36'].data,
-        'v37': xr_tbs['v36'].data,
-    }
-
-    # interpolate tbs
-    for tb in tbs.keys():
-        tbs[tb] = spatial_interp_tbs(tbs[tb])
 
     _nasateam_ancillary_dir = CDR_TESTDATA_DIR / 'nasateam_ancillary'
     shoremap = np.fromfile(
@@ -60,7 +47,10 @@ def amsr2_nasateam(
     )
 
     conc_ds = nasateam(
-        tbs=tbs,
+        tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
+        tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
+        tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
+        tb_h19=spatial_interp_tbs(xr_tbs['h18'].data),
         sat='u2',
         hemisphere=hemisphere,
         shoremap=shoremap,
