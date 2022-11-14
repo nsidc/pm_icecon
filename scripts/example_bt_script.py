@@ -36,7 +36,6 @@ if __name__ == '__main__':
     # Define bootstrap params. See
     # `cdr_amsr2/config/models/bt.py:BootstrapParams` for more details.
     bootstrap_params = BootstrapParams(
-        sat='a2l1c',
         land_mask=land_mask,
         pole_mask=pole_mask,
         invalid_ice_mask=invalid_ice_mask,

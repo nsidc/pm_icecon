@@ -32,7 +32,6 @@ def amsr2_bootstrap(
     )
 
     params = BootstrapParams(
-        sat='u2',
         land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
         # There's no pole hole in the southern hemisphere.
         pole_mask=(
@@ -77,7 +76,6 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
     is_high_sst = sst_mask == 50
 
     params = BootstrapParams(
-        sat='a2l1c',
         land_mask=get_e2n625_land_mask(),
         # TODO: For now, let's NOT impose a pole hole on the A2L1C data
         pole_mask=None,

@@ -63,23 +63,27 @@ def tb_data_mask(
 
 def xfer_tbs_nrt(
     *,
-    v37: npt.NDArray,
-    h37: npt.NDArray,
-    v19: npt.NDArray,
-    v22: npt.NDArray,
+    tb_v37: npt.NDArray,
+    tb_h37: npt.NDArray,
+    tb_v19: npt.NDArray,
+    tb_v22: npt.NDArray,
     sat: str,
 ) -> dict[str, npt.NDArray[np.float32]]:
+    """Transform selected TBs for consistentcy with timeseries.
+
+    TODO: make sure this description is...descriptive enough.
+    """
     # NRT regressions
     if sat == '17_class':
-        v37 = fadd(fmul(1.0170066, v37), -4.9383355)
-        h37 = fadd(fmul(1.0009720, h37), -1.3709822)
-        v19 = fadd(fmul(1.0140723, v19), -3.4705583)
-        v22 = fadd(fmul(0.99652931, v22), -0.82305684)
+        tb_v37 = fadd(fmul(1.0170066, tb_v37), -4.9383355)
+        tb_h37 = fadd(fmul(1.0009720, tb_h37), -1.3709822)
+        tb_v19 = fadd(fmul(1.0140723, tb_v19), -3.4705583)
+        tb_v22 = fadd(fmul(0.99652931, tb_v22), -0.82305684)
     elif sat == '18_class':
-        v37 = fadd(fmul(1.0104497, v37), -3.3174017)
-        h37 = fadd(fmul(0.98914390, h37), 1.2031835)
-        v19 = fadd(fmul(1.0057373, v19), -0.92638520)
-        v22 = fadd(fmul(0.98793409, v22), 1.2108198)
+        tb_v37 = fadd(fmul(1.0104497, tb_v37), -3.3174017)
+        tb_h37 = fadd(fmul(0.98914390, tb_h37), 1.2031835)
+        tb_v19 = fadd(fmul(1.0057373, tb_v19), -0.92638520)
+        tb_v22 = fadd(fmul(0.98793409, tb_v22), 1.2108198)
     elif sat == 'u2':
         print(f'No TB modifications for sat: {sat}')
     elif sat == 'a2l1c':
@@ -88,10 +92,10 @@ def xfer_tbs_nrt(
         raise UnexpectedSatelliteError(f'No such sat tb xform: {sat}')
 
     return {
-        'v37': v37,
-        'h37': h37,
-        'v19': v19,
-        'v22': v22,
+        'tb_v37': tb_v37,
+        'tb_h37': tb_h37,
+        'tb_v19': tb_v19,
+        'tb_v22': tb_v22,
     }
 
 
@@ -928,22 +932,17 @@ def bootstrap(
         max_tb=params.maxtb,
     )
 
-    # TODO: reconsider this approach. Perhaps this function should take a
-    # dataset or 'tb_set' object and return the same? Ideally this function
-    # should not exist in the bootstrap code itself anyway - it should be the
-    # caller's responsibility to decide if Tbs need a transformation in order to
-    # be e.g., consistent with a timeseries with different platforms.
-    tbs = xfer_tbs_nrt(
-        v37=tb_v37,
-        h37=tb_h37,
-        v19=tb_v19,
-        v22=tb_v22,
-        sat=params.sat,
-    )
-    tb_v37 = tbs['v37']
-    tb_h37 = tbs['h37']
-    tb_v19 = tbs['v19']
-    tb_v22 = tbs['v22']
+    # tbs = xfer_tbs_nrt(
+    #     v37=tb_v37,
+    #     h37=tb_h37,
+    #     v19=tb_v19,
+    #     v22=tb_v22,
+    #     sat=params.sat,
+    # )
+    # tb_v37 = tbs['v37']
+    # tb_h37 = tbs['h37']
+    # tb_v19 = tbs['v19']
+    # tb_v22 = tbs['v22']
 
     water_mask = ret_water_ssmi(
         v37=tb_v37,
