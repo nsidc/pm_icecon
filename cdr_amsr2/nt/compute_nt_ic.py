@@ -16,7 +16,6 @@ from typing import Any
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
-from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
@@ -149,25 +148,6 @@ def compute_ratios(
     ratios['pr_1919'] = np.divide(dif_19v19h, sum_19v19h)
 
     return ratios
-
-
-def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]:
-    """Return the gradient ratio thresholds for this sat, hem combo."""
-    gr_thresholds = {}
-    if sat == '17_final' or sat == 'u2':
-        if sat == 'u2':
-            logger.warning(
-                'The graident threshold values were stolen from f17_final!'
-                ' Do we need new ones for AMSR2? How do we get them?'
-            )
-        if hem == 'north':
-            gr_thresholds['3719'] = 0.050
-            gr_thresholds['2219'] = 0.045
-        else:
-            gr_thresholds['3719'] = 0.053
-            gr_thresholds['2219'] = 0.045
-
-    return gr_thresholds
 
 
 def get_weather_filter_mask(
@@ -331,6 +311,7 @@ def nasateam(
     minic: npt.NDArray,
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
+    gradient_thresholds: dict[str, float],
 ):
     tiepoints = get_tiepoints(satellite=sat, hemisphere=hemisphere)
     print(f'tiepoints: {tiepoints}')
@@ -339,9 +320,6 @@ def nasateam(
     print(f'NT coefs: {nt_coefficients}')
     for c in ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'):
         print(f'  coef {c}: {nt_coefficients[c]}')
-
-    gr_thresholds = get_gr_thresholds(sat, hemisphere)
-    print(f'gr_thresholds:\n{gr_thresholds}')
 
     ratios = compute_ratios(
         tb_h19=tb_h19,
@@ -363,7 +341,8 @@ def nasateam(
         tb_v37=tb_v37,
     )
     weather_filter_mask = get_weather_filter_mask(
-        ratios=ratios, gr_thresholds=gr_thresholds
+        ratios=ratios,
+        gr_thresholds=gradient_thresholds,
     )
     conc[invalid_tb_mask | weather_filter_mask] = 0
 
