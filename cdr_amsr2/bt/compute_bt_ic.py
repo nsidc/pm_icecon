@@ -931,18 +931,6 @@ def bootstrap(
         max_tb=params.maxtb,
     )
 
-    # tbs = xfer_tbs_nrt(
-    #     v37=tb_v37,
-    #     h37=tb_h37,
-    #     v19=tb_v19,
-    #     v22=tb_v22,
-    #     sat=params.sat,
-    # )
-    # tb_v37 = tbs['v37']
-    # tb_h37 = tbs['h37']
-    # tb_v19 = tbs['v19']
-    # tb_v22 = tbs['v22']
-
     water_mask = ret_water_ssmi(
         v37=tb_v37,
         h37=tb_h37,
