@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 import cdr_amsr2.bt.compute_bt_ic as bt
 from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.bt.api import amsr2_bootstrap
-from cdr_amsr2.bt.compute_bt_ic import xfer_tbs_nrt
+from cdr_amsr2.bt.compute_bt_ic import xfer_class_tbs
 from cdr_amsr2.bt.masks import get_ps_invalid_ice_mask
 from cdr_amsr2.bt.params.goddard_class import SSMIS_NORTH_PARAMS
 from cdr_amsr2.config.models.bt import BootstrapParams
@@ -102,12 +102,12 @@ def _original_f18_example() -> xr.Dataset:
 
     conc_ds = bt.bootstrap(
         # Apply expected transformation for F18 CLASS data.
-        **xfer_tbs_nrt(
+        **xfer_class_tbs(
             tb_v37=spatial_interp_tbs(otbs['v37']),
             tb_h37=spatial_interp_tbs(otbs['h37']),
             tb_v19=spatial_interp_tbs(otbs['v19']),
             tb_v22=spatial_interp_tbs(otbs['v22']),
-            sat='18_class',
+            sat='f18',
         ),
         params=params,
         date=date,
