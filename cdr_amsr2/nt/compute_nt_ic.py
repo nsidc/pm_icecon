@@ -11,22 +11,22 @@ Note: the original Goddard code involves the following files:
 """
 
 import datetime as dt
-from typing import Any
+from typing import Literal, cast
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
-from cdr_amsr2.nt.tiepoints import get_tiepoints
+from cdr_amsr2.nt.tiepoints import NasateamTiePoints
 
 
 def fdiv(a, b):
     return np.divide(a, b, dtype=np.float32)
 
 
-def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]:
+def compute_nt_coefficients(tp: NasateamTiePoints) -> dict[str, float]:
     """Compute coefficients for the NT algorithm.
 
     tp are the tiepoints, a dictionary of structure:
@@ -36,17 +36,21 @@ def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]
                         for open water, multiyear, first-year respectively
     """
     # Intermediate variables
-    # TODO: better type annotations.
-    diff: dict[str, dict[str, Any]] = {}
-    sums: dict[str, dict[str, Any]] = {}
-    for tiepoint in ('ow', 'fy', 'my'):
-        diff[tiepoint] = {}
-        diff[tiepoint]['19v19h'] = tp['19v'][tiepoint] - tp['19h'][tiepoint]
-        diff[tiepoint]['37v19v'] = tp['37v'][tiepoint] - tp['19v'][tiepoint]
+    tp_names = Literal['ow', 'fy', 'my']
+    diff: dict[tp_names, dict[str, float]] = {}
+    sums: dict[tp_names, dict[str, float]] = {}
+    for tp_name in ('ow', 'fy', 'my'):
+        # This cast is necessary because mypy just sees that tp_name is a value
+        # that takes a str. Dumb...
+        tp_name = cast(tp_names, tp_name)
 
-        sums[tiepoint] = {}
-        sums[tiepoint]['19v19h'] = tp['19v'][tiepoint] + tp['19h'][tiepoint]
-        sums[tiepoint]['37v19v'] = tp['37v'][tiepoint] + tp['19v'][tiepoint]
+        diff[tp_name] = {}
+        diff[tp_name]['19v19h'] = tp['19v'][tp_name] - tp['19h'][tp_name]
+        diff[tp_name]['37v19v'] = tp['37v'][tp_name] - tp['19v'][tp_name]
+
+        sums[tp_name] = {}
+        sums[tp_name]['19v19h'] = tp['19v'][tp_name] + tp['19h'][tp_name]
+        sums[tp_name]['37v19v'] = tp['37v'][tp_name] + tp['19v'][tp_name]
 
     coefs = {}
 
@@ -305,15 +309,14 @@ def nasateam(
     tb_v37: npt.NDArray,
     tb_v22: npt.NDArray,
     tb_h19: npt.NDArray,
-    sat: ValidSatellites,
     hemisphere: Hemisphere,
     shoremap: npt.NDArray,
     minic: npt.NDArray,
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
     gradient_thresholds: dict[str, float],
+    tiepoints: NasateamTiePoints,
 ):
-    tiepoints = get_tiepoints(satellite=sat, hemisphere=hemisphere)
     print(f'tiepoints: {tiepoints}')
 
     nt_coefficients = compute_nt_coefficients(tiepoints)

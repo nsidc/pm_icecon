@@ -14,6 +14,7 @@ from cdr_amsr2.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,
     RSS_F17_SOUTH_GRADIENT_THRESHOLDS,
 )
+from cdr_amsr2.nt.tiepoints import get_tiepoints
 from cdr_amsr2.util import get_ps25_grid_shape
 
 
@@ -73,7 +74,6 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         tb_v37=tbs['v37'],
         tb_v22=tbs['v22'],
         tb_h19=tbs['h19'],
-        sat='17_final',
         hemisphere=hemisphere,
         shoremap=_get_shoremap(hemisphere=hemisphere),
         minic=_get_minic(hemisphere=hemisphere),
@@ -84,6 +84,7 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
             if hemisphere == 'north'
             else RSS_F17_SOUTH_GRADIENT_THRESHOLDS
         ),
+        tiepoints=get_tiepoints(satellite='17_final', hemisphere=hemisphere),
     )
 
     return conc_ds
