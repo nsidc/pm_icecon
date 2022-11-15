@@ -48,18 +48,11 @@ def amsr2_bootstrap(
         **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
     )
 
-    tbs = {
-        'v19': xr_tbs['v18'].data,
-        'v37': xr_tbs['v36'].data,
-        'h37': xr_tbs['h36'].data,
-        'v22': xr_tbs['v23'].data,
-    }
-
-    # interpolate tbs
-    tbs = spatial_interp_tbs(tbs)
-
     conc_ds = bt.bootstrap(
-        tbs=tbs,
+        tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
+        tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
+        tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
+        tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         params=params,
         date=date,
         hemisphere=hemisphere,
@@ -92,18 +85,11 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         **A2L1C_NORTH_PARAMS,
     )
 
-    tbs = {
-        'v19': xr_tbs['v18'].data,
-        'v37': xr_tbs['v36'].data,
-        'h37': xr_tbs['h36'].data,
-        'v22': xr_tbs['v23'].data,
-    }
-
-    # interpolate tbs
-    tbs = spatial_interp_tbs(tbs)
-
     conc_ds = bt.bootstrap(
-        tbs=tbs,
+        tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
+        tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
+        tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
+        tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         params=params,
         date=date,
         hemisphere=hemisphere,

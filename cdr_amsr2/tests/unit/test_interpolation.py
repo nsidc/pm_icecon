@@ -31,7 +31,7 @@ def test_spatial_interp_tbs():
         dtype=np.float32,
     )
 
-    actual = spatial_interp_tbs({'chan': example_data})['chan']
+    actual = spatial_interp_tbs(example_data)
 
     assert_almost_equal(expected, actual, decimal=6)
 
@@ -78,7 +78,7 @@ def test_spatial_interp_tbs_edge():
         dtype=np.float32,
     )
 
-    actual = spatial_interp_tbs({'chan': example_data})['chan']
+    actual = spatial_interp_tbs(example_data)
 
     assert_almost_equal(expected, actual, decimal=6)
 
@@ -107,6 +107,6 @@ def test_spatial_interp_tbs_only_if_enough():
         dtype=np.float32,
     )
 
-    actual = spatial_interp_tbs({'chan': example_data})['chan']
+    actual = spatial_interp_tbs(example_data)
 
     assert_almost_equal(expected, actual, decimal=6)

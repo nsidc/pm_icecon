@@ -45,29 +45,30 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     date = dt.date(2018, 1, 1)
     orig_input_tbs_dir = CDR_TESTDATA_DIR / 'nt_goddard_input_tbs'
     raw_fns = {
-        'h19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin',
         'v19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19v.bin',
-        'v22': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}22v.bin',
-        'h37': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}37h.bin',
         'v37': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}37v.bin',
+        'v22': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}22v.bin',
+        'h19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin',
     }
 
     tbs = {}
     grid_shape = get_ps25_grid_shape(hemisphere=hemisphere)
     for tb in raw_fns.keys():
         tbfn = raw_fns[tb]
-        tbs[tb] = np.fromfile(
-            orig_input_tbs_dir / tbfn,
-            dtype=np.int16,
-        ).reshape(grid_shape)
+        tbs[tb] = spatial_interp_tbs(
+            np.fromfile(
+                orig_input_tbs_dir / tbfn,
+                dtype=np.int16,
+            ).reshape(grid_shape)
+        )
 
     invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
 
-    # interpolate tbs
-    tbs = spatial_interp_tbs(tbs)
-
     conc_ds = nasateam(
-        tbs=tbs,
+        tb_v19=tbs['v19'],
+        tb_v37=tbs['v37'],
+        tb_v22=tbs['v22'],
+        tb_h19=tbs['h19'],
         sat='17_final',
         hemisphere=hemisphere,
         shoremap=_get_shoremap(hemisphere=hemisphere),
