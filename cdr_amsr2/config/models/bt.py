@@ -3,7 +3,6 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
-from cdr_amsr2._types import ValidSatellites
 from cdr_amsr2.bt._types import Tiepoint
 from cdr_amsr2.config.models.base_model import ConfigBaseModel
 
@@ -79,11 +78,6 @@ class BootstrapParams(ConfigBaseModel):
     """The minimum valid brightness temperature value."""
     maxtb: float = 320.0
     """The maximum valid brightness temperature value."""
-
-    # TODO: consider just adding this as an argument to the bootstrap alg
-    # entrypoint?
-    sat: ValidSatellites
-    """String representing satellite."""
 
     # TODO: change to boolean type mask
     land_mask: npt.NDArray[np.bool_]

@@ -11,23 +11,22 @@ Note: the original Goddard code involves the following files:
 """
 
 import datetime as dt
-from typing import Any
+from typing import Literal, cast
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
-from loguru import logger
 
-from cdr_amsr2._types import Hemisphere, ValidSatellites
+from cdr_amsr2._types import Hemisphere
 from cdr_amsr2.constants import DEFAULT_FLAG_VALUES
-from cdr_amsr2.nt.tiepoints import get_tiepoints
+from cdr_amsr2.nt.tiepoints import NasateamTiePoints
 
 
 def fdiv(a, b):
     return np.divide(a, b, dtype=np.float32)
 
 
-def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]:
+def compute_nt_coefficients(tp: NasateamTiePoints) -> dict[str, float]:
     """Compute coefficients for the NT algorithm.
 
     tp are the tiepoints, a dictionary of structure:
@@ -37,17 +36,21 @@ def compute_nt_coefficients(tp: dict[str, dict[str, float]]) -> dict[str, float]
                         for open water, multiyear, first-year respectively
     """
     # Intermediate variables
-    # TODO: better type annotations.
-    diff: dict[str, dict[str, Any]] = {}
-    sums: dict[str, dict[str, Any]] = {}
-    for tiepoint in ('ow', 'fy', 'my'):
-        diff[tiepoint] = {}
-        diff[tiepoint]['19v19h'] = tp['19v'][tiepoint] - tp['19h'][tiepoint]
-        diff[tiepoint]['37v19v'] = tp['37v'][tiepoint] - tp['19v'][tiepoint]
+    tp_names = Literal['ow', 'fy', 'my']
+    diff: dict[tp_names, dict[str, float]] = {}
+    sums: dict[tp_names, dict[str, float]] = {}
+    for tp_name in ('ow', 'fy', 'my'):
+        # This cast is necessary because mypy just sees that tp_name is a value
+        # that takes a str. Dumb...
+        tp_name = cast(tp_names, tp_name)
 
-        sums[tiepoint] = {}
-        sums[tiepoint]['19v19h'] = tp['19v'][tiepoint] + tp['19h'][tiepoint]
-        sums[tiepoint]['37v19v'] = tp['37v'][tiepoint] + tp['19v'][tiepoint]
+        diff[tp_name] = {}
+        diff[tp_name]['19v19h'] = tp['19v'][tp_name] - tp['19h'][tp_name]
+        diff[tp_name]['37v19v'] = tp['37v'][tp_name] - tp['19v'][tp_name]
+
+        sums[tp_name] = {}
+        sums[tp_name]['19v19h'] = tp['19v'][tp_name] + tp['19h'][tp_name]
+        sums[tp_name]['37v19v'] = tp['37v'][tp_name] + tp['19v'][tp_name]
 
     coefs = {}
 
@@ -149,25 +152,6 @@ def compute_ratios(
     ratios['pr_1919'] = np.divide(dif_19v19h, sum_19v19h)
 
     return ratios
-
-
-def get_gr_thresholds(sat: ValidSatellites, hem: Hemisphere) -> dict[str, float]:
-    """Return the gradient ratio thresholds for this sat, hem combo."""
-    gr_thresholds = {}
-    if sat == '17_final' or sat == 'u2':
-        if sat == 'u2':
-            logger.warning(
-                'The graident threshold values were stolen from f17_final!'
-                ' Do we need new ones for AMSR2? How do we get them?'
-            )
-        if hem == 'north':
-            gr_thresholds['3719'] = 0.050
-            gr_thresholds['2219'] = 0.045
-        else:
-            gr_thresholds['3719'] = 0.053
-            gr_thresholds['2219'] = 0.045
-
-    return gr_thresholds
 
 
 def get_weather_filter_mask(
@@ -325,23 +309,20 @@ def nasateam(
     tb_v37: npt.NDArray,
     tb_v22: npt.NDArray,
     tb_h19: npt.NDArray,
-    sat: ValidSatellites,
     hemisphere: Hemisphere,
     shoremap: npt.NDArray,
     minic: npt.NDArray,
     date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
+    gradient_thresholds: dict[str, float],
+    tiepoints: NasateamTiePoints,
 ):
-    tiepoints = get_tiepoints(satellite=sat, hemisphere=hemisphere)
     print(f'tiepoints: {tiepoints}')
 
     nt_coefficients = compute_nt_coefficients(tiepoints)
     print(f'NT coefs: {nt_coefficients}')
     for c in ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'):
         print(f'  coef {c}: {nt_coefficients[c]}')
-
-    gr_thresholds = get_gr_thresholds(sat, hemisphere)
-    print(f'gr_thresholds:\n{gr_thresholds}')
 
     ratios = compute_ratios(
         tb_h19=tb_h19,
@@ -363,7 +344,8 @@ def nasateam(
         tb_v37=tb_v37,
     )
     weather_filter_mask = get_weather_filter_mask(
-        ratios=ratios, gr_thresholds=gr_thresholds
+        ratios=ratios,
+        gr_thresholds=gradient_thresholds,
     )
     conc[invalid_tb_mask | weather_filter_mask] = 0
 

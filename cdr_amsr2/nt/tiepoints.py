@@ -16,11 +16,35 @@ These values were primarily taken from the 'seaice_goddard.f' code
 of the pmalgos package.  The relevant section of this code is pasted
 at the end of this file.
 """
+from typing import TypedDict
+
 from loguru import logger
 
 from cdr_amsr2._types import Hemisphere, ValidSatellites
 
-TIEPOINTS = {
+
+class TiePoints(TypedDict):
+    # Open water
+    ow: float  # noqa
+    # First-year ice
+    fy: float  # noqa
+    # Multi-year ice
+    my: float  # noqa
+
+
+# Cannot use class syntax because channel names start w/ a number. Might want to
+# change this.
+NasateamTiePoints = TypedDict(
+    'NasateamTiePoints',
+    {
+        '19h': TiePoints,
+        '19v': TiePoints,
+        '37v': TiePoints,
+    },
+)
+
+
+TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
     # Source: pmalgos::seaice_goddard.f
     'f08': {
         'n': {
@@ -191,8 +215,10 @@ TIEPOINTS = {
 
 
 def get_tiepoints(
-    *, satellite: ValidSatellites, hemisphere: Hemisphere
-) -> dict[str, dict[str, float]]:
+    *,
+    satellite: ValidSatellites,
+    hemisphere: Hemisphere,
+) -> NasateamTiePoints:
     """Given a satellite and hemisphere, return pre-defined tiepoints."""
     try:
         sat = {
@@ -210,45 +236,6 @@ def get_tiepoints(
 
     return TIEPOINTS[sat][hemisphere[0].lower()]
 
-
-if __name__ == '__main__':
-    import sys
-
-    default_sat = 'f13'
-    default_hem = 'n'
-    default_freq = '19h'
-    default_tp = 'ow'
-
-    try:
-        sat = sys.argv[1]
-        print(f'  Using sat: {sat:>13s}')
-    except IndexError:
-        sat = default_sat
-        print(f'  Using default sat:   {sat:3s}')
-
-    try:
-        hem = sys.argv[2]
-        print(f'  Using hem: {hem:>13s}')
-    except IndexError:
-        hem = default_hem
-        print(f'  Using default hem:   {hem:>3s}')
-
-    try:
-        freq = sys.argv[3]
-        print(f'  Using freq: {freq:>12s}')
-    except IndexError:
-        freq = default_freq
-        print(f'  Using default freq:  {freq:3s}')
-
-    try:
-        tp = sys.argv[4]
-        print(f'  Using tp: {tp:>14s}')
-    except IndexError:
-        tp = default_tp
-        print(f'  Using default tp:    {tp:>3s}')
-
-    tiepoint = TIEPOINTS[sat][hem][freq][tp]
-    print(f'  TIEPOINTS[{sat}][{hem}][{freq}][{tp}]: {tiepoint}')
 
 """
 For reference, below is a copy of the /data/ statements
