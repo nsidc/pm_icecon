@@ -22,6 +22,7 @@ dependencies:
   # debugging/development tools
   - ipython
   - ipdb
+  - bump2version
 
   # Runtime dependencies
   - python ~=3.10.4
