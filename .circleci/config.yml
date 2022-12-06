@@ -1,14 +1,14 @@
 version: 2
 
 conda-setup: &conda-setup
-  working_directory: ~/cdr_amsr2
+  working_directory: ~/pm_icecon
   docker:
     - image: continuumio/miniconda3:4.10.3
 
 docker-setup: &docker-setup
   docker:
     - image: docker:17.05.0-ce-git
-  working_directory: ~/cdr_amsr2
+  working_directory: ~/pm_icecon
   # 1 vCPU, 2GB RAM: https://circleci.com/docs/2.0/configuration-reference/#resourceclass
   resource_class: small
 
@@ -23,7 +23,7 @@ jobs:
       - run:
           name: Run tests
           command: |
-            source activate cdr_amsr2
+            source activate pm_icecon
 
             invoke test.ci
 
