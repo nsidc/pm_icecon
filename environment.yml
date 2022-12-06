@@ -1,4 +1,4 @@
-name: cdr_amsr2
+name: pm_icecon
 channels:
   - conda-forge
   - nsidc

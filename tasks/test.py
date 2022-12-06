@@ -27,7 +27,7 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/cdr_amsr2/tests/unit',
+        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/pm_icecon/tests/unit',
         pty=True,
     )
 
@@ -39,7 +39,7 @@ def regression(ctx):
     Requires access to data on NFS and should be run on a VM.
     """
     print_and_run(
-        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/cdr_amsr2/tests/regression',
+        f'PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/pm_icecon/tests/regression',
         pty=True,
     )
 
@@ -52,11 +52,11 @@ def vulture(ctx):
             'vulture'
             f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/nt_tiepoint_generation'
             # ignore `_types.py` because vulture doesn't understand typed dicts.
-            f',{PROJECT_DIR}/cdr_amsr2/bt/_types.py'
+            f',{PROJECT_DIR}/pm_icecon/bt/_types.py'
             # ignore some models because vulture flags config options as
             # unused variables/class.
-            f',{PROJECT_DIR}/cdr_amsr2/config/models/base_model.py'
-            f',{PROJECT_DIR}/cdr_amsr2/config/models/__init__.py'
+            f',{PROJECT_DIR}/pm_icecon/config/models/base_model.py'
+            f',{PROJECT_DIR}/pm_icecon/config/models/__init__.py'
             f' {PROJECT_DIR}'
         ),
         pty=True,

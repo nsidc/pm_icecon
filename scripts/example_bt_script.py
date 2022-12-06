@@ -8,11 +8,11 @@ from pathlib import Path
 
 import numpy as np
 
-from cdr_amsr2._types import Hemisphere
-from cdr_amsr2.bt.compute_bt_ic import bootstrap
-from cdr_amsr2.bt.params.a2l1c import A2L1C_NORTH_PARAMS
-from cdr_amsr2.config.models.bt import BootstrapParams
-from cdr_amsr2.fetch.a2l1c_625 import get_a2l1c_625_tbs
+from pm_icecon._types import Hemisphere
+from pm_icecon.bt.compute_bt_ic import bootstrap
+from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
+from pm_icecon.config.models.bt import BootstrapParams
+from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
 
 if __name__ == '__main__':
     hemisphere: Hemisphere = 'north'
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     invalid_ice_mask = np.zeros(_data_shape).astype(bool)
 
     # Define bootstrap params. See
-    # `cdr_amsr2/config/models/bt.py:BootstrapParams` for more details.
+    # `pm_icecon/config/models/bt.py:BootstrapParams` for more details.
     bootstrap_params = BootstrapParams(
         land_mask=land_mask,
         pole_mask=pole_mask,

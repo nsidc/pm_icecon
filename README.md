@@ -47,7 +47,7 @@ $ conda env create
 First, Activate the conda environment:
 
 ```
-$ conda activate cdr_amsr2
+$ conda activate pm_icecon
 ```
 
 ## Usage
@@ -65,7 +65,7 @@ The CLI can be interacted with via `scripts/cli.sh`:
 
 ```
 $ ./scripts/cli.sh --help
-Usage: python -m cdr_amsr2.cli.entrypoint [OPTIONS] COMMAND [ARGS]...
+Usage: python -m pm_icecon.cli.entrypoint [OPTIONS] COMMAND [ARGS]...
 
   Run the nasateam or bootstrap algorithm.
 
@@ -83,7 +83,7 @@ values from AU_SI12 from the bootstrap algorithm:
 
 ```
 $ ./scripts/cli.sh bootstrap amsr2 --date 2022-08-01 --hemisphere north --output-dir /tmp/ --resolution 12
-2022-09-12 15:21:44.482 | INFO     | cdr_amsr2.bt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/bt_NH_20220801_u2_12km.nc
+2022-09-12 15:21:44.482 | INFO     | pm_icecon.bt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/bt_NH_20220801_u2_12km.nc
 ```
 
 E.g., to create a NetCDF file with a `conc` variable containing concentration
@@ -91,7 +91,7 @@ values from AU_SI25 from the nasateam algorithm:
 
 ```
 $ ./scripts/cli.sh nasateam amsr2 --date 2022-08-01 --hemisphere south --output-dir /tmp/ --resolution 25
-2022-09-12 15:23:34.993 | INFO     | cdr_amsr2.nt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/nt_SH_20220801_u2_25km.nc
+2022-09-12 15:23:34.993 | INFO     | pm_icecon.nt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/nt_SH_20220801_u2_25km.nc
 ```
 
 ### Scripting
@@ -100,12 +100,12 @@ $ ./scripts/cli.sh nasateam amsr2 --date 2022-08-01 --hemisphere south --output-
 
 Users can write a script using the functions provided in this repo to run the
 bootstrap algorithm. The main entrypoint to the bootstrap algorithm is the
-`bootstrap` function defined in `cdr_amsr2/bt/compute_bt_ic.py`.
+`bootstrap` function defined in `pm_icecon/bt/compute_bt_ic.py`.
 
 For an example of how to write a script to convert a2l1c tbs into a
 concentration field, see `scripts/example_bt_script.py`.
 
-Additional examples are in `cdr_amsr2/bt/api.py`. Note that as of this time, all
+Additional examples are in `pm_icecon/bt/api.py`. Note that as of this time, all
 functions defined in the the `api` module are specifically setup to use
 hard-coded defaults for testing purposes at NSIDC. This includes paths to data
 on NSIDC infrastructure that are not available to the public.
@@ -114,7 +114,7 @@ on NSIDC infrastructure that are not available to the public.
 #### Nasateam
 
 The main entrypoint to running the nasateam code on input Tbs is the `nasateam`
-function defined in `cdr_amsr2/nt/compute_nt_ic.py`.
+function defined in `pm_icecon/nt/compute_nt_ic.py`.
 
 An API has also been defined for common use cases. See `cdr_amsr/nt/api.py` for
 more information. NOTE: the API is currently defined with hard-coded defaults
@@ -124,7 +124,7 @@ with caution.
 
 #### CDR
 
-The `cdr_amsr2/cdr.py` module provides code related to creating a CDR-like
+The `pm_icecon/cdr.py` module provides code related to creating a CDR-like
 concentration field from the outputs of bootstrap and nasateam algorithms.
 
 The `amsr2_cdr` function is the primary entrypoint that can be used to generate
@@ -133,7 +133,7 @@ concentrations programatically:
 ```
 import datetime as dt
 
-from cdr_amsr2.cdr import amsr2_cdr
+from pm_icecon.cdr import amsr2_cdr
 
 
 nh_cdr_20210101 = amsr2_cdr(
