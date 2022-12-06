@@ -102,7 +102,7 @@ def _original_f18_example() -> xr.Dataset:
 
     conc_ds = bt.bootstrap(
         # Apply expected transformation for F18 CLASS data.
-        **xfer_class_tbs(
+        **xfer_class_tbs(  # type: ignore[arg-type]
             tb_v37=spatial_interp_tbs(otbs['v37']),
             tb_h37=spatial_interp_tbs(otbs['h37']),
             tb_v19=spatial_interp_tbs(otbs['v19']),
