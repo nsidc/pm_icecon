@@ -918,6 +918,7 @@ def bootstrap(
     params: BootstrapParams,
     date: dt.date,
     hemisphere: Hemisphere,
+    missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> xr.Dataset:
     """Run the boostrap algorithm."""
     tb_mask = tb_data_mask(
@@ -980,7 +981,7 @@ def bootstrap(
 
     # ## LINES with loop calling (in part) ret_ic() ###
     iceout = calc_bt_ice(
-        missval=DEFAULT_FLAG_VALUES.missing,
+        missval=missing_flag_value,
         landval=DEFAULT_FLAG_VALUES.land,
         maxic=params.maxic,
         vh37=vh37,
@@ -1002,14 +1003,14 @@ def bootstrap(
     print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
         iceout=iceout,
-        missval=DEFAULT_FLAG_VALUES.missing,
+        missval=missing_flag_value,
         landval=DEFAULT_FLAG_VALUES.land,
         invalid_ice_mask=params.invalid_ice_mask,
     )
 
     # *** Do spatial interp ***
     iceout_fix = coastal_fix(
-        iceout_sst, DEFAULT_FLAG_VALUES.missing, DEFAULT_FLAG_VALUES.land, params.minic
+        iceout_sst, missing_flag_value, DEFAULT_FLAG_VALUES.land, params.minic
     )
     iceout_fix[iceout_fix < params.minic] = 0
 
