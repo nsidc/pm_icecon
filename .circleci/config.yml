@@ -34,7 +34,7 @@ jobs:
       - persist_to_workspace:
           root: /opt
           paths:
-            - conda/envs/build/
+            - conda/envs/pm_icecon/
 
   conda-publish-to-main:
     <<: *conda-setup
@@ -47,7 +47,7 @@ jobs:
           command: |
             source activate pm_icecon
 
-            for ARTIFACT in $(ls /opt/conda/envs/build/conda-bld/noarch/*.tar.bz2) ; do
+            for ARTIFACT in $(ls /opt/conda/envs/pm_icecon/conda-bld/noarch/*.tar.bz2) ; do
                 # TODO: consider updating `musher` deps so it can be used with
                 # this project. The deploy code e.g., checks that the given
                 # version hasn't been pushed to the main channel arleady.
