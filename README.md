@@ -164,6 +164,20 @@ Available tasks:
   test.vulture                 Use `vulture` to detect dead code.
 ```
 
+
+## Making a new release
+
+To make a new release:
+
+1. Make a feature branch and commit your changes.
+2. Update the CHANGELOG.md and bump the version (`bumpversion {major|minor|patch}`)
+3. Open a PR and have it reviewed.
+4. If tests pass and the PR has been approved, merge with `main`.
+5. Tag the last commit in `main` with the version you bumped to. This will
+   automatically trigger a circleCI build that includes deployment of the
+   pacakge to anaconda.org.
+
+
 ## License
 
 See [LICENSE](LICENSE).
