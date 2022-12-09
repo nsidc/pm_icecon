@@ -1,0 +1,35 @@
+package:
+  name: pm_icecon
+  version: "0.1.0"
+
+source:
+  path: ../
+
+build:
+  number: {{ environ.get('BUILD_NUMBER', 0) }}
+  preserve_egg_dir: True
+  noarch: python
+
+requirements:
+  build:
+    - python ~=3.10.4
+    - numpy x.x
+
+  run:
+    - python ~=3.10.4
+    - numpy x.x
+    - h5py ~=3.6
+    - xarray ~=2022.3
+    - netCDF4 ~=1.5.8
+    - cartopy ~=0.20
+    - click ~=8.1
+    - loguru ~=0.6
+    - pydantic ~=1.9
+    - pandas ~=1.4.2
+    - seaice ~=5.0.0
+    - pyresample ~=1.25
+
+about:
+  home: https://github.com/nsidc/pm_icecon
+  license: MIT
+  summary: sea ice concentration estimates from passive microwave data

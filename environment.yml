@@ -23,8 +23,11 @@ dependencies:
   - ipython
   - ipdb
   - bump2version
+  # build tools
+  - conda-build ~=3.23.3
 
   # Runtime dependencies
+  # NOTE: these should be kept in sync with those in `recipe/meta.yaml`.
   - python ~=3.10.4
   - numpy ~=1.22.3
   - h5py ~=3.6

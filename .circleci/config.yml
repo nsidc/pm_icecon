@@ -3,36 +3,71 @@ version: 2
 conda-setup: &conda-setup
   working_directory: ~/pm_icecon
   docker:
-    - image: continuumio/miniconda3:4.10.3
-
-docker-setup: &docker-setup
-  docker:
-    - image: docker:17.05.0-ce-git
-  working_directory: ~/pm_icecon
-  # 1 vCPU, 2GB RAM: https://circleci.com/docs/2.0/configuration-reference/#resourceclass
-  resource_class: small
+    - image: continuumio/miniconda3:4.12.0
 
 jobs:
-  test:
+  test-and-build:
     <<: *conda-setup
     steps:
       - checkout
       - run:
           name: Configure Conda
-          command: conda env create -f environment.yml
+          command: |
+            conda config --add channels conda-forge
+            conda config --add channels nsidc
+            conda env create -f environment.yml
       - run:
           name: Run tests
           command: |
             source activate pm_icecon
 
             invoke test.ci
+      - run:
+          name: Build Package
+          command: |
+            source activate pm_icecon
 
+            conda-build --numpy 1.22 recipe/
+      - store_artifacts:  # Only needed if you want to get them from the circleci interface
+          path: /opt/conda/envs/build/conda-bld/noarch/
+          destination: ~/pm_icecon/artifacts
+      - persist_to_workspace:
+          root: /opt
+          paths:
+            - conda/envs/pm_icecon/
+
+  conda-publish-to-main:
+    <<: *conda-setup
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /opt
+      - run:
+          name: publish to anaconda.org main channel
+          command: |
+            source activate pm_icecon
+
+            for ARTIFACT in $(ls /opt/conda/envs/pm_icecon/conda-bld/noarch/*.tar.bz2) ; do
+                # TODO: consider updating `musher` deps so it can be used with
+                # this project. The deploy code e.g., checks that the given
+                # version hasn't been pushed to the main channel arleady.
+                anaconda -t $ANACONDA_TOKEN upload -u nsidc ${ARTIFACT} -l main
+            done
 
 workflows:
   version: 2
   run-tests:
     jobs:
-      - test:
+      - test-and-build:
           filters:
             tags:
                only: /.*/
+      - conda-publish-to-main:
+          requires:
+            - test-and-build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+          context: org-global
