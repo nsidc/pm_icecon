@@ -12,7 +12,10 @@ jobs:
       - checkout
       - run:
           name: Configure Conda
-          command: conda env create -f environment.yml && conda config --add channels conda-forge
+          command: |
+            conda config --add channels conda-forge
+            conda config --add channels nsidc
+            conda env create -f environment.yml
       - run:
           name: Run tests
           command: |
