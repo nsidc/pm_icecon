@@ -8,7 +8,6 @@ source:
 build:
   number: {{ environ.get('BUILD_NUMBER', 0) }}
   preserve_egg_dir: True
-  # script: invoke test.ci && python install
   noarch: python
 
 requirements:
