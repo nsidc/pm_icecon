@@ -68,7 +68,7 @@ def get_ps_land_mask(
     hemisphere: Hemisphere,
     resolution: AU_SI_RESOLUTIONS,
 ) -> npt.NDArray[np.bool_]:
-    """Get the polar stereo 25km land mask."""
+    """Get the polar stereo land mask.  Here, we can find 12km or 25km"""
     # Ocean has a value of 0, land a value of 1, and coast a value of 2.
     if resolution == '25':
         shape = get_ps25_grid_shape(hemisphere=hemisphere)
@@ -104,6 +104,9 @@ def get_ps_land_mask(
             ).reshape(896, 608)
 
             land_mask = _land_coast_array != 0
+
+    else:
+        raise ValueError(f'resolution not recognized: {resolution}')
 
     return land_mask
 
