@@ -60,7 +60,7 @@ jobs:
                 # TODO: consider updating `musher` deps so it can be used with
                 # this project. The deploy code e.g., checks that the given
                 # version hasn't been pushed to the main channel arleady.
-                anaconda -t $ANACONDA_TOKEN upload -u nsidc ${ARTIFACT} -l main
+                anaconda -t $ANACONDA_TOKEN upload -u nsidc $ARTIFACT -l main
             done
 
 workflows:
