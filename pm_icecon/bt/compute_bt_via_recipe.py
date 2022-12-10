@@ -27,6 +27,50 @@ from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 
+def get_standard_bootstrap_recipe():
+    """Return a dictionary of the standard recipe for AU_SI12 bootstrap"""
+    bt_recipe = {}
+
+    bt_recipe['run_parameters'] = {
+        'gridid': 'psn12.5',
+        'date': dt.date(2020, 1, 1),
+    }
+
+    bt_recipe['tb_parameters'] = {
+        'tb_source': 'au_si12',
+        'mintb': 10.0,
+        'maxtb': 320.0,
+    }
+
+    bt_recipe['bootstrap_parameters'] = {
+        'add1': 0.0,
+        'add2': -2.0,
+        'minic': 10.0,
+        'maxic': 1.0,
+        'maxtb': 320.0,
+        'vh37_params': {
+            'water_tie_point': None,
+            'ice_tie_point':None,
+            'lnline': (None, None),
+        },
+        'v1937_params': {
+            'water_tie_point': None,
+            'ice_tie_point':None,
+            'lnline': (None, None),
+        },
+    }
+
+    bt_recipe['ancillary_sources'] = {
+        'surface_mask': 'default',
+        'pole_mask': 'default',
+        'weather_filters': ('bt_22v',),
+        'valid_ice_mask': 'bt_monthly',
+        'land_spillover': ('bt', '75km'),
+    }
+
+    return bt_recipe
+
+                  
 def f(num):
     # return float32 of num
     return np.float32(num)

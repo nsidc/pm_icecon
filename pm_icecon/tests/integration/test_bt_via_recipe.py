@@ -18,19 +18,48 @@ from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
-from pm_icecon.bt.compute_bt_via_recipe import bootstrap_via_recipe
+from pm_icecon.bt.compute_bt_via_recipe import bootstrap_via_recipe, get_standard_bootstrap_recipe
 
 
-def test_bt_recipe_is_Dataset():
+def test_bt_via_recipe_returns_Dataset():
     """
     Test that the generation of a bootstrap code via a "recipe"
-
+    yields an xarray Dataset
     """
     bt_recipe = {}
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
-    # print(f'bt type: {type(bt)'}
     assert type(bt) == type(xr.Dataset())
+
+
+def test_get_recipe_has_appropriate_keys():
+    """
+    Test that the generation of a bootstrap code via a "recipe"
+
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    assert type(bt_recipe) == dict
+
+    recipe_elements = \
+        ('run_parameters', 'tb_parameters',
+         'bootstrap_parameters', 'ancillary_sources',
+        )
+    for recipe_element in recipe_elements:
+        assert recipe_element in bt_recipe.keys()
+
+
+def not_test_bt_recipe_yields_ausi12_tbs():
+    """
+    Test that TB fields from AI_SI12 can be acquired via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    bt = bootstrap_via_recipe(recipe=bt_recipe)
+
+    initial_tb_fields = \
+        ('tb_v37_init', 'tb_h37_init', 'tb_v19_init', 'tb_v22_init')
+
+    for tb_field in initial_tb_fields:
+        assert tb_field in bt.variables.keys()
 
 
 '''
