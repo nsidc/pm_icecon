@@ -10,12 +10,21 @@ jobs:
     <<: *conda-setup
     steps:
       - checkout
+      - restore_cache:
+          key: 'conda-{{ checksum "environment.yml" }}'
       - run:
           name: Configure Conda
           command: |
             conda config --add channels conda-forge
             conda config --add channels nsidc
+            if [ -d '/opt/conda/envs/pm_icecon' ]; then
+              echo "Environment exists in cache. Skipping build!"
+              exit 0
+            fi
             conda env create -f environment.yml
+      - save_cache:
+          key: 'conda-{{ checksum "environment.yml" }}'
+          paths: "/opt/conda"
       - run:
           name: Run tests
           command: |
