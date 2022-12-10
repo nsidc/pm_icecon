@@ -34,6 +34,7 @@ from pm_icecon.masks import (
     get_ps_land_mask,
     get_ps_pole_hole_mask,
 )
+from pm_icecon.interpolation import spatial_interp_tbs
 
 
 def get_standard_bootstrap_recipe():
@@ -1009,6 +1010,12 @@ def bootstrap_via_recipe(
     bt['tb_h37_in'] = tbs.variables['h36']
     bt['tb_v19_in'] = tbs.variables['v18']
     bt['tb_v22_in'] = tbs.variables['v23']
+
+    # Spatially interpolate the tb fields
+    bt['tb_v37_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v37_in'].data))
+    bt['tb_h37_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_h37_in'].data))
+    bt['tb_v19_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v19_in'].data))
+    bt['tb_v22_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v22_in'].data))
 
     # Add the mask fields
     #get_ps_land_mask() returns type:

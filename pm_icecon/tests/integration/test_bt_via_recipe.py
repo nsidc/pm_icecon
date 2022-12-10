@@ -68,6 +68,20 @@ def test_bt_recipe_yields_ausi12_tbs():
         assert tb_field in bt.variables.keys()
 
 
+def test_bt_recipe_yields_spatially_interpolated_tbs():
+    """
+    Test that TB fields from AI_SI12 can be acquired via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    bt = bootstrap_via_recipe(recipe=bt_recipe)
+
+    spatially_interpolated_tb_fields = \
+        ('tb_v37_si', 'tb_h37_si', 'tb_v19_si', 'tb_v22_si')
+
+    for tb_field in spatially_interpolated_tb_fields:
+        assert tb_field in bt.variables.keys()
+
+
 def test_bt_recipe_yields_masks():
     """
     Test that standard masks can be loaded via the bootstrap recipe
