@@ -35,6 +35,7 @@ from pm_icecon.masks import (
     get_ps_pole_hole_mask,
 )
 from pm_icecon.interpolation import spatial_interp_tbs
+from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 
 
 def get_standard_bootstrap_recipe():
@@ -993,13 +994,21 @@ def bootstrap_via_recipe(
     # Initialize the dataset
     bt = xr.Dataset()
 
+    # Start collecting algorithm parameters
+    bt['icecon_parameters'] = int()
+    bt['icecon_parameters'].attrs['icecon_algorithm'] = 'Bootstrap'
+
     # Parse parameters
     date = recipe['run_parameters']['date']
     hemisphere = get_hemisphere_from_gridid(recipe['run_parameters']['gridid'])
     intres = get_intres_from_gridid(recipe['run_parameters']['gridid'])
 
+    bt['icecon_parameters'].attrs['gridid'] = recipe['run_parameters']['gridid']
+    bt['icecon_parameters'].attrs['date'] = date
+
     # Read in the TBs
     # TODO: Will need to get 12.5km 6.9GHz fields here
+    bt['icecon_parameters'].attrs['tb_source'] = 'get_au_si_tbs()'
     tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
@@ -1012,30 +1021,27 @@ def bootstrap_via_recipe(
     bt['tb_v22_in'] = tbs.variables['v23']
 
     # Spatially interpolate the tb fields
+    bt['icecon_parameters'].attrs['tb_spatial_interpolation'] = 'spatial_interp_tbs()'
     bt['tb_v37_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v37_in'].data))
     bt['tb_h37_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_h37_in'].data))
     bt['tb_v19_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v19_in'].data))
     bt['tb_v22_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v22_in'].data))
 
     # Add the mask fields
-    #get_ps_land_mask() returns type:
-    #    npt.NDArray[np.bool_]
+    bt['icecon_parameters'].attrs['surface_mask'] = 'get_ps_land_mask()'
     surface_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=str(intres))
-
-    # This gives an error:
-    #   cannot set variable 'surface_mask' with 2-dimensional data without explicit dimension names.
-    #   Pass a tuple of (dims, data) instead.
-    # bt['surface_mask'] = surface_mask
     bt['surface_mask'] = (('y', 'x'), surface_mask)
 
     if hemisphere == 'north':
         pole_mask = get_ps_pole_hole_mask(resolution=str(intres))
         bt['pole_mask'] = (('y', 'x'), pole_mask)
+        bt['icecon_parameters'].attrs['pole_mask'] = 'get_ps_pole_hole_mask()'
     else:
         bt['pole_mask'] = None
 
     # Note: invalid_ice_mask is of type:
     #  npt.NDArray[np.bool_]
+    bt['icecon_parameters'].attrs['invalid_ice_mask'] = 'get_ps_invalid_ice_mask()'
     invalid_ice_mask = get_ps_invalid_ice_mask(
         hemisphere=hemisphere,
         date=date,
@@ -1043,8 +1049,20 @@ def bootstrap_via_recipe(
     )
     bt['invalid_ice_mask'] = (('y', 'x'), invalid_ice_mask)
 
-    ### NExt, add         **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+    # Add sensor-specific BT parameters
+    if hemisphere == 'north':
+        bt['icecon_parameters'].attrs['bt_params_source'] = 'AMSR2_NORTH_PARAMS'
+        for key in AMSR2_NORTH_PARAMS:
+            bt['icecon_parameters'].attrs[key] = AMSR2_NORTH_PARAMS[key]
 
+    else:
+        bt['icecon_parameters'].attrs['bt_params_source'] = 'AMSR2_SOUTH_PARAMS'
+        for key in AMSR2_SOUTH_PARAMS:
+            bt['icecon_parameters'].attrs[key] = AMSR2_SOUTH_PARAMS[key]
+
+    print(f'icecon_parameters var:\n{bt["icecon_parameters"]}')
+
+    # NOTE: We should be able to construct the arguments to bootstrap() now
 
     return bt
 

@@ -98,6 +98,21 @@ def test_bt_recipe_yields_masks():
         assert 'pole_mask' in bt.variables.keys()
 
 
+def test_bt_recipe_yields_icecon_parameters():
+    """
+    Test that standard masks can be loaded via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    bt = bootstrap_via_recipe(recipe=bt_recipe)
+
+    preset_keys = ('vh37_params', 'v1937_params', 'weather_filter_seasons')
+
+    print(f"preset attr keys:\n{bt.variables['icecon_parameters'].attrs.keys()}")
+    for preset_key in preset_keys:
+        print(f"Checking for {preset_key} in {bt.variables['icecon_parameters'].attrs.keys()}")
+        assert preset_key in bt.variables['icecon_parameters'].attrs.keys()
+
+
 '''
 def test_bt_amsr2_regression():
     """Regression test for BT AMSR2 outputs.
