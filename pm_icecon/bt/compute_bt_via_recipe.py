@@ -26,6 +26,8 @@ from pm_icecon.config.models.bt import (
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
 
+from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+
 
 def get_standard_bootstrap_recipe():
     """Return a dictionary of the standard recipe for AU_SI12 bootstrap"""
@@ -953,12 +955,45 @@ def calc_bt_ice(
     return ic
 
 
+def get_hemisphere_from_gridid(gridid):
+    if 'psn' in gridid or 'e2n' in gridid:
+        return 'north'
+    elif 'pss' in gridid or 'e2s' in gridid:
+        return 'south'
+    else:
+        raise RuntimeError(f'Could not determine hemisphere from gridid {gridid}')
+
+
+def get_intres_from_gridid(gridid):
+    if '3.125' in gridid:
+        return 3
+    elif '6.25' in gridid:
+        return 6
+    elif '12.5' in gridid:
+        return 12
+    elif '25' in gridid:
+        return 25
+    else:
+        raise RuntimeError(f'Could not determine hemisphere from gridid {gridid}')
+
+
 def bootstrap_via_recipe(
     *,
     recipe: dict,
 ) -> xr.Dataset:
 
     bt = xr.Dataset()
+    tbs = get_au_si_tbs(
+        date=recipe['run_parameters']['date'],
+        hemisphere=get_hemisphere_from_gridid(recipe['run_parameters']['gridid']),
+        resolution=get_intres_from_gridid(recipe['run_parameters']['gridid']),
+    )
+    # TODO: Will need to get 12.5km 6.9GHz fields here
+
+    bt['tb_v37_init'] = tbs.variables['v36']
+    bt['tb_h37_init'] = tbs.variables['h36']
+    bt['tb_v19_init'] = tbs.variables['v18']
+    bt['tb_v22_init'] = tbs.variables['v23']
 
     return bt
 

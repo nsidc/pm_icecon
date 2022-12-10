@@ -21,12 +21,18 @@ from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 from pm_icecon.bt.compute_bt_via_recipe import bootstrap_via_recipe, get_standard_bootstrap_recipe
 
 
+"""
+Notes:
+amsr2_bootstrap() is in pm_icecon.bt.api.py
+get_au_si_tbs() is in pm_icecon.fetch.au_si
+"""
+
 def test_bt_via_recipe_returns_Dataset():
     """
     Test that the generation of a bootstrap code via a "recipe"
     yields an xarray Dataset
     """
-    bt_recipe = {}
+    bt_recipe = get_standard_bootstrap_recipe()
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     assert type(bt) == type(xr.Dataset())
@@ -48,7 +54,7 @@ def test_get_recipe_has_appropriate_keys():
         assert recipe_element in bt_recipe.keys()
 
 
-def not_test_bt_recipe_yields_ausi12_tbs():
+def test_bt_recipe_yields_ausi12_tbs():
     """
     Test that TB fields from AI_SI12 can be acquired via the bootstrap recipe
     """
