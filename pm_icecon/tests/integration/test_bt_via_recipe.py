@@ -68,6 +68,22 @@ def test_bt_recipe_yields_ausi12_tbs():
         assert tb_field in bt.variables.keys()
 
 
+def test_bt_recipe_yields_masks():
+    """
+    Test that standard masks can be loaded via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    bt = bootstrap_via_recipe(recipe=bt_recipe)
+
+    mask_list = ('surface_mask', 'invalid_ice_mask',)
+
+    for mask in mask_list:
+        assert mask in bt.variables.keys()
+
+    if 'n' in bt_recipe['run_parameters']['gridid']:
+        assert 'pole_mask' in bt.variables.keys()
+
+
 '''
 def test_bt_amsr2_regression():
     """Regression test for BT AMSR2 outputs.

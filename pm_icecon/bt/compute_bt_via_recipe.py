@@ -28,6 +28,13 @@ from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 
+from pm_icecon.bt.masks import get_ps_invalid_ice_mask
+from pm_icecon.masks import (
+    get_e2n625_land_mask,
+    get_ps_land_mask,
+    get_ps_pole_hole_mask,
+)
+
 
 def get_standard_bootstrap_recipe():
     """Return a dictionary of the standard recipe for AU_SI12 bootstrap"""
@@ -982,18 +989,52 @@ def bootstrap_via_recipe(
     recipe: dict,
 ) -> xr.Dataset:
 
+    # Initialize the dataset
     bt = xr.Dataset()
-    tbs = get_au_si_tbs(
-        date=recipe['run_parameters']['date'],
-        hemisphere=get_hemisphere_from_gridid(recipe['run_parameters']['gridid']),
-        resolution=get_intres_from_gridid(recipe['run_parameters']['gridid']),
-    )
+
+    # Parse parameters
+    date = recipe['run_parameters']['date']
+    hemisphere = get_hemisphere_from_gridid(recipe['run_parameters']['gridid'])
+    intres = get_intres_from_gridid(recipe['run_parameters']['gridid'])
+
+    # Read in the TBs
     # TODO: Will need to get 12.5km 6.9GHz fields here
+    tbs = get_au_si_tbs(
+        date=date,
+        hemisphere=hemisphere,
+        resolution=intres,
+    )
 
     bt['tb_v37_init'] = tbs.variables['v36']
     bt['tb_h37_init'] = tbs.variables['h36']
     bt['tb_v19_init'] = tbs.variables['v18']
     bt['tb_v22_init'] = tbs.variables['v23']
+
+    # Add the mask fields
+    #get_ps_land_mask() returns type:
+    #    npt.NDArray[np.bool_]
+    surface_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=str(intres))
+
+    # This gives an error:
+    #   cannot set variable 'surface_mask' with 2-dimensional data without explicit dimension names.
+    #   Pass a tuple of (dims, data) instead.
+    # bt['surface_mask'] = surface_mask
+    bt['surface_mask'] = (('y', 'x'), surface_mask)
+
+    if hemisphere == 'north':
+        pole_mask = get_ps_pole_hole_mask(resolution=str(intres))
+        bt['pole_mask'] = (('y', 'x'), pole_mask)
+    else:
+        bt['pole_mask'] = None
+
+    # Note: invalid_ice_mask is of type:
+    #  npt.NDArray[np.bool_]
+    invalid_ice_mask = get_ps_invalid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=str(intres),  # type: ignore[arg-type]
+    )
+    bt['invalid_ice_mask'] = (('y', 'x'), invalid_ice_mask)
 
     return bt
 
