@@ -25,6 +25,7 @@ dependencies:
   - bump2version
   # build tools
   - conda-build ~=3.23.3
+  - anaconda-client
 
   # Runtime dependencies
   # NOTE: these should be kept in sync with those in `recipe/meta.yaml`.
