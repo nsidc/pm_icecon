@@ -62,7 +62,7 @@ def test_bt_recipe_yields_ausi12_tbs():
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     initial_tb_fields = \
-        ('tb_v37_init', 'tb_h37_init', 'tb_v19_init', 'tb_v22_init')
+        ('tb_v37_in', 'tb_h37_in', 'tb_v19_in', 'tb_v22_in')
 
     for tb_field in initial_tb_fields:
         assert tb_field in bt.variables.keys()

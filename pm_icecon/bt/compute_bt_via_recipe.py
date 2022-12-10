@@ -1005,10 +1005,10 @@ def bootstrap_via_recipe(
         resolution=intres,
     )
 
-    bt['tb_v37_init'] = tbs.variables['v36']
-    bt['tb_h37_init'] = tbs.variables['h36']
-    bt['tb_v19_init'] = tbs.variables['v18']
-    bt['tb_v22_init'] = tbs.variables['v23']
+    bt['tb_v37_in'] = tbs.variables['v36']
+    bt['tb_h37_in'] = tbs.variables['h36']
+    bt['tb_v19_in'] = tbs.variables['v18']
+    bt['tb_v22_in'] = tbs.variables['v23']
 
     # Add the mask fields
     #get_ps_land_mask() returns type:
@@ -1035,6 +1035,9 @@ def bootstrap_via_recipe(
         resolution=str(intres),  # type: ignore[arg-type]
     )
     bt['invalid_ice_mask'] = (('y', 'x'), invalid_ice_mask)
+
+    ### NExt, add         **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+
 
     return bt
 
