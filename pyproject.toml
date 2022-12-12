@@ -1,14 +1,3 @@
-[build-system]
-requires = ["setuptools", "conda-build"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "pm_icecon"
-description = "sea ice concentration estimates from passive microwave data"
-readme = "README.md"
-license = {text = "MIT"}
-version = "0.1.0"
-
 [tool.black]
 skip-string-normalization = true
 

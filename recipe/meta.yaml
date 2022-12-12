@@ -1,12 +1,13 @@
 package:
   name: pm_icecon
-  version: "0.1.0"
+  version: "0.1.1"
 
 source:
   path: ../
 
 build:
   number: {{ environ.get('BUILD_NUMBER', 0) }}
+  script: python setup.py install
   preserve_egg_dir: True
   noarch: python
 
