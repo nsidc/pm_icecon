@@ -113,6 +113,49 @@ def test_bt_recipe_yields_icecon_parameters():
         assert preset_key in bt.variables['icecon_parameters'].attrs.keys()
 
 
+def test_bt_recipe_yields_icecon():
+    """
+    Test that standard masks can be loaded via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    bt = bootstrap_via_recipe(recipe=bt_recipe)
+
+    icecon_key = 'icecon'
+    assert icecon_key in bt.variables.keys()
+
+
+def test_bt_recipe_yields_same_icecon():
+    """
+    Test that standard masks can be loaded via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    bt = bootstrap_via_recipe(recipe=bt_recipe)
+    bt_icecon_via_recipe = bt['icecon']
+
+    bt_ds_orig_method = amsr2_bootstrap(
+        date=dt.date(2020, 1, 1),
+        hemisphere='north',
+        resolution='12',
+        # resolution='25',
+    )
+
+    bt_icecon_via_orig_method = bt_ds_orig_method['conc']
+
+    ofn = 'bt_viarecipe.nc'
+    bt.to_netcdf(ofn)
+    print(f'Wrote: {ofn}')
+
+    ofn = 'bt_viaoriginal.nc'
+    bt_ds_orig_method.to_netcdf(ofn)
+    print(f'Wrote: {ofn}')
+
+    assert_almost_equal(
+        bt_icecon_via_recipe.data,
+        bt_icecon_via_orig_method.data,
+    )
+    print(f'Two icecons are "almost equal"!')
+
+
 '''
 def test_bt_amsr2_regression():
     """Regression test for BT AMSR2 outputs.
