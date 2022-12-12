@@ -14,6 +14,7 @@ ANCILLARY
 *.txt
 out*
 *out/
+*.nc
 
 boot_driver_sb2_?p_nrt
 bin
