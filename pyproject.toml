@@ -7,7 +7,7 @@ name = "pm_icecon"
 description = "sea ice concentration estimates from passive microwave data"
 readme = "README.md"
 license = {text = "MIT"}
-version = "0.1.0"
+version = "0.1.1"
 
 [tool.black]
 skip-string-normalization = true
