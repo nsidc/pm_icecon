@@ -18,7 +18,12 @@ from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
-from pm_icecon.bt.compute_bt_via_recipe import bootstrap_via_recipe, get_standard_bootstrap_recipe
+# TODO: When bootstrap_via_recipe() is complete, won't need the _crutched ver
+from pm_icecon.bt.compute_bt_via_recipe import (
+    bootstrap_via_recipe, 
+    get_standard_bootstrap_recipe,
+    bootstrap_via_recipe_crutched, 
+)
 
 
 """
@@ -26,6 +31,14 @@ Notes:
 amsr2_bootstrap() is in pm_icecon.bt.api.py
 get_au_si_tbs() is in pm_icecon.fetch.au_si
 """
+
+_bt_parameter_list = (
+        'wtp_v37', 'wtp_h37', 'wtp_v19',
+        'itp_v37', 'itp_h37', 'itp_v19',
+        'vh37_lnline_offset', 'vh37_lnline_slope',
+        'v1937_lnline_offset', 'v1937_lnline_slope',
+    )
+
 
 def test_bt_via_recipe_returns_Dataset():
     """
@@ -98,6 +111,15 @@ def test_bt_recipe_yields_masks():
         assert 'pole_mask' in bt.variables.keys()
 
 
+def test_bt_recipe_has_bt_parameters():
+    """
+    Test that standard masks can be loaded via the bootstrap recipe
+    """
+    bt_recipe = get_standard_bootstrap_recipe()
+    for bt_parameter in _bt_parameter_list:
+        assert bt_parameter in bt_recipe['bootstrap_parameters'].keys()
+
+
 def test_bt_recipe_yields_icecon_parameters():
     """
     Test that standard masks can be loaded via the bootstrap recipe
@@ -105,12 +127,9 @@ def test_bt_recipe_yields_icecon_parameters():
     bt_recipe = get_standard_bootstrap_recipe()
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
-    preset_keys = ('vh37_params', 'v1937_params', 'weather_filter_seasons')
-
-    print(f"preset attr keys:\n{bt.variables['icecon_parameters'].attrs.keys()}")
-    for preset_key in preset_keys:
-        print(f"Checking for {preset_key} in {bt.variables['icecon_parameters'].attrs.keys()}")
-        assert preset_key in bt.variables['icecon_parameters'].attrs.keys()
+    for bt_parameter in _bt_parameter_list:
+        print(f"Checking for {bt_parameter} in {bt.variables['icecon_parameters'].attrs.keys()}")
+        assert bt_parameter in bt.variables['icecon_parameters'].attrs.keys()
 
 
 def test_bt_recipe_yields_icecon():
