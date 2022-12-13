@@ -18,11 +18,9 @@ from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
-# TODO: When bootstrap_via_recipe() is complete, won't need the _crutched ver
 from pm_icecon.bt.compute_bt_via_recipe import (
     bootstrap_via_recipe, 
     get_standard_bootstrap_recipe,
-    bootstrap_via_recipe_crutched, 
 )
 
 
@@ -141,38 +139,6 @@ def test_bt_recipe_yields_icecon():
 
     icecon_key = 'icecon'
     assert icecon_key in bt.variables.keys()
-
-
-def test_bt_recipe_crutch_yields_same_icecon():
-    """
-    Test that standard masks can be loaded via the bootstrap recipe
-    """
-    bt_recipe = get_standard_bootstrap_recipe()
-    bt = bootstrap_via_recipe_crutched(recipe=bt_recipe)
-    bt_icecon_via_recipe = bt['icecon']
-
-    bt_ds_orig_method = amsr2_bootstrap(
-        date=dt.date(2020, 1, 1),
-        hemisphere='north',
-        resolution='12',
-        # resolution='25',
-    )
-
-    bt_icecon_via_orig_method = bt_ds_orig_method['conc']
-
-    ofn = 'bt_viarecipe.nc'
-    bt.to_netcdf(ofn)
-    print(f'Wrote: {ofn}')
-
-    ofn = 'bt_viaoriginal.nc'
-    bt_ds_orig_method.to_netcdf(ofn)
-    print(f'Wrote: {ofn}')
-
-    assert_almost_equal(
-        bt_icecon_via_recipe.data,
-        bt_icecon_via_orig_method.data,
-    )
-    print(f'Two icecons are "almost equal"!')
 
 
 def test_bt_recipe_yields_same_icecon():
