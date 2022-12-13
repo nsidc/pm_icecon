@@ -43,7 +43,7 @@ def test_bt_via_recipe_returns_Dataset():
     Test that the generation of a bootstrap code via a "recipe"
     yields an xarray Dataset
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     assert type(bt) == type(xr.Dataset())
@@ -54,7 +54,7 @@ def test_get_recipe_has_appropriate_keys():
     Test that the generation of a bootstrap code via a "recipe"
 
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     assert type(bt_recipe) == dict
 
     recipe_elements = \
@@ -69,7 +69,7 @@ def test_bt_recipe_yields_ausi12_tbs():
     """
     Test that TB fields from AI_SI12 can be acquired via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     initial_tb_fields = \
@@ -83,7 +83,7 @@ def test_bt_recipe_yields_spatially_interpolated_tbs():
     """
     Test that TB fields from AI_SI12 can be acquired via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     spatially_interpolated_tb_fields = \
@@ -97,7 +97,7 @@ def test_bt_recipe_yields_masks():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     mask_list = ('surface_mask', 'invalid_ice_mask',)
@@ -113,7 +113,7 @@ def test_bt_recipe_has_bt_parameters():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     for bt_parameter in _bt_parameter_list:
         assert bt_parameter in bt_recipe['bootstrap_parameters'].keys()
 
@@ -122,7 +122,7 @@ def test_bt_recipe_yields_icecon_parameters():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     for bt_parameter in _bt_parameter_list:
@@ -134,7 +134,7 @@ def test_bt_recipe_yields_icecon():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     icecon_key = 'icecon'
@@ -145,7 +145,7 @@ def test_bt_recipe_yields_same_icecon():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe()
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
     bt = bootstrap_via_recipe(recipe=bt_recipe)
     bt_icecon_via_recipe = bt['icecon']
 

@@ -42,95 +42,97 @@ from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 import pm_icecon.bt.compute_bt_ic as compute_bt_ic
 
 
-def get_standard_bootstrap_recipe():
+def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap'):
     """Return a dictionary of the standard recipe for AU_SI12 bootstrap"""
     bt_recipe = {}
 
     bt_recipe['run_parameters'] = {
-        'gridid': 'psn12.5',
-        # 'date_str': str(dt.date(2020, 1, 1)),
+        'icecon_algorithm': icecon_algorithm,
+        'gridid': gridid,
+        'tb_source': 'au_si12',
         'date_str': '2020-01-01',
     }
 
     bt_recipe['tb_parameters'] = {
-        'tb_source': 'au_si12',
         'mintb': 10.0,
         'maxtb': 320.0,
     }
 
-    bt_recipe['bootstrap_parameters'] = {
-        # Old formulation...
-        # 'vh37_params': {
-        #     'water_tie_point': [207.2, 131.9],
-        #     'ice_tie_point': [256.3, 241.2],
-        #     'lnline': [-71.99, 1.20],
-        # },
-        # 'v1937_params': {
-        #     'water_tie_point': [207.2, 182.4],
-        #     'ice_tie_point': [256.3, 258.9],
-        #     'lnline': [48.26, 0.8048],
-        # },
-        # weather_filter_seasons=[
-        #     # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
-        #     WeatherFilterParamsForSeason(
-        #         start_month=11,
-        #         end_month=4,
-        #         weather_filter_params=WeatherFilterParams(
-        #             wintrc=84.73,
-        #             wslope=0.5352,
-        #             wxlimt=18.39,
-        #         ),
-        #     ),
-        #     # May (`seas=2`) will get interpolated from the previous and next season
-        #     # June through Sept. (`seas=3`)
-        #     WeatherFilterParamsForSeason(
-        #         start_month=6,
-        #         end_month=9,
-        #         weather_filter_params=WeatherFilterParams(
-        #             wintrc=82.71,
-        #             wslope=0.5352,
-        #             wxlimt=23.34,
-        #         ),
-        #     ),
-        #     # October (`seas=4`) will get interpolated from the previous and next
-        #     # (first in this list) season.
-        # ],
+    if 'psn' in gridid and 'au_si' in tb_source:
+        # These are the AMSR2_NORTH_PARAMS for NH AU_SI products
+        bt_recipe['bootstrap_parameters'] = {
+            # Old formulation...
+            # 'vh37_params': {
+            #     'water_tie_point': [207.2, 131.9],
+            #     'ice_tie_point': [256.3, 241.2],
+            #     'lnline': [-71.99, 1.20],
+            # },
+            # 'v1937_params': {
+            #     'water_tie_point': [207.2, 182.4],
+            #     'ice_tie_point': [256.3, 258.9],
+            #     'lnline': [48.26, 0.8048],
+            # },
+            # weather_filter_seasons=[
+            #     # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
+            #     WeatherFilterParamsForSeason(
+            #         start_month=11,
+            #         end_month=4,
+            #         weather_filter_params=WeatherFilterParams(
+            #             wintrc=84.73,
+            #             wslope=0.5352,
+            #             wxlimt=18.39,
+            #         ),
+            #     ),
+            #     # May (`seas=2`) will get interpolated from the previous and next season
+            #     # June through Sept. (`seas=3`)
+            #     WeatherFilterParamsForSeason(
+            #         start_month=6,
+            #         end_month=9,
+            #         weather_filter_params=WeatherFilterParams(
+            #             wintrc=82.71,
+            #             wslope=0.5352,
+            #             wxlimt=23.34,
+            #         ),
+            #     ),
+            #     # October (`seas=4`) will get interpolated from the previous and next
+            #     # (first in this list) season.
+            # ],
 
-        # Current formulation...
-        'wtp_v37': 207.2,
-        'wtp_h37': 131.9,
-        'wtp_v19': 182.4,
+            # Current formulation...
+            'wtp_v37': 207.2,
+            'wtp_h37': 131.9,
+            'wtp_v19': 182.4,
 
-        'itp_v37': 256.3,
-        'itp_h37': 241.2,
-        'itp_v19': 258.9,
+            'itp_v37': 256.3,
+            'itp_h37': 241.2,
+            'itp_v19': 258.9,
 
-        'vh37_lnline_offset': -71.99,
-        'vh37_lnline_slope': 1.20,
+            'vh37_lnline_offset': -71.99,
+            'vh37_lnline_slope': 1.20,
 
-        'v1937_lnline_offset': 48.26,
-        'v1937_lnline_slope': 0.8048,
+            'v1937_lnline_offset': 48.26,
+            'v1937_lnline_slope': 0.8048,
 
-        # These should be labeled 'wfseason_<n>'...
-        # There will be at least one season (start_month=1, end_month=12)
-        'wx_season_1_start_month': 11,
-        'wx_season_1_end_month': 4,
-        'wx_season_1_wintrc': 84.73,
-        'wx_season_1_wslope': 0.5352,
-        'wx_season_1_wxlimt': 18.39,
+            # These should be labeled 'wfseason_<n>'...
+            # There will be at least one season (start_month=1, end_month=12)
+            'wx_season_1_start_month': 11,
+            'wx_season_1_end_month': 4,
+            'wx_season_1_wintrc': 84.73,
+            'wx_season_1_wslope': 0.5352,
+            'wx_season_1_wxlimt': 18.39,
 
-        'wx_season_2_start_month': 6,
-        'wx_season_2_end_month': 9,
-        'wx_season_2_wintrc': 82.71,
-        'wx_season_2_wslope': 0.5352,
-        'wx_season_2_wxlimt': 23.34,
+            'wx_season_2_start_month': 6,
+            'wx_season_2_end_month': 9,
+            'wx_season_2_wintrc': 82.71,
+            'wx_season_2_wslope': 0.5352,
+            'wx_season_2_wxlimt': 23.34,
 
-        'add1': 0.0,
-        'add2': -2.0,
+            'add1': 0.0,
+            'add2': -2.0,
 
-        'minic': 10.0,
-        'maxic': 1.0,
-    }
+            'minic': 10.0,
+            'maxic': 1.0,
+        }
 
     bt_recipe['ancillary_sources'] = {
         'surface_mask': 'default',
