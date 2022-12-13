@@ -172,6 +172,7 @@ def test_bt_recipe_yields_same_icecon():
 
     bt_icecon_via_orig_method = bt_ds_orig_method['conc']
 
+    """
     ofn = 'bt_viarecipe.nc'
     bt.to_netcdf(ofn)
     print(f'Wrote: {ofn}')
@@ -179,6 +180,7 @@ def test_bt_recipe_yields_same_icecon():
     ofn = 'bt_viaoriginal.nc'
     bt_ds_orig_method.to_netcdf(ofn)
     print(f'Wrote: {ofn}')
+    """
 
     # assert np.all(bt_icecon_via_recipe.data == bt_icecon_via_orig_method.data)
     assert_almost_equal(
