@@ -1071,79 +1071,91 @@ def bootstrap_via_recipe(
     bt['invalid_ice_mask'] = (('y', 'x'), invalid_ice_mask)
 
     # Add sensor-specific BT parameters
-    """
-    # TODO: This fails when using ds.to_netcdf() because it can't format
-    #       the special contructs such as TbSetParams....
+    bt['icecon_parameters'].attrs['wtp_v37'] = 207.2
+    bt['icecon_parameters'].attrs['wtp_h37'] = 131.9
+    bt['icecon_parameters'].attrs['wtp_v19'] = 182.4
+
+    bt['icecon_parameters'].attrs['itp_v37'] = 256.3
+    bt['icecon_parameters'].attrs['itp_h37'] = 241.2
+    bt['icecon_parameters'].attrs['itp_v19'] = 258.9
+
+    bt['icecon_parameters'].attrs['vh37_lnline_offset'] = -71.99
+    bt['icecon_parameters'].attrs['vh37_lnline_slope'] = 1.20
+
+    bt['icecon_parameters'].attrs['v1937_lnline_offset'] = 48.26
+    bt['icecon_parameters'].attrs['v1937_lnline_slope'] = 0.8048
+
+    bt['icecon_parameters'].attrs['wx_season_1_start_month'] = 11
+    bt['icecon_parameters'].attrs['wx_season_1_end_month'] = 4
+    bt['icecon_parameters'].attrs['wx_season_1_wintrc'] = 84.73
+    bt['icecon_parameters'].attrs['wx_season_1_wslope'] = 0.5352
+    bt['icecon_parameters'].attrs['wx_season_1_wxlimt'] = 18.39
+
+    bt['icecon_parameters'].attrs['wx_season_2_start_month'] = 6
+    bt['icecon_parameters'].attrs['wx_season_2_end_month'] = 9
+    bt['icecon_parameters'].attrs['wx_season_2_wintrc'] = 82.71
+    bt['icecon_parameters'].attrs['wx_season_2_wslope'] = 0.5352
+    bt['icecon_parameters'].attrs['wx_season_2_wxlimt'] = 23.34
+
     if hemisphere == 'north':
         bt['icecon_parameters'].attrs['bt_params_source'] = 'AMSR2_NORTH_PARAMS'
-        for key in AMSR2_NORTH_PARAMS:
-            bt['icecon_parameters'].attrs[key] = AMSR2_NORTH_PARAMS[key]
-
     else:
         bt['icecon_parameters'].attrs['bt_params_source'] = 'AMSR2_SOUTH_PARAMS'
-        for key in AMSR2_SOUTH_PARAMS:
-            bt['icecon_parameters'].attrs[key] = AMSR2_SOUTH_PARAMS[key]
-    """
-
-    # print(f'icecon_parameters var:\n{bt["icecon_parameters"]}')
-
-    # NOTE: We should be able to construct the arguments to bootstrap() now
-    #  Arguments to bootstrap()
-    #      *,
-    #      tb_v37: npt.NDArray,
-    #      tb_h37: npt.NDArray,
-    #      tb_v19: npt.NDArray,
-    #      tb_v22: npt.NDArray,
-    #      params: BootstrapParams,
-    #      date: dt.date,
-    #      hemisphere: Hemisphere,
-    #      missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 
     # TODO: Replace reference to "original" data fields with ".var" from Dataset
     #       Currently, these are simply local variables set above...
     a2bt_params = BootstrapParams(
-        land_mask=bt['surface_mask'].data,
-        pole_mask=bt['pole_mask'].data,
-        invalid_ice_mask=bt['invalid_ice_mask'].data,
-        # **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
-        # NOTE: These may be more parameters than are needed in this params structure?
-        # **bt['icecon_parameters'],
-        # Note:        wtp    itp
-        #       v37:  207.2  256.3
-        #       h37:  131.9  241.2
-        #       v19:  182.4  258.9
-        #  vh37_lnline:  -71.99   1.20
-        #  v1937_lnline:  48.26   0.8048
+        land_mask=surface_mask,
+        pole_mask=pole_mask,
+        invalid_ice_mask=invalid_ice_mask,
         vh37_params=TbSetParams(
-            water_tie_point=[207.2, 131.9],
-            ice_tie_point=[256.3, 241.2],
-            lnline=[-71.99, 1.20],
+            water_tie_point=[
+                bt['icecon_parameters'].attrs['wtp_v37'],
+                bt['icecon_parameters'].attrs['wtp_h37'],
+            ],
+            ice_tie_point=[
+                bt['icecon_parameters'].attrs['itp_v37'],
+                bt['icecon_parameters'].attrs['itp_h37'],
+            ],
+            lnline=[
+                bt['icecon_parameters'].attrs['vh37_lnline_offset'],
+                bt['icecon_parameters'].attrs['vh37_lnline_slope'],
+            ],
         ),
         v1937_params=TbSetParams(
-            water_tie_point=[207.2, 182.4],
-            ice_tie_point=[256.3, 258.9],
-            lnline=[48.26, 0.8048],
+            water_tie_point=[
+                bt['icecon_parameters'].attrs['wtp_v37'],
+                bt['icecon_parameters'].attrs['wtp_v19'],
+            ],
+            ice_tie_point=[
+                bt['icecon_parameters'].attrs['itp_v37'],
+                bt['icecon_parameters'].attrs['itp_v19'],
+            ],
+            lnline=[
+                bt['icecon_parameters'].attrs['v1937_lnline_offset'],
+                bt['icecon_parameters'].attrs['v1937_lnline_slope'],
+            ],
         ),
         weather_filter_seasons=[
             # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
             WeatherFilterParamsForSeason(
-                start_month=11,
-                end_month=4,
+                start_month=bt['icecon_parameters'].attrs['wx_season_1_start_month'],
+                end_month=bt['icecon_parameters'].attrs['wx_season_1_end_month'],
                 weather_filter_params=WeatherFilterParams(
-                    wintrc=84.73,
-                    wslope=0.5352,
-                    wxlimt=18.39,
+                    wintrc=bt['icecon_parameters'].attrs['wx_season_1_wintrc'],
+                    wslope=bt['icecon_parameters'].attrs['wx_season_1_wslope'],
+                    wxlimt=bt['icecon_parameters'].attrs['wx_season_1_wxlimt'],
                 ),
             ),
             # May (`seas=2`) will get interpolated from the previous and next season
             # June through Sept. (`seas=3`)
             WeatherFilterParamsForSeason(
-                start_month=6,
-                end_month=9,
+                start_month=bt['icecon_parameters'].attrs['wx_season_2_start_month'],
+                end_month=bt['icecon_parameters'].attrs['wx_season_2_end_month'],
                 weather_filter_params=WeatherFilterParams(
-                    wintrc=82.71,
-                    wslope=0.5352,
-                    wxlimt=23.34,
+                    wintrc=bt['icecon_parameters'].attrs['wx_season_2_wintrc'],
+                    wslope=bt['icecon_parameters'].attrs['wx_season_2_wslope'],
+                    wxlimt=bt['icecon_parameters'].attrs['wx_season_2_wxlimt'],
                 ),
             ),
             # October (`seas=4`) will get interpolated from the previous and next
@@ -1152,6 +1164,7 @@ def bootstrap_via_recipe(
     )
     a2bt_date = date
     a2bt_hemisphere = hemisphere
+
 
     # Call the bootstrap code
     computed_bt_ds = compute_bt_ic.bootstrap(
@@ -1232,15 +1245,6 @@ def bootstrap_via_recipe_crutched(
     bt['invalid_ice_mask'] = (('y', 'x'), invalid_ice_mask)
 
     # Add sensor-specific BT parameters
-    # Note:        wtp    itp
-    #       v37:  207.2  256.3
-    #       h37:  131.9  241.2
-    #       v19:  182.4  258.9
-    #  vh37_lnline:  -71.99   1.20
-    #  v1937_lnline:  48.26   0.8048
-    bt['icecon_parameters'].attrs['wtp_v37'] = 207.2
-    bt['icecon_parameters'].attrs['wtp_h37'] = 131.9
-    bt['icecon_parameters'].attrs['wtp_v19'] = 207.2
     """
     # TODO: This fails when using ds.to_netcdf() because it can't format
     #       the special contructs such as TbSetParams....
@@ -1272,12 +1276,18 @@ def bootstrap_via_recipe_crutched(
     # TODO: Replace reference to "original" data fields with ".var" from Dataset
     #       Currently, these are simply local variables set above...
     a2bt_params = BootstrapParams(
-        land_mask=surface_mask,
-        pole_mask=pole_mask,
-        invalid_ice_mask=invalid_ice_mask,
+        land_mask=bt['surface_mask'].data,
+        pole_mask=bt['pole_mask'].data,
+        invalid_ice_mask=bt['invalid_ice_mask'].data,
         # **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
         # NOTE: These may be more parameters than are needed in this params structure?
         # **bt['icecon_parameters'],
+        # Note:        wtp    itp
+        #       v37:  207.2  256.3
+        #       h37:  131.9  241.2
+        #       v19:  182.4  258.9
+        #  vh37_lnline:  -71.99   1.20
+        #  v1937_lnline:  48.26   0.8048
         vh37_params=TbSetParams(
             water_tie_point=[207.2, 131.9],
             ice_tie_point=[256.3, 241.2],
@@ -1314,9 +1324,6 @@ def bootstrap_via_recipe_crutched(
             # (first in this list) season.
         ],
     )
-    a2bt_date = date
-    a2bt_hemisphere = hemisphere
-
     # Call the bootstrap code
     computed_bt_ds = compute_bt_ic.bootstrap(
         tb_v37=bt['tb_v37_si'].data,

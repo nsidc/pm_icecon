@@ -168,19 +168,19 @@ def test_bt_recipe_yields_same_icecon():
         date=dt.date(2020, 1, 1),
         hemisphere='north',
         resolution='12',
-        # resolution='25',
     )
 
     bt_icecon_via_orig_method = bt_ds_orig_method['conc']
 
     ofn = 'bt_viarecipe.nc'
     bt.to_netcdf(ofn)
-    # print(f'Wrote: {ofn}')
+    print(f'Wrote: {ofn}')
 
     ofn = 'bt_viaoriginal.nc'
     bt_ds_orig_method.to_netcdf(ofn)
-    # print(f'Wrote: {ofn}')
+    print(f'Wrote: {ofn}')
 
+    # assert np.all(bt_icecon_via_recipe.data == bt_icecon_via_orig_method.data)
     assert_almost_equal(
         bt_icecon_via_recipe.data,
         bt_icecon_via_orig_method.data,
