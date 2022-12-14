@@ -126,7 +126,6 @@ def test_bt_recipe_yields_icecon_parameters():
     bt = bootstrap_via_recipe(recipe=bt_recipe)
 
     for bt_parameter in _bt_parameter_list:
-        print(f"Checking for {bt_parameter} in {bt.variables['icecon_parameters'].attrs.keys()}")
         assert bt_parameter in bt.variables['icecon_parameters'].attrs.keys()
 
 
