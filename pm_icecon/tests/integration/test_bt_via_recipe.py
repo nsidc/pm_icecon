@@ -187,5 +187,4 @@ def test_bt_recipe_returns_mask_fields():
         'is_water_mask',
     )
     for mask_field in mask_fields:
-        print(f'\nChecking mask field: {mask_field}')
         assert np.any(bt[mask_field])
