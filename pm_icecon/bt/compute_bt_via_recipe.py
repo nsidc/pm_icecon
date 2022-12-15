@@ -40,6 +40,12 @@ from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
 
 # from pm_icecon.bt.api import amsr2_bootstrap
 import pm_icecon.bt.compute_bt_ic as compute_bt_ic
+"""
+from pm_icecon.bt.compute_bt_ic import (
+    tb_data_mask,
+    ret_water_ssmi,
+)
+"""
 
 
 def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap'):
@@ -99,9 +105,9 @@ def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap
             # ],
 
             # Current formulation...
-            'wtp_v37': 207.2,
-            'wtp_h37': 131.9,
-            'wtp_v19': 182.4,
+            'wtp_v37_init': 207.2,
+            'wtp_h37_init': 131.9,
+            'wtp_v19_init': 182.4,
 
             'itp_v37': 256.3,
             'itp_h37': 241.2,
@@ -132,6 +138,9 @@ def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap
 
             'minic': 10.0,
             'maxic': 1.0,
+
+            'flag_value_missing': 255,
+            'flag_value_land': 254,
         }
 
     bt_recipe['ancillary_sources'] = {
@@ -587,6 +596,7 @@ def ret_water_ssmi(
 
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
+
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
     watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
@@ -1082,6 +1092,8 @@ def bootstrap_via_recipe(
     # Read in the TBs
     # TODO: Will need to get 12.5km 6.9GHz fields here
     bt['icecon_parameters'].attrs['tb_source'] = 'get_au_si_tbs()'
+    bt['icecon_parameters'].attrs['mintb'] = recipe['tb_parameters']['mintb']
+    bt['icecon_parameters'].attrs['maxtb'] = recipe['tb_parameters']['maxtb']
     tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
@@ -1128,8 +1140,8 @@ def bootstrap_via_recipe(
         invalid_ice_mask=invalid_ice_mask,
         vh37_params=TbSetParams(
             water_tie_point=[
-                bt['icecon_parameters'].attrs['wtp_v37'],
-                bt['icecon_parameters'].attrs['wtp_h37'],
+                bt['icecon_parameters'].attrs['wtp_v37_init'],
+                bt['icecon_parameters'].attrs['wtp_h37_init'],
             ],
             ice_tie_point=[
                 bt['icecon_parameters'].attrs['itp_v37'],
@@ -1142,8 +1154,8 @@ def bootstrap_via_recipe(
         ),
         v1937_params=TbSetParams(
             water_tie_point=[
-                bt['icecon_parameters'].attrs['wtp_v37'],
-                bt['icecon_parameters'].attrs['wtp_v19'],
+                bt['icecon_parameters'].attrs['wtp_v37_init'],
+                bt['icecon_parameters'].attrs['wtp_v19_init'],
             ],
             ice_tie_point=[
                 bt['icecon_parameters'].attrs['itp_v37'],
@@ -1188,6 +1200,8 @@ def bootstrap_via_recipe(
     #       of the bootstrap code.
 
     # Call the bootstrap code
+    # TODO: Remove this once the icecon is fully computed in this routine
+    """ """
     computed_bt_ds = compute_bt_ic.bootstrap(
         tb_v37=bt['tb_v37_si'].data,
         tb_h37=bt['tb_h37_si'].data,
@@ -1198,6 +1212,153 @@ def bootstrap_via_recipe(
         hemisphere=a2bt_hemisphere,
     )
     bt['icecon'] = computed_bt_ds['conc']
+    """ """
+
+    # Below, implement the functions of the compute_bt_ic.bootstrap() routine
+
+    tb_data_mask_field = tb_data_mask(
+        tbs=(
+            bt['tb_v37_si'].data,
+            bt['tb_h37_si'].data,
+            bt['tb_v19_si'].data,
+            bt['tb_v22_si'].data,
+        ),
+        min_tb=bt['icecon_parameters'].attrs['mintb'],
+        max_tb=bt['icecon_parameters'].attrs['maxtb'],
+    )
+
+    bt['valid_tb_mask'] = (('y', 'x'), tb_data_mask_field)
+
+    is_water_mask_field = ret_water_ssmi(
+        v37=bt['tb_v37_si'].data,
+        h37=bt['tb_h37_si'].data,
+        v22=bt['tb_v22_si'].data,
+        v19=bt['tb_v19_si'].data,
+        land_mask=bt['surface_mask'].data,
+        tb_mask=bt['valid_tb_mask'].data,
+        ln1=[
+            bt['icecon_parameters'].attrs['vh37_lnline_offset'],
+            bt['icecon_parameters'].attrs['vh37_lnline_slope'],
+        ],
+        date=a2bt_date,
+        weather_filter_seasons=a2bt_params.weather_filter_seasons,
+    )
+    bt['is_water_mask'] =  (('y', 'x'), is_water_mask_field)
+
+    # vh37 = ret_linfit_32(
+    [bt['icecon_parameters'].attrs['vh37_linfitted_offset'],
+     bt['icecon_parameters'].attrs['vh37_linfitted_slope']] = ret_linfit_32(
+        land_mask=bt['surface_mask'],
+        tb_mask=bt['valid_tb_mask'],
+        tbx=bt['tb_v37_si'].data,
+        tby=bt['tb_h37_si'].data,
+        lnline=[
+            bt['icecon_parameters'].attrs['vh37_lnline_offset'],
+            bt['icecon_parameters'].attrs['vh37_lnline_slope'],
+        ],
+        add=bt['icecon_parameters'].attrs['add1'],
+        water_mask=bt['is_water_mask'],
+    )
+
+    vh37_params_wtp = (
+        bt['icecon_parameters'].attrs['wtp_v37_init'],
+        bt['icecon_parameters'].attrs['wtp_h37_init'],
+    )
+    v1937_params_wtp = (
+        bt['icecon_parameters'].attrs['wtp_v37_init'],
+        bt['icecon_parameters'].attrs['wtp_v19_init'],
+    )
+    wtp, wtp2 = get_water_tiepoints(
+        water_mask=bt['is_water_mask'].data,
+        tb_v37=bt['tb_v37_si'].data,
+        tb_h37=bt['tb_h37_si'].data,
+        tb_v19=bt['tb_v19_si'].data,
+        wtp1_default=vh37_params_wtp,
+        wtp2_default=v1937_params_wtp,
+    )
+
+    (bt['icecon_parameters'].attrs['wtp_v37'],
+     bt['icecon_parameters'].attrs['wtp_h37']) = wtp
+
+    (bt['icecon_parameters'].attrs['wtp_v37'],
+     bt['icecon_parameters'].attrs['wtp_v19']) = wtp2
+
+    # adoff = ret_adj_adoff(
+    bt['icecon_parameters'].attrs['adoff'] = ret_adj_adoff(
+        wtp=(bt['icecon_parameters'].attrs['wtp_v37'], 
+             bt['icecon_parameters'].attrs['wtp_h37']),
+        vh37=[bt['icecon_parameters'].attrs['vh37_linfitted_offset'],
+              bt['icecon_parameters'].attrs['vh37_linfitted_slope']],
+    )
+
+    v1937 = ret_linfit_32(
+        land_mask=bt['surface_mask'],
+        tb_mask=bt['valid_tb_mask'],
+        tbx=bt['tb_v37_si'].data,
+        tby=bt['tb_v19_si'].data,
+        lnline=[
+            bt['icecon_parameters'].attrs['v1937_lnline_offset'],
+            bt['icecon_parameters'].attrs['v1937_lnline_slope'],
+        ],
+        add=bt['icecon_parameters'].attrs['add2'],
+        water_mask=bt['is_water_mask'],
+        tba=bt['tb_h37_si'].data,
+        iceline=[bt['icecon_parameters'].attrs['vh37_linfitted_offset'],
+                 bt['icecon_parameters'].attrs['vh37_linfitted_slope']],
+        adoff=bt['icecon_parameters'].attrs['adoff'],
+    )
+    [bt['icecon_parameters'].attrs['v1937_linfitted_offset'],
+     bt['icecon_parameters'].attrs['v1937_linfitted_slope']] = v1937
+
+    """ """
+    iceout = calc_bt_ice(
+        #missval=missing_flag_value,
+        #landval=DEFAULT_FLAG_VALUES.land,
+        #maxic=params.maxic,
+        missval=bt['icecon_parameters'].attrs['flag_value_missing'],
+        landval=bt['icecon_parameters'].attrs['flag_value_land'],
+        maxic=bt['icecon_parameters'].attrs['maxic'],
+        #vh37=vh37,
+        #adoff=adoff,
+        vh37=[bt['icecon_parameters'].attrs['vh37_linfitted_offset'],
+              bt['icecon_parameters'].attrs['vh37_linfitted_slope']],
+        adoff=bt['icecon_parameters'].attrs['adoff'],
+        #itp=params.vh37_params.ice_tie_point,
+        #itp2=params.v1937_params.ice_tie_point,
+        itp=[bt['icecon_parameters'].attrs['itp_v37'],
+             bt['icecon_parameters'].attrs['itp_h37']],
+        itp2=[bt['icecon_parameters'].attrs['itp_v37'],
+              bt['icecon_parameters'].attrs['itp_v19']],
+        #wtp=wtp,
+        #wtp2=wtp2,
+        #v1937=v1937,
+        wtp=(bt['icecon_parameters'].attrs['wtp_v37'],
+             bt['icecon_parameters'].attrs['wtp_h37']),
+        wtp2=(bt['icecon_parameters'].attrs['wtp_v37'],
+              bt['icecon_parameters'].attrs['wtp_v19']),
+        v1937=[bt['icecon_parameters'].attrs['v1937_linfitted_offset'],
+               bt['icecon_parameters'].attrs['v1937_linfitted_slope']],
+        #tb_v37=tb_v37,
+        #tb_h37=tb_h37,
+        #tb_v19=tb_v19,
+        tb_v37=bt['tb_v37_si'].data,
+        tb_h37=bt['tb_h37_si'].data,
+        tb_v19=bt['tb_v19_si'].data,
+        #land_mask=params.land_mask,
+        #water_mask=water_mask,
+        #tb_mask=tb_mask,
+        land_mask=bt['surface_mask'],
+        water_mask=bt['is_water_mask'],
+        tb_mask=bt['valid_tb_mask'],
+    )
+    ofn = 'iceout_recipe.dat'
+    iceout.tofile(ofn)
+    print(f'Wrote: {ofn}  {iceout.dtype}  {iceout.shape}')
+    bt['iceout'] = (('y', 'x'), iceout)
+
+    """ """
+
+    # print('Remove call to compute_bt_ic.bootstrap()')
 
     return bt
 
@@ -1293,7 +1454,6 @@ def bootstrap(
     )
 
     # *** Do sst cleaning ***
-    print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
         iceout=iceout,
         missval=missing_flag_value,
