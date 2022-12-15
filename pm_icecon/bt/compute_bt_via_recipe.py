@@ -1354,8 +1354,6 @@ def bootstrap_via_recipe(
     bt['iceout_fix'] = (('y', 'x'), iceout_fix)
     bt['icecon'] = bt['iceout_fix']
 
-    # print('Remove call to compute_bt_ic.bootstrap()')
-
     return bt
 
 
