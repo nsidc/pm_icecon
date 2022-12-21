@@ -581,9 +581,7 @@ def ret_water_ssmi(
     v19,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    ln1,
-    date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+    weather_filter_condition2,
     wintrc,
     wslope,
     wxlimt,
@@ -597,13 +595,10 @@ def ret_water_ssmi(
 
     watchk1 = wslope * v22 + wintrc
     watchk2 = v22 - v19
-    watchk4 = ln1[1] * v37 + ln1[0]
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
-    # TODO: where does this 230.0 value come from? Should it be configuratble?
-    is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
 
-    is_water = not_land_or_masked & is_cond1 & is_cond2
+    is_water = not_land_or_masked & is_cond1 & weather_filter_condition2
 
     return is_water
 
@@ -1243,6 +1238,14 @@ def bootstrap_via_recipe(
     bt['icecon_parameters'].attrs['wslope'] = season_params.wslope
     bt['icecon_parameters'].attrs['wxlimt'] = season_params.wxlimt
 
+    # Calculate one of weather filter conditions as mask
+    watchk4 = bt['icecon_parameters'].attrs['vh37_lnline_slope'] \
+              * bt['tb_v37_si'].data \
+              + bt['icecon_parameters'].attrs['vh37_lnline_offset']
+    weather_filter_condition2 = \
+        (watchk4 > bt['tb_h37_si'].data) | \
+        (bt['tb_v37_si'].data >= 230.0)
+
     is_water_mask_field = ret_water_ssmi(
         v37=bt['tb_v37_si'].data,
         h37=bt['tb_h37_si'].data,
@@ -1250,12 +1253,7 @@ def bootstrap_via_recipe(
         v19=bt['tb_v19_si'].data,
         land_mask=bt['surface_mask'].data,
         tb_mask=bt['valid_tb_mask'].data,
-        ln1=[
-            bt['icecon_parameters'].attrs['vh37_lnline_offset'],
-            bt['icecon_parameters'].attrs['vh37_lnline_slope'],
-        ],
-        date=a2bt_date,
-        weather_filter_seasons=a2bt_params.weather_filter_seasons,
+        weather_filter_condition2=weather_filter_condition2,
         wintrc=bt['icecon_parameters'].attrs['wintrc'],
         wslope=bt['icecon_parameters'].attrs['wslope'],
         wxlimt=bt['icecon_parameters'].attrs['wxlimt'],
