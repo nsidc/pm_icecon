@@ -215,15 +215,15 @@ def xfer_class_tbs(
     """
     # NRT regressions
     if sat == 'f17':
-        tb_v37 = fmul(1.0170066, tb_v37) + -4.9383355
-        tb_h37 = fmul(1.0009720, tb_h37) + -1.3709822
-        tb_v19 = fmul(1.0140723, tb_v19) + -3.4705583
-        tb_v22 = fmul(0.99652931, tb_v22) + -0.82305684
+        tb_v37 = (1.0170066 * tb_v37) + -4.9383355
+        tb_h37 = (1.0009720 * tb_h37) + -1.3709822
+        tb_v19 = (1.0140723 * tb_v19) + -3.4705583
+        tb_v22 = (0.99652931 * tb_v22) + -0.82305684
     elif sat == 'f18':
-        tb_v37 = fmul(1.0104497, tb_v37) + -3.3174017
-        tb_h37 = fmul(0.98914390, tb_h37) + 1.2031835
-        tb_v19 = fmul(1.0057373, tb_v19) + -0.92638520
-        tb_v22 = fmul(0.98793409, tb_v22) + 1.2108198
+        tb_v37 = (1.0104497 * tb_v37) + -3.3174017
+        tb_h37 = (0.98914390 * tb_h37) + 1.2031835
+        tb_v19 = (1.0057373 * tb_v19) + -0.92638520
+        tb_v22 = (0.98793409 * tb_v22) + 1.2108198
     else:
         raise UnexpectedSatelliteError(f'No such tb xform: {sat}')
 
@@ -348,10 +348,17 @@ def linfit_32(xvals, yvals):
     nvals = f(xvals.shape[0])
     sumx = np.sum(xvals, dtype=np.float64)
     sumy = np.sum(yvals, dtype=np.float64)
+
+    # Removing this fsqr() results in difference
     sumx2 = np.sum(fsqr(xvals), dtype=np.float64)
+    # sumx2 = np.sum(np.square(xvals), dtype=np.float64)
+
     # sumy2 is included in Bootstrap, but not used.
     # sumy2 = np.sum(fsqr(yvals), dtype=np.float64)
+
+    # Removing this fmul() causes difference
     sumxy = np.sum(fmul(xvals, yvals), dtype=np.float64)
+    # sumxy = np.sum(xvals * yvals, dtype=np.float64)
 
     delta = (nvals * sumx2) - sumx * sumx
     offset = ((sumx2 * sumy) - (sumx * sumxy)) / delta
@@ -623,28 +630,28 @@ def calc_rad_coeffs_32(
         f(itp[1]) - f(wtp[1]),
         f(itp[0]) - f(wtp[0]),
     )
-    radoff1 = f(wtp[1]) - fmul(f(wtp[0]), f(radslp1))
+    radoff1 = f(wtp[1]) - f(wtp[0]) * f(radslp1)
     xint = fdiv(
         f(radoff1) - f(vh37[0]),
         f(vh37[1]) - f(radslp1),
     )
-    yint = fmul(vh37[1], f(xint)) + f(vh37[0])
-    radlen1 = fsqt(
-        (fsqr(f(xint) - f(wtp[0])) + fsqr(f(yint) - f(wtp[1])))
+    yint = vh37[1] * f(xint) + f(vh37[0])
+    radlen1 = np.sqrt(
+        (np.square(f(xint) - f(wtp[0])) + np.square(f(yint) - f(wtp[1])))
     )
 
     radslp2 = fdiv(
         f(itp2[1]) - f(wtp2[1]),
         f(itp2[0]) - f(wtp2[0]),
     )
-    radoff2 = f(wtp2[1]) - fmul(f(wtp2[0]), f(radslp2))
+    radoff2 = f(wtp2[1]) - f(wtp2[0]) * f(radslp2)
     xint = fdiv(
         f(radoff2) - f(v1937[0]),
         f(v1937[1]) - f(radslp2),
     )
-    yint = fmul(f(v1937[1]), f(xint)) + f(v1937[0])
-    radlen2 = fsqt(
-        (fsqr(f(xint) - f(wtp2[0])) + fsqr(f(yint) - f(wtp2[1])))
+    yint = f(v1937[1]) * f(xint) + f(v1937[0])
+    radlen2 = np.sqrt(
+        (np.square(f(xint) - f(wtp2[0])) + np.square(f(yint) - f(wtp2[1])))
     )
 
     return {
