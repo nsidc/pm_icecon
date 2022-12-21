@@ -606,9 +606,9 @@ def ret_water_ssmi(
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
 
-    watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
-    watchk2 = fsub(v22, v19)
-    watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
+    watchk1 = wslope * v22 + wintrc
+    watchk2 = v22 - v19
+    watchk4 = ln1[1] * v37 + ln1[0]
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     # TODO: where does this 230.0 value come from? Should it be configuratble?
