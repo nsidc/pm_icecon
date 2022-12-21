@@ -466,10 +466,6 @@ def fmul(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.multiply(a, b, dtype=np.float32)
 
 
-def fdiv(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.divide(a, b, dtype=np.float32)
-
-
 def fsqr(a: npt.ArrayLike):
     return np.square(a, dtype=np.float32)
 
@@ -626,29 +622,18 @@ def calc_rad_coeffs_32(
     v1937,
 ):
     # Compute radlsp, radoff, radlen vars
-    radslp1 = fdiv(
-        f(itp[1]) - f(wtp[1]),
-        f(itp[0]) - f(wtp[0]),
-    )
+    radslp1 = (f(itp[1]) - f(wtp[1])) / (f(itp[0]) - f(wtp[0]))
+
     radoff1 = f(wtp[1]) - f(wtp[0]) * f(radslp1)
-    xint = fdiv(
-        f(radoff1) - f(vh37[0]),
-        f(vh37[1]) - f(radslp1),
-    )
+    xint = (f(radoff1) - f(vh37[0])) / (f(vh37[1]) - f(radslp1))
     yint = vh37[1] * f(xint) + f(vh37[0])
     radlen1 = np.sqrt(
         (np.square(f(xint) - f(wtp[0])) + np.square(f(yint) - f(wtp[1])))
     )
 
-    radslp2 = fdiv(
-        f(itp2[1]) - f(wtp2[1]),
-        f(itp2[0]) - f(wtp2[0]),
-    )
+    radslp2 = (f(itp2[1]) - f(wtp2[1])) / (f(itp2[0]) - f(wtp2[0]))
     radoff2 = f(wtp2[1]) - f(wtp2[0]) * f(radslp2)
-    xint = fdiv(
-        f(radoff2) - f(v1937[0]),
-        f(v1937[1]) - f(radslp2),
-    )
+    xint = (f(radoff2) - f(v1937[0])) / (f(v1937[1]) - f(radslp2))
     yint = f(v1937[1]) * f(xint) + f(v1937[0])
     radlen2 = np.sqrt(
         (np.square(f(xint) - f(wtp2[0])) + np.square(f(yint) - f(wtp2[1])))
