@@ -595,17 +595,13 @@ def ret_water_ssmi(
     ln1,
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
+    wintrc,
+    wslope,
+    wxlimt,
     v06=None,
-    wslope2=None,
     wintrc2=None,
+    wslope2=None,
 ) -> npt.NDArray[np.bool_]:
-    season_params = _get_wx_params(
-        date=date,
-        weather_filter_seasons=weather_filter_seasons,
-    )
-    wintrc = season_params.wintrc
-    wslope = season_params.wslope
-    wxlimt = season_params.wxlimt
 
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
@@ -1266,6 +1262,15 @@ def bootstrap_via_recipe(
 
     bt['valid_tb_mask'] = (('y', 'x'), tb_data_mask_field)
 
+    # Calcuate "normal" weather filter parameters
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=a2bt_params.weather_filter_seasons,
+    )
+    bt['icecon_parameters'].attrs['wintrc'] = season_params.wintrc
+    bt['icecon_parameters'].attrs['wslope'] = season_params.wslope
+    bt['icecon_parameters'].attrs['wxlimt'] = season_params.wxlimt
+
     is_water_mask_field = ret_water_ssmi(
         v37=bt['tb_v37_si'].data,
         h37=bt['tb_h37_si'].data,
@@ -1279,6 +1284,9 @@ def bootstrap_via_recipe(
         ],
         date=a2bt_date,
         weather_filter_seasons=a2bt_params.weather_filter_seasons,
+        wintrc=bt['icecon_parameters'].attrs['wintrc'],
+        wslope=bt['icecon_parameters'].attrs['wslope'],
+        wxlimt=bt['icecon_parameters'].attrs['wxlimt'],
     )
     bt['is_water_mask'] =  (('y', 'x'), is_water_mask_field)
 
@@ -1391,15 +1399,6 @@ def bootstrap_via_recipe(
 
     bt['iceout_fix'] = (('y', 'x'), iceout_fix)
     bt['icecon'] = bt['iceout_fix']
-
-    """
-    # Add compressing to all data arrays
-    # Note: this must be done at the to_netcdf() time?
-    zlib_encoding_spec = {}
-    for field in bt.variables.keys():
-        print(f'  field: {field}')
-        zlib_encoding_spec[field] = {'zlib': True}
-    """
 
     return bt
 
