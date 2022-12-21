@@ -470,10 +470,6 @@ def fsqr(a: npt.ArrayLike):
     return np.square(a, dtype=np.float32)
 
 
-def fsqt(a: npt.ArrayLike):
-    return np.sqrt(a, dtype=np.float32)
-
-
 def _get_wx_params(
     *,
     date: dt.date,
