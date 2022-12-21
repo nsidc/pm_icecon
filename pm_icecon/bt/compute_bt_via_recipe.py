@@ -353,12 +353,6 @@ def linfit_32(xvals, yvals):
     # sumy2 = np.sum(fsqr(yvals), dtype=np.float64)
     sumxy = np.sum(fmul(xvals, yvals), dtype=np.float64)
 
-    # float32 version
-    # delta = fsub(fmul(nvals, sumx2), fsqr(sumx))
-    # offset = fdiv(fsub(fmul(sumx2, sumy), fmul(sumx, sumxy)), delta)
-    # slope = fdiv(fsub(fmul(sumxy, nvals), fmul(sumx, sumy)), delta)
-
-    # float64 version
     delta = (nvals * sumx2) - sumx * sumx
     offset = ((sumx2 * sumy) - (sumx * sumxy)) / delta
     slope = ((sumxy * nvals) - (sumx * sumy)) / delta
@@ -386,11 +380,12 @@ def ret_linfit_32(
 
     not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None:
-        is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
+        is_tba_le_modad = tba <= tbx * iceline[1] + iceline[0] - adoff
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
+    # is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
+    is_tby_gt_lnline = tby > tbx * lnline[1] + lnline[0]
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
@@ -459,10 +454,6 @@ def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
 
 def fadd(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.add(a, b, dtype=np.float32)
-
-
-def fsub(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.subtract(a, b, dtype=np.float32)
 
 
 def fmul(a: npt.ArrayLike, b: npt.ArrayLike):
@@ -630,36 +621,36 @@ def calc_rad_coeffs_32(
 ):
     # Compute radlsp, radoff, radlen vars
     radslp1 = fdiv(
-        fsub(f(itp[1]), f(wtp[1])),
-        fsub(f(itp[0]), f(wtp[0])),
+        f(itp[1]) - f(wtp[1]),
+        f(itp[0]) - f(wtp[0]),
     )
-    radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
+    radoff1 = f(wtp[1]) - fmul(f(wtp[0]), f(radslp1))
     xint = fdiv(
-        fsub(f(radoff1), f(vh37[0])),
-        fsub(f(vh37[1]), f(radslp1)),
+        f(radoff1) - f(vh37[0]),
+        f(vh37[1]) - f(radslp1),
     )
     yint = fadd(fmul(vh37[1], f(xint)), f(vh37[0]))
     radlen1 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp[0]))),
-            fsqr(fsub(f(yint), f(wtp[1]))),
+            fsqr(f(xint) - f(wtp[0])),
+            fsqr(f(yint) - f(wtp[1])),
         )
     )
 
     radslp2 = fdiv(
-        fsub(f(itp2[1]), f(wtp2[1])),
-        fsub(f(itp2[0]), f(wtp2[0])),
+        f(itp2[1]) - f(wtp2[1]),
+        f(itp2[0]) - f(wtp2[0]),
     )
-    radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
+    radoff2 = f(wtp2[1]) - fmul(f(wtp2[0]), f(radslp2))
     xint = fdiv(
-        fsub(f(radoff2), f(v1937[0])),
-        fsub(f(v1937[1]), f(radslp2)),
+        f(radoff2) - f(v1937[0]),
+        f(v1937[1]) - f(radslp2),
     )
     yint = fadd(fmul(f(v1937[1]), f(xint)), f(v1937[0]))
     radlen2 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp2[0]))),
-            fsqr(fsub(f(yint), f(wtp2[1]))),
+            fsqr(f(xint) - f(wtp2[0])),
+            fsqr(f(yint) - f(wtp2[1])),
         )
     )
 
