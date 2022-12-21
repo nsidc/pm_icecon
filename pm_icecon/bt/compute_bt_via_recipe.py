@@ -27,7 +27,11 @@ from pm_icecon.config.models.bt import (
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
 
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from pm_icecon.fetch.au_si import (
+    AU_SI_RESOLUTIONS,
+    get_au_si_tbs,
+    get_au_si_tbs_zoomed,
+)
 
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.masks import (
@@ -132,6 +136,12 @@ def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap
             'wx_season_2_wintrc': 82.71,
             'wx_season_2_wslope': 0.5352,
             'wx_season_2_wxlimt': 23.34,
+
+            # These are used for AMSR2 7GHz weather filtering
+            'wintrc2': 12.22,   # Northern Hemisphere
+            'wslope2': 0.7020,  # Northern Hemisphere
+            #'wintrc2': 10.93,   # Southern Hemisphere
+            #'wslope2': 0.7046,  # Southern Hemisphere
 
             'add1': 0.0,
             'add2': -2.0,
@@ -585,6 +595,9 @@ def ret_water_ssmi(
     ln1,
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
+    v06=None,
+    wslope2=None,
+    wintrc2=None,
 ) -> npt.NDArray[np.bool_]:
     season_params = _get_wx_params(
         date=date,
@@ -1105,12 +1118,37 @@ def bootstrap_via_recipe(
     bt['tb_v19_in'] = tbs.variables['v18']
     bt['tb_v22_in'] = tbs.variables['v23']
 
+    # The 6.9 GHz channels are only provided at 25km resolution,
+    # so we "zoom" them to get them at other resolutions
+    if intres == 25:
+        bt['tb_v06_in'] = tbs.variables['v06']
+    else:
+        if intres == 12:
+            zoom_factor = 2
+        elif intres == 6:
+            zoom_factor = 4
+        else:
+            raise RuntimeError('intres not recognized: {intres}')
+        tbs_zoomed = get_au_si_tbs_zoomed(
+            date=date,
+            hemisphere=hemisphere,
+            input_resolution='25',
+            zoom_factor=zoom_factor,
+            fields=['v06',]
+        )
+
+        bt['tb_v06_in'] = (('YDim', 'XDim'), tbs_zoomed['v06'])
+        bt['tb_v06_in'].attrs['long_name'] = '6.9 GHz vertical daily average Tbs; bilinearly interpolated from 25km resolution'  # noqa
+        bt['tb_v06_in'].attrs['units'] = 'degree_kelvin'
+        bt['tb_v06_in'].attrs['standard_name'] = 'brightness_temperature'
+
     # Spatially interpolate the tb fields
     bt['icecon_parameters'].attrs['tb_spatial_interpolation'] = 'spatial_interp_tbs()'
     bt['tb_v37_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v37_in'].data))
     bt['tb_h37_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_h37_in'].data))
     bt['tb_v19_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v19_in'].data))
     bt['tb_v22_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v22_in'].data))
+    bt['tb_v06_si'] = (('y', 'x'), spatial_interp_tbs(bt['tb_v06_in'].data))
 
     # Add the mask fields
     bt['icecon_parameters'].attrs['surface_mask'] = 'get_ps_land_mask()'
@@ -1353,6 +1391,15 @@ def bootstrap_via_recipe(
 
     bt['iceout_fix'] = (('y', 'x'), iceout_fix)
     bt['icecon'] = bt['iceout_fix']
+
+    """
+    # Add compressing to all data arrays
+    # Note: this must be done at the to_netcdf() time?
+    zlib_encoding_spec = {}
+    for field in bt.variables.keys():
+        print(f'  field: {field}')
+        zlib_encoding_spec[field] = {'zlib': True}
+    """
 
     return bt
 

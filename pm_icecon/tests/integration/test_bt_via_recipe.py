@@ -157,8 +157,14 @@ def test_bt_recipe_yields_same_icecon():
     bt_icecon_via_orig_method = bt_ds_orig_method['conc']
 
     """
+    print('')
+
+    # Add compressing to all data arrays
+    zlib_encoding_spec = {}
+    for field in bt.variables.keys():
+        zlib_encoding_spec[field] = {'zlib': True}
     ofn = 'bt_viarecipe.nc'
-    bt.to_netcdf(ofn)
+    bt.to_netcdf(ofn, encoding=zlib_encoding_spec)
     print(f'Wrote: {ofn}')
 
     ofn = 'bt_viaoriginal.nc'

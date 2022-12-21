@@ -23,7 +23,7 @@ from loguru import logger
 
 from pm_icecon._types import Hemisphere
 
-AU_SI_RESOLUTIONS = Literal['25', '12']
+AU_SI_RESOLUTIONS = Literal['25', '12', '6']
 
 
 def _get_au_si_fp(base_dir: Path, date: dt.date, resolution: AU_SI_RESOLUTIONS) -> Path:
@@ -118,3 +118,30 @@ def get_au_si_tbs(
     tb_data = _normalize_au_si_tbs(data_fields, resolution=resolution)
 
     return tb_data
+
+
+def get_au_si_tbs_zoomed(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    input_resolution: AU_SI_RESOLUTIONS,
+    zoom_factor: int,
+    fields: list,
+) -> xr.Dataset:
+
+    from scipy.ndimage import zoom
+
+    data_fields = _get_au_si_data_fields(
+        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{input_resolution}.001/'),
+        date=date,
+        hemisphere=hemisphere,
+        resolution=input_resolution,
+    )
+    tb_data = _normalize_au_si_tbs(data_fields, resolution=input_resolution)
+
+    zoomed_fields = {}
+    for field in fields:
+        data = tb_data[field].data
+        zoomed_fields[field] = zoom(data, zoom_factor, order=1)
+
+    return zoomed_fields
