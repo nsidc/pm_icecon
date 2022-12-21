@@ -215,15 +215,15 @@ def xfer_class_tbs(
     """
     # NRT regressions
     if sat == 'f17':
-        tb_v37 = fadd(fmul(1.0170066, tb_v37), -4.9383355)
-        tb_h37 = fadd(fmul(1.0009720, tb_h37), -1.3709822)
-        tb_v19 = fadd(fmul(1.0140723, tb_v19), -3.4705583)
-        tb_v22 = fadd(fmul(0.99652931, tb_v22), -0.82305684)
+        tb_v37 = fmul(1.0170066, tb_v37) + -4.9383355
+        tb_h37 = fmul(1.0009720, tb_h37) + -1.3709822
+        tb_v19 = fmul(1.0140723, tb_v19) + -3.4705583
+        tb_v22 = fmul(0.99652931, tb_v22) + -0.82305684
     elif sat == 'f18':
-        tb_v37 = fadd(fmul(1.0104497, tb_v37), -3.3174017)
-        tb_h37 = fadd(fmul(0.98914390, tb_h37), 1.2031835)
-        tb_v19 = fadd(fmul(1.0057373, tb_v19), -0.92638520)
-        tb_v22 = fadd(fmul(0.98793409, tb_v22), 1.2108198)
+        tb_v37 = fmul(1.0104497, tb_v37) + -3.3174017
+        tb_h37 = fmul(0.98914390, tb_h37) + 1.2031835
+        tb_v19 = fmul(1.0057373, tb_v19) + -0.92638520
+        tb_v22 = fmul(0.98793409, tb_v22) + 1.2108198
     else:
         raise UnexpectedSatelliteError(f'No such tb xform: {sat}')
 
@@ -384,7 +384,6 @@ def ret_linfit_32(
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    # is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
     is_tby_gt_lnline = tby > tbx * lnline[1] + lnline[0]
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
@@ -409,7 +408,7 @@ def ret_linfit_32(
             ' sure how the default values of (`iceline`) were originally chosen.'
         )
 
-    fit_off = fadd(intrca, add)
+    fit_off = fadd(intrca, add)  # removing this fadd() causes difference!
     fit_slp = f(slopeb)
 
     return [fit_off, fit_slp]
@@ -629,12 +628,9 @@ def calc_rad_coeffs_32(
         f(radoff1) - f(vh37[0]),
         f(vh37[1]) - f(radslp1),
     )
-    yint = fadd(fmul(vh37[1], f(xint)), f(vh37[0]))
+    yint = fmul(vh37[1], f(xint)) + f(vh37[0])
     radlen1 = fsqt(
-        fadd(
-            fsqr(f(xint) - f(wtp[0])),
-            fsqr(f(yint) - f(wtp[1])),
-        )
+        (fsqr(f(xint) - f(wtp[0])) + fsqr(f(yint) - f(wtp[1])))
     )
 
     radslp2 = fdiv(
@@ -646,12 +642,9 @@ def calc_rad_coeffs_32(
         f(radoff2) - f(v1937[0]),
         f(v1937[1]) - f(radslp2),
     )
-    yint = fadd(fmul(f(v1937[1]), f(xint)), f(v1937[0]))
+    yint = fmul(f(v1937[1]), f(xint)) + f(v1937[0])
     radlen2 = fsqt(
-        fadd(
-            fsqr(f(xint) - f(wtp2[0])),
-            fsqr(f(yint) - f(wtp2[1])),
-        )
+        (fsqr(f(xint) - f(wtp2[0])) + fsqr(f(yint) - f(wtp2[1])))
     )
 
     return {
