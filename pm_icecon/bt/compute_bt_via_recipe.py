@@ -52,7 +52,7 @@ from pm_icecon.bt.compute_bt_ic import (
 """
 
 
-def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap'):
+def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap', date_str='2020-01-01'):
     """Return a dictionary of the standard recipe for AU_SI12 bootstrap"""
     bt_recipe = {}
 
@@ -60,7 +60,7 @@ def get_standard_bootstrap_recipe(gridid, tb_source, icecon_algorithm='bootstrap
         'icecon_algorithm': icecon_algorithm,
         'gridid': gridid,
         'tb_source': 'au_si12',
-        'date_str': '2020-01-01',
+        'date_str': date_str,
     }
 
     bt_recipe['tb_parameters'] = {
@@ -1246,6 +1246,30 @@ def bootstrap_via_recipe(
         (watchk4 > bt['tb_h37_si'].data) | \
         (bt['tb_v37_si'].data >= 230.0)
 
+    weather_v22v19_condition = \
+            (bt['icecon_parameters'].attrs['wslope'] * bt['tb_v22_si'].data + bt['icecon_parameters'].attrs['wintrc']) > bt['tb_v19_si'].data  # noqa
+
+    weather_v22v19diff_condition = \
+            (bt['tb_v22_si'].data - bt['tb_v19_si'].data) > bt['icecon_parameters'].attrs['wxlimt']  # noqa
+
+    weather_v06v37_condition = \
+        (bt['icecon_parameters'].attrs['wslope'] * bt['tb_v37_si'].data) + bt['icecon_parameters'].attrs['wintrc2'] > bt['tb_v06_si'].data
+
+    """ """
+    is_water_mask_field = \
+        (~bt['surface_mask'].data & ~bt['valid_tb_mask'].data) \
+        & (weather_v22v19_condition | weather_v22v19diff_condition) \
+        & (weather_filter_condition2)
+    """ """
+
+    """ this version includes the amsr2 v06 field
+    is_water_mask_field = \
+        (~bt['surface_mask'].data & ~bt['valid_tb_mask'].data) \
+        & (weather_v22v19_condition | weather_v22v19diff_condition | weather_v06v37_condition) \
+        & (weather_filter_condition2)
+    """
+
+    """
     is_water_mask_field = ret_water_ssmi(
         v37=bt['tb_v37_si'].data,
         h37=bt['tb_h37_si'].data,
@@ -1258,6 +1282,7 @@ def bootstrap_via_recipe(
         wslope=bt['icecon_parameters'].attrs['wslope'],
         wxlimt=bt['icecon_parameters'].attrs['wxlimt'],
     )
+    """
     bt['is_water_mask'] =  (('y', 'x'), is_water_mask_field)
 
     # vh37 = ret_linfit_32(
