@@ -144,12 +144,18 @@ def test_bt_recipe_yields_same_icecon():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
+    test_date = dt.date(2020, 1, 1)
+
+    bt_recipe = get_standard_bootstrap_recipe(
+        gridid='psn12.5',
+        tb_source='au_si12',
+        date_str=test_date.strftime('%Y-%m-%d'),
+    )
     bt = bootstrap_via_recipe(recipe=bt_recipe)
     bt_icecon_via_recipe = bt['icecon']
 
     bt_ds_orig_method = amsr2_bootstrap(
-        date=dt.date(2020, 1, 1),
+        date=test_date,
         hemisphere='north',
         resolution='12',
     )
