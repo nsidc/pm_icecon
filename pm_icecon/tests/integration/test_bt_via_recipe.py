@@ -144,7 +144,9 @@ def test_bt_recipe_yields_same_icecon():
     """
     Test that standard masks can be loaded via the bootstrap recipe
     """
-    test_date = dt.date(2020, 1, 1)
+    test_date = dt.date(2021, 4, 5)
+    write_testfiles = True
+    do_exact_array_comparison = True
 
     bt_recipe = get_standard_bootstrap_recipe(
         gridid='psn12.5',
@@ -162,29 +164,32 @@ def test_bt_recipe_yields_same_icecon():
 
     bt_icecon_via_orig_method = bt_ds_orig_method['conc']
 
-    """
-    print('')
+    if write_testfiles:
+        print('')
+        print(f'Writing test output files for date: {test_date}...')
+        print('')
 
-    # Add compressing to all data arrays
-    zlib_encoding_spec = {}
-    for field in bt.variables.keys():
-        zlib_encoding_spec[field] = {'zlib': True}
-    ofn = 'bt_viarecipe.nc'
-    bt.to_netcdf(ofn, encoding=zlib_encoding_spec)
-    print(f'Wrote: {ofn}')
+        ymd_str = test_date.strftime('%Y%m%d')
 
-    ofn = 'bt_viaoriginal.nc'
-    bt_ds_orig_method.to_netcdf(ofn)
-    print(f'Wrote: {ofn}')
-    """
+        # Add compressing to all data arrays
+        zlib_encoding_spec = {}
+        for field in bt.variables.keys():
+            zlib_encoding_spec[field] = {'zlib': True}
+        ofn = f'bt_viarecipe_{ymd_str}.nc'
+        bt.to_netcdf(ofn, encoding=zlib_encoding_spec)
+        print(f'Wrote: {ofn}')
 
-    assert np.all(bt_icecon_via_recipe.data == bt_icecon_via_orig_method.data)
-    """
-    assert_almost_equal(
-        bt_icecon_via_recipe.data,
-        bt_icecon_via_orig_method.data,
-    )
-    """
+        ofn = f'bt_viaoriginal_{ymd_str}.nc'
+        bt_ds_orig_method.to_netcdf(ofn)
+        print(f'Wrote: {ofn}')
+
+    if do_exact_array_comparison:
+        assert np.all(bt_icecon_via_recipe.data == bt_icecon_via_orig_method.data)
+    else:
+        assert_almost_equal(
+            bt_icecon_via_recipe.data,
+            bt_icecon_via_orig_method.data,
+        )
 
 
 def test_bt_recipe_returns_mask_fields():
