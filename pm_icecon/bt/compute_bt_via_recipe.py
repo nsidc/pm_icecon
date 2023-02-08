@@ -1255,19 +1255,20 @@ def bootstrap_via_recipe(
     weather_v06v37_condition = \
         (bt['icecon_parameters'].attrs['wslope'] * bt['tb_v37_si'].data) + bt['icecon_parameters'].attrs['wintrc2'] > bt['tb_v06_si'].data
 
-    """ """
+    # This is the no-7GHz water-mask
     is_water_mask_field = \
         (~bt['surface_mask'].data & ~bt['valid_tb_mask'].data) \
         & (weather_v22v19_condition | weather_v22v19diff_condition) \
         & (weather_filter_condition2)
-    """ """
 
-    """ this version includes the amsr2 v06 field
-    is_water_mask_field = \
+    # This is the water-mask using the 7GHz filter too
+    print('\nUsing v06 weather filter...')
+    is_water_mask_field2 = \
         (~bt['surface_mask'].data & ~bt['valid_tb_mask'].data) \
         & (weather_v22v19_condition | weather_v22v19diff_condition | weather_v06v37_condition) \
         & (weather_filter_condition2)
-    """
+
+    print(f'diff in water filter fields: {np.sum(np.where(is_water_mask_field != is_water_mask_field2, 1, 0))}')
 
     """
     is_water_mask_field = ret_water_ssmi(
