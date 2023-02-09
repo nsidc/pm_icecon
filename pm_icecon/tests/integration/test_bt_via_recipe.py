@@ -38,6 +38,23 @@ _initial_bt_parameter_list = (
     )
 
 
+def test_reading_this_file():
+    """
+    Test that this test file is accessible
+    """
+    assert True
+
+
+def test_can_get_bt_recipe():
+    """
+    Test that the generation of a bootstrap code via a "recipe"
+    yields an xarray Dataset
+    """
+    bt_recipe = get_standard_bootstrap_recipe(gridid='psn12.5', tb_source='au_si12')
+
+    assert bt_recipe is not None
+
+
 def test_bt_via_recipe_returns_Dataset():
     """
     Test that the generation of a bootstrap code via a "recipe"
