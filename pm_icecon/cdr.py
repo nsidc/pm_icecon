@@ -13,6 +13,7 @@ project should be primarily responsible for generating concentration fields from
 input Tbs.
 """
 import datetime as dt
+import traceback
 from pathlib import Path
 from typing import get_args
 
@@ -55,6 +56,7 @@ def make_cdr_netcdf(
     resolution: AU_SI_RESOLUTIONS,
     output_dir: Path,
 ) -> None:
+    logger.info(f'Creating CDR for {date=}, {hemisphere=}, {resolution=}')
     conc_ds = amsr2_cdr(
         date=date,
         hemisphere=hemisphere,
@@ -85,12 +87,28 @@ def create_cdr_for_date_range(
     output_dir: Path,
 ) -> None:
     for date in date_range(start_date=start_date, end_date=end_date):
-        make_cdr_netcdf(
-            date=date,
-            hemisphere=hemisphere,
-            resolution=resolution,
-            output_dir=output_dir,
-        )
+        try:
+            make_cdr_netcdf(
+                date=date,
+                hemisphere=hemisphere,
+                resolution=resolution,
+                output_dir=output_dir,
+            )
+        except Exception:
+            logger.error(
+                f'Failed to create NetCDF for {hemisphere=}, {date=}, {resolution=}.'
+            )
+            err_filename = standard_output_filename(
+                hemisphere=hemisphere,
+                date=date,
+                sat='u2',
+                algorithm='cdr',
+                resolution=f'{resolution}km',
+            )
+            err_filename += '.error'
+            logger.info(f'Writing error info to {err_filename}')
+            with open(output_dir / err_filename, 'w') as f:
+                traceback.print_exc(file=f)
 
 
 @click.command(name='cdr')
@@ -146,8 +164,8 @@ def cli(
 if __name__ == '__main__':
     for hemisphere in get_args(Hemisphere):
         create_cdr_for_date_range(
-            start_date=dt.date(2021, 1, 1),
-            end_date=dt.date(2021, 12, 31),
+            start_date=dt.date(2012, 7, 2),
+            end_date=dt.date(2021, 2, 11),
             hemisphere=hemisphere,
             resolution='12',
             output_dir=CDR_DATA_DIR,
