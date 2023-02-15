@@ -17,16 +17,10 @@ of and Differences between the NASA Team and Bootstrap
 Algorithms](https://nsidc.org/data/user-resources/help-center/descriptions-and-differences-between-nasa-team-and-bootstrap)
 
 
-## Level of Support (TODO)
+## Level of Support
 
-_(Choose one of the following bullets to describe USO Level of Support, then
-delete this instructional message along with the unchosen support bullet)_
-
-* This repository is fully supported by NSIDC. If you discover any problems or
-  bugs, please submit an Issue. If you would like to contribute to this
-  repository, you may fork the repository and submit a pull request.
-* This repository is not actively supported by NSIDC but we welcome issue
-  submissions and pull requests in order to foster community contribution.
+This repository is not actively supported by NSIDC but we welcome issue
+submissions and pull requests in order to foster community contribution.
 
 See the [LICENSE](LICENSE) for details on permissions and warranties. Please
 contact nsidc@nsidc.org for more information.
@@ -186,7 +180,17 @@ See [LICENSE](LICENSE).
 
 See [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Credit (TODO: credit Goddard. Specific language for NOAA?)
+## Credit
 
 This software was developed by the National Snow and Ice Data Center with
-funding from multiple sources.
+funding from NASA and NOAA.
+
+The original Bootstrap and NASA Team algorithms were developed by researchers at
+the NASA Goddard Space Flight Center. NASA Goddard provided the original code to
+NSIDC where it has been adapted and modernized for processing at NSIDC.
+
+For more information, please consult the following references:
+
+Cavalieri, D. J., Gloersen, P., and Campbell, W. J. (1984), Determination of sea ice parameters with the NIMBUS 7 SMMR, J. Geophys. Res., 89( D4), 5355– 5369, doi:10.1029/JD089iD04p05355. 
+
+Comiso, J. C. 1995. SSM/I Concentrations Using the Bootstrap Algorithm. NASA Reference Publication 1380. 40 pg. Available from: https://www.geobotany.uaf.edu/library/pubs/ComisoJC1995_nasa_1380_53.pdf
