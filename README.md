@@ -189,7 +189,8 @@ The original Bootstrap and NASA Team algorithms were developed by researchers at
 the NASA Goddard Space Flight Center. NASA Goddard provided the original code to
 NSIDC where it has been adapted and modernized for processing at NSIDC.
 
-For more information, please consult the following references:
+For more information on the NASA Team and Bootstrap algorithms, please consult
+the following references, respectively:
 
 Cavalieri, D. J., Gloersen, P., and Campbell, W. J. (1984), Determination of sea ice parameters with the NIMBUS 7 SMMR, J. Geophys. Res., 89( D4), 5355– 5369, doi:10.1029/JD089iD04p05355. 
 
