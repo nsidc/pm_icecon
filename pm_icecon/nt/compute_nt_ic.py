@@ -17,7 +17,7 @@ import numpy.typing as npt
 import xarray as xr
 
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
-from pm_icecon.nt._types import NasateamCoefficients
+from pm_icecon.nt._types import NasateamCoefficients, NasateamGradientRatios
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
 
@@ -139,34 +139,38 @@ def compute_ratios(
     tb_v19: npt.NDArray,
     tb_v22: npt.NDArray,
     tb_v37: npt.NDArray,
-) -> dict[str, npt.NDArray]:
+) -> NasateamGradientRatios:
     """Return calculated gradient ratios.
 
     TODO: make this function more generic. There should be a func for computing
     a single gradient ratio. This function could call that.
     """
-    ratios = {}
-
     dif_37v19v = tb_v37 - tb_v19
     sum_37v19v = tb_v37 + tb_v19
     sum_37v19v[sum_37v19v == 0] = 1  # Avoid div by zero
-    ratios['gr_3719'] = np.divide(dif_37v19v, sum_37v19v)
+    gr_3719 = np.divide(dif_37v19v, sum_37v19v)
 
     dif_22v19v = tb_v22 - tb_v19
     sum_22v19v = tb_v22 + tb_v19
     sum_22v19v[sum_22v19v == 0] = 1  # Avoid div by zero
-    ratios['gr_2219'] = np.divide(dif_22v19v, sum_22v19v)
+    gr_2219 = np.divide(dif_22v19v, sum_22v19v)
 
     dif_19v19h = tb_v19 - tb_h19
     sum_19v19h = tb_v19 + tb_h19
     sum_19v19h[sum_19v19h == 0] = 1  # Avoid div by zero
-    ratios['pr_1919'] = np.divide(dif_19v19h, sum_19v19h)
+    pr_1919 = np.divide(dif_19v19h, sum_19v19h)
+
+    ratios = NasateamGradientRatios(
+        gr_3719=gr_3719,
+        gr_2219=gr_2219,
+        pr_1919=pr_1919,
+    )
 
     return ratios
 
 
 def get_weather_filter_mask(
-    *, ratios: dict[str, npt.NDArray], gr_thresholds: dict[str, float]
+    *, ratios: NasateamGradientRatios, gr_thresholds: dict[str, float]
 ) -> npt.NDArray[np.bool_]:
     # Determine where array is weather-filtered
     print(f'gr_thresholds 2219: {gr_thresholds["2219"]}')
@@ -198,7 +202,7 @@ def get_invalid_tbs_mask(
 def compute_nt_conc(
     *,
     coefs: NasateamCoefficients,
-    ratios: dict[str, npt.NDArray],
+    ratios: NasateamGradientRatios,
 ) -> npt.NDArray:
     """Compute NASA Team sea ice concentration estimate."""
     pr_gr_product = ratios['pr_1919'] * ratios['gr_3719']
