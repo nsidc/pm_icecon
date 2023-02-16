@@ -164,7 +164,9 @@ def compute_gradient_ratios(
 
 
 def get_weather_filter_mask(
-    *, ratios: NasateamGradientRatios, gr_thresholds: dict[str, float]
+    *,
+    gradient_ratios: NasateamGradientRatios,
+    gr_thresholds: dict[str, float],
 ) -> npt.NDArray[np.bool_]:
     # Determine where array is weather-filtered
     print(f'gr_thresholds 2219: {gr_thresholds["2219"]}')
@@ -172,8 +174,8 @@ def get_weather_filter_mask(
 
     # fmt: off
     weather_filter_mask = (
-        (ratios['gr_2219'] > gr_thresholds['2219'])
-        | (ratios['gr_3719'] > gr_thresholds['3719'])
+        (gradient_ratios['gr_2219'] > gr_thresholds['2219'])
+        | (gradient_ratios['gr_3719'] > gr_thresholds['3719'])
     )
     # fmt: on
 
@@ -196,29 +198,29 @@ def get_invalid_tbs_mask(
 def compute_nt_conc(
     *,
     coefs: NasateamCoefficients,
-    ratios: NasateamGradientRatios,
+    gradient_ratios: NasateamGradientRatios,
 ) -> npt.NDArray:
     """Compute NASA Team sea ice concentration estimate."""
-    pr_gr_product = ratios['pr_1919'] * ratios['gr_3719']
+    pr_gr_product = gradient_ratios['pr_1919'] * gradient_ratios['gr_3719']
 
     dd = (
         coefs['E']
-        + coefs['F'] * ratios['pr_1919']
-        + coefs['G'] * ratios['gr_3719']
+        + coefs['F'] * gradient_ratios['pr_1919']
+        + coefs['G'] * gradient_ratios['gr_3719']
         + coefs['H'] * pr_gr_product
     )
 
     fy = (
         coefs['A']
-        + coefs['B'] * ratios['pr_1919']
-        + coefs['C'] * ratios['gr_3719']
+        + coefs['B'] * gradient_ratios['pr_1919']
+        + coefs['C'] * gradient_ratios['gr_3719']
         + coefs['D'] * pr_gr_product
     )
 
     my = (
         coefs['I']
-        + coefs['J'] * ratios['pr_1919']
-        + coefs['K'] * ratios['gr_3719']
+        + coefs['J'] * gradient_ratios['pr_1919']
+        + coefs['K'] * gradient_ratios['gr_3719']
         + coefs['L'] * pr_gr_product
     )
 
@@ -352,7 +354,7 @@ def nasateam(
     gradient_thresholds: dict[str, float],
     tiepoints: NasateamTiePoints,
 ):
-    ratios = compute_gradient_ratios(
+    gradient_ratios = compute_gradient_ratios(
         tb_h19=tb_h19,
         tb_v19=tb_v19,
         tb_v22=tb_v22,
@@ -362,7 +364,7 @@ def nasateam(
     coefficients = compute_nt_coefficients(tiepoints)
     conc = compute_nt_conc(
         coefs=coefficients,
-        ratios=ratios,
+        gradient_ratios=gradient_ratios,
     )
 
     # Set invalid tbs and weather-filtered values
@@ -372,7 +374,7 @@ def nasateam(
         tb_v37=tb_v37,
     )
     weather_filter_mask = get_weather_filter_mask(
-        ratios=ratios,
+        gradient_ratios=gradient_ratios,
         gr_thresholds=gradient_thresholds,
     )
     conc[invalid_tb_mask | weather_filter_mask] = 0
