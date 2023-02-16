@@ -19,9 +19,21 @@ class NasateamCoefficients(TypedDict):
 
 
 class NasateamGradientRatios(TypedDict):
-    # 37v vs19v
-    gr_3719: npt.NDArray
     # 22v vs 19v
     gr_2219: npt.NDArray
+
+    # 37v vs19v
+    gr_3719: npt.NDArray
+
     # 19v vs 19h
+    # TODO: why 'pr_'
     pr_1919: npt.NDArray
+
+
+NasateamGradientRatioThresholds = TypedDict(
+    'NasateamGradientRatioThresholds',
+    {
+        '2219': float,
+        '3719': float,
+    },
+)

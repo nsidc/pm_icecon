@@ -17,7 +17,11 @@ import numpy.typing as npt
 import xarray as xr
 
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
-from pm_icecon.nt._types import NasateamCoefficients, NasateamGradientRatios
+from pm_icecon.nt._types import (
+    NasateamCoefficients,
+    NasateamGradientRatios,
+    NasateamGradientRatioThresholds,
+)
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
 
@@ -166,7 +170,7 @@ def compute_gradient_ratios(
 def get_weather_filter_mask(
     *,
     gradient_ratios: NasateamGradientRatios,
-    gr_thresholds: dict[str, float],
+    gr_thresholds: NasateamGradientRatioThresholds,
 ) -> npt.NDArray[np.bool_]:
     # fmt: off
     weather_filter_mask = (
@@ -319,7 +323,7 @@ def goddard_nasateam(
     shoremap: npt.NDArray,
     minic: npt.NDArray,
     invalid_ice_mask: npt.NDArray[np.bool_],
-    gradient_thresholds: dict[str, float],
+    gradient_thresholds: NasateamGradientRatioThresholds,
     tiepoints: NasateamTiePoints,
 ):
     """NASA Team algorithm as organized by the orignal code from GSFC."""
@@ -347,7 +351,7 @@ def nasateam(
     shoremap: npt.NDArray,
     minic: npt.NDArray,
     invalid_ice_mask: npt.NDArray[np.bool_],
-    gradient_thresholds: dict[str, float],
+    gradient_thresholds: NasateamGradientRatioThresholds,
     tiepoints: NasateamTiePoints,
 ):
     gradient_ratios = compute_gradient_ratios(
