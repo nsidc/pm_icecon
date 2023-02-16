@@ -23,6 +23,15 @@ def typecheck(ctx):
     print('🎉🦆 Type checking passed.')
 
 
+@task
+def formatcheck(ctx):
+    """Check that the code conforms to formatting standards."""
+    print_and_run(f'isort --check-only {PROJECT_DIR}')
+    print_and_run(f'black --check {PROJECT_DIR}')
+
+    print('🎉🙈 Format check passed.')
+
+
 @task()
 def unit(ctx):
     """Run unit tests."""
@@ -68,6 +77,7 @@ def vulture(ctx):
         lint,
         typecheck,
         vulture,
+        formatcheck,
         unit,
     ],
 )
@@ -85,6 +95,7 @@ def ci(ctx):
         lint,
         typecheck,
         vulture,
+        formatcheck,
         unit,
         regression,
     ],
