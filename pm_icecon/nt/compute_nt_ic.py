@@ -125,7 +125,6 @@ def compute_ratios(
     tb_v19: npt.NDArray,
     tb_v22: npt.NDArray,
     tb_v37: npt.NDArray,
-    coefs,
 ) -> dict[str, npt.NDArray]:
     """Return calculated gradient ratios.
 
@@ -325,7 +324,6 @@ def nasateam(
         tb_v19=tb_v19,
         tb_v22=tb_v22,
         tb_v37=tb_v37,
-        coefs=nt_coefficients,
     )
 
     conc = compute_nt_conc(
