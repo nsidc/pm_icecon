@@ -52,7 +52,7 @@ def vulture(ctx):
             'vulture'
             f' --exclude {PROJECT_DIR}/tasks,{PROJECT_DIR}/nt_tiepoint_generation'
             # ignore `_types.py` because vulture doesn't understand typed dicts.
-            f',{PROJECT_DIR}/pm_icecon/bt/_types.py'
+            f',{PROJECT_DIR}/pm_icecon/**/_types.py'
             # ignore some models because vulture flags config options as
             # unused variables/class.
             f',{PROJECT_DIR}/pm_icecon/config/models/base_model.py'

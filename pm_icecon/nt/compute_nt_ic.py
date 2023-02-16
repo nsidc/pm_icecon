@@ -17,6 +17,7 @@ import numpy.typing as npt
 import xarray as xr
 
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
+from pm_icecon.nt._types import NasateamCoefficients
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
 
@@ -24,7 +25,7 @@ def fdiv(a, b):
     return np.divide(a, b, dtype=np.float32)
 
 
-def compute_nt_coefficients(tp: NasateamTiePoints) -> dict[str, float]:
+def compute_nt_coefficients(tp: NasateamTiePoints) -> NasateamCoefficients:
     """Compute coefficients for the NT algorithm.
 
     tp are the tiepoints, a dictionary of structure:
@@ -50,70 +51,83 @@ def compute_nt_coefficients(tp: NasateamTiePoints) -> dict[str, float]:
         sums[tp_name]['19v19h'] = tp['19v'][tp_name] + tp['19h'][tp_name]
         sums[tp_name]['37v19v'] = tp['37v'][tp_name] + tp['19v'][tp_name]
 
-    coefs = {}
-
-    coefs['A'] = (
+    coef_a = (
         diff['my']['19v19h'] * diff['ow']['37v19v']
         - diff['my']['37v19v'] * diff['ow']['19v19h']
     )
 
-    coefs['B'] = (
+    coef_b = (
         diff['my']['37v19v'] * sums['ow']['19v19h']
         - diff['ow']['37v19v'] * sums['my']['19v19h']
     )
 
-    coefs['C'] = (
+    coef_c = (
         diff['ow']['19v19h'] * sums['my']['37v19v']
         - diff['my']['19v19h'] * sums['ow']['37v19v']
     )
 
-    coefs['D'] = (
+    coef_d = (
         sums['my']['19v19h'] * sums['ow']['37v19v']
         - sums['my']['37v19v'] * sums['ow']['19v19h']
     )
 
-    coefs['E'] = (
+    coef_e = (
         diff['fy']['19v19h'] * (diff['my']['37v19v'] - diff['ow']['37v19v'])
         + diff['ow']['19v19h'] * (diff['fy']['37v19v'] - diff['my']['37v19v'])
         + diff['my']['19v19h'] * (diff['ow']['37v19v'] - diff['fy']['37v19v'])
     )
 
-    coefs['F'] = (
+    coef_f = (
         diff['fy']['37v19v'] * (sums['my']['19v19h'] - sums['ow']['19v19h'])
         + diff['ow']['37v19v'] * (sums['fy']['19v19h'] - sums['my']['19v19h'])
         + diff['my']['37v19v'] * (sums['ow']['19v19h'] - sums['fy']['19v19h'])
     )
 
-    coefs['G'] = (
+    coef_g = (
         diff['fy']['19v19h'] * (sums['ow']['37v19v'] - sums['my']['37v19v'])
         + diff['ow']['19v19h'] * (sums['my']['37v19v'] - sums['fy']['37v19v'])
         + diff['my']['19v19h'] * (sums['fy']['37v19v'] - sums['ow']['37v19v'])
     )
 
-    coefs['H'] = (
+    coef_h = (
         sums['fy']['37v19v'] * (sums['ow']['19v19h'] - sums['my']['19v19h'])
         + sums['ow']['37v19v'] * (sums['my']['19v19h'] - sums['fy']['19v19h'])
         + sums['my']['37v19v'] * (sums['fy']['19v19h'] - sums['ow']['19v19h'])
     )
 
-    coefs['I'] = (
+    coef_i = (
         diff['fy']['37v19v'] * diff['ow']['19v19h']
         - diff['fy']['19v19h'] * diff['ow']['37v19v']
     )
 
-    coefs['J'] = (
+    coef_j = (
         diff['ow']['37v19v'] * sums['fy']['19v19h']
         - diff['fy']['37v19v'] * sums['ow']['19v19h']
     )
 
-    coefs['K'] = (
+    coef_k = (
         sums['ow']['37v19v'] * diff['fy']['19v19h']
         - diff['ow']['19v19h'] * sums['fy']['37v19v']
     )
 
-    coefs['L'] = (
+    coef_l = (
         sums['fy']['37v19v'] * sums['ow']['19v19h']
         - sums['fy']['19v19h'] * sums['ow']['37v19v']
+    )
+
+    coefs = NasateamCoefficients(
+        A=coef_a,
+        B=coef_b,
+        C=coef_c,
+        D=coef_d,
+        E=coef_e,
+        F=coef_f,
+        G=coef_g,
+        H=coef_h,
+        I=coef_i,
+        J=coef_j,
+        K=coef_k,
+        L=coef_l,
     )
 
     return coefs
@@ -183,7 +197,7 @@ def get_invalid_tbs_mask(
 
 def compute_nt_conc(
     *,
-    coefs: dict[str, float],
+    coefs: NasateamCoefficients,
     ratios: dict[str, npt.NDArray],
 ) -> npt.NDArray:
     """Compute NASA Team sea ice concentration estimate."""
@@ -300,7 +314,7 @@ def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
     return flagged_conc
 
 
-def nasateam(
+def goddard_nasateam(
     *,
     tb_v19: npt.NDArray,
     tb_v37: npt.NDArray,
@@ -312,13 +326,35 @@ def nasateam(
     gradient_thresholds: dict[str, float],
     tiepoints: NasateamTiePoints,
 ):
-    print(f'tiepoints: {tiepoints}')
+    """NASA Team algorithm as organized by the orignal code from GSFC."""
+    coefficients = compute_nt_coefficients(tiepoints)
+    result = nasateam(
+        tb_v19=tb_v19,
+        tb_v37=tb_v37,
+        tb_v22=tb_v22,
+        tb_h19=tb_h19,
+        shoremap=shoremap,
+        minic=minic,
+        invalid_ice_mask=invalid_ice_mask,
+        gradient_thresholds=gradient_thresholds,
+        coefficients=coefficients,
+    )
 
-    nt_coefficients = compute_nt_coefficients(tiepoints)
-    print(f'NT coefs: {nt_coefficients}')
-    for c in ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'):
-        print(f'  coef {c}: {nt_coefficients[c]}')
+    return result
 
+
+def nasateam(
+    *,
+    tb_v19: npt.NDArray,
+    tb_v37: npt.NDArray,
+    tb_v22: npt.NDArray,
+    tb_h19: npt.NDArray,
+    shoremap: npt.NDArray,
+    minic: npt.NDArray,
+    invalid_ice_mask: npt.NDArray[np.bool_],
+    gradient_thresholds: dict[str, float],
+    coefficients: NasateamCoefficients,
+):
     ratios = compute_ratios(
         tb_h19=tb_h19,
         tb_v19=tb_v19,
@@ -327,7 +363,7 @@ def nasateam(
     )
 
     conc = compute_nt_conc(
-        coefs=nt_coefficients,
+        coefs=coefficients,
         ratios=ratios,
     )
 
