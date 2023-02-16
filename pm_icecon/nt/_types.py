@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import NewType, TypedDict
 
 import numpy.typing as npt
 
@@ -18,15 +18,18 @@ class NasateamCoefficients(TypedDict):
     L: float
 
 
+NasateamRatio = NewType('NasateamRatio', npt.NDArray)
+
+
 class NasateamRatios(TypedDict):
     # gradient ratio for 22v vs 19v
-    gr_2219: npt.NDArray
+    gr_2219: NasateamRatio
 
     # gradient ratio for 37v vs19v
-    gr_3719: npt.NDArray
+    gr_3719: NasateamRatio
 
     # polarization ratio for 19v vs 19h
-    pr_1919: npt.NDArray
+    pr_1919: NasateamRatio
 
 
 NasateamGradientRatioThresholds = TypedDict(
