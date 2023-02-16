@@ -18,15 +18,14 @@ class NasateamCoefficients(TypedDict):
     L: float
 
 
-class NasateamGradientRatios(TypedDict):
-    # 22v vs 19v
+class NasateamRatios(TypedDict):
+    # gradient ratio for 22v vs 19v
     gr_2219: npt.NDArray
 
-    # 37v vs19v
+    # gradient ratio for 37v vs19v
     gr_3719: npt.NDArray
 
-    # 19v vs 19h
-    # TODO: why 'pr_'
+    # polarization ratio for 19v vs 19h
     pr_1919: npt.NDArray
 
 

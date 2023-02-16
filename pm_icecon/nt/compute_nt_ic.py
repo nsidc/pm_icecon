@@ -19,8 +19,8 @@ import xarray as xr
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.nt._types import (
     NasateamCoefficients,
-    NasateamGradientRatios,
     NasateamGradientRatioThresholds,
+    NasateamRatios,
 )
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
@@ -137,7 +137,7 @@ def compute_nt_coefficients(tp: NasateamTiePoints) -> NasateamCoefficients:
     return coefs
 
 
-def _compute_gradient_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> npt.NDArray:
+def _compute_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> npt.NDArray:
     tb_diff = tb1 - tb2
     tb_sum = tb1 + tb2
     tb_sum[tb_sum == 0] = 1  # Avoid div by zero
@@ -146,19 +146,19 @@ def _compute_gradient_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> npt.NDArray:
     return ratio
 
 
-def compute_gradient_ratios(
+def compute_ratios(
     *,
     tb_h19: npt.NDArray,
     tb_v19: npt.NDArray,
     tb_v22: npt.NDArray,
     tb_v37: npt.NDArray,
-) -> NasateamGradientRatios:
+) -> NasateamRatios:
     """Return calculated gradient ratios."""
-    gr_3719 = _compute_gradient_ratio(tb_v37, tb_v19)
-    gr_2219 = _compute_gradient_ratio(tb_v22, tb_v19)
-    pr_1919 = _compute_gradient_ratio(tb_v19, tb_h19)
+    gr_3719 = _compute_ratio(tb_v37, tb_v19)
+    gr_2219 = _compute_ratio(tb_v22, tb_v19)
+    pr_1919 = _compute_ratio(tb_v19, tb_h19)
 
-    ratios = NasateamGradientRatios(
+    ratios = NasateamRatios(
         gr_3719=gr_3719,
         gr_2219=gr_2219,
         pr_1919=pr_1919,
@@ -169,7 +169,7 @@ def compute_gradient_ratios(
 
 def get_weather_filter_mask(
     *,
-    gradient_ratios: NasateamGradientRatios,
+    gradient_ratios: NasateamRatios,
     gr_thresholds: NasateamGradientRatioThresholds,
 ) -> npt.NDArray[np.bool_]:
     # fmt: off
@@ -198,7 +198,7 @@ def get_invalid_tbs_mask(
 def compute_nt_conc(
     *,
     coefs: NasateamCoefficients,
-    gradient_ratios: NasateamGradientRatios,
+    gradient_ratios: NasateamRatios,
 ) -> npt.NDArray:
     """Compute NASA Team sea ice concentration estimate."""
     pr_gr_product = gradient_ratios['pr_1919'] * gradient_ratios['gr_3719']
@@ -354,7 +354,7 @@ def nasateam(
     gradient_thresholds: NasateamGradientRatioThresholds,
     tiepoints: NasateamTiePoints,
 ):
-    gradient_ratios = compute_gradient_ratios(
+    gradient_ratios = compute_ratios(
         tb_h19=tb_h19,
         tb_v19=tb_v19,
         tb_v22=tb_v22,
