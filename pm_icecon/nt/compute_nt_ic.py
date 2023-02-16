@@ -327,7 +327,6 @@ def goddard_nasateam(
     tiepoints: NasateamTiePoints,
 ):
     """NASA Team algorithm as organized by the orignal code from GSFC."""
-    coefficients = compute_nt_coefficients(tiepoints)
     result = nasateam(
         tb_v19=tb_v19,
         tb_v37=tb_v37,
@@ -337,7 +336,7 @@ def goddard_nasateam(
         minic=minic,
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=gradient_thresholds,
-        coefficients=coefficients,
+        tiepoints=tiepoints,
     )
 
     return result
@@ -353,7 +352,7 @@ def nasateam(
     minic: npt.NDArray,
     invalid_ice_mask: npt.NDArray[np.bool_],
     gradient_thresholds: dict[str, float],
-    coefficients: NasateamCoefficients,
+    tiepoints: NasateamTiePoints,
 ):
     ratios = compute_ratios(
         tb_h19=tb_h19,
@@ -362,6 +361,7 @@ def nasateam(
         tb_v37=tb_v37,
     )
 
+    coefficients = compute_nt_coefficients(tiepoints)
     conc = compute_nt_conc(
         coefs=coefficients,
         ratios=ratios,
