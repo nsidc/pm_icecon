@@ -168,10 +168,6 @@ def get_weather_filter_mask(
     gradient_ratios: NasateamGradientRatios,
     gr_thresholds: dict[str, float],
 ) -> npt.NDArray[np.bool_]:
-    # Determine where array is weather-filtered
-    print(f'gr_thresholds 2219: {gr_thresholds["2219"]}')
-    print(f'gr_thresholds 3719: {gr_thresholds["3719"]}')
-
     # fmt: off
     weather_filter_mask = (
         (gradient_ratios['gr_2219'] > gr_thresholds['2219'])
