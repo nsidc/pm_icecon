@@ -74,10 +74,8 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         tb_v37=tbs['v37'],
         tb_v22=tbs['v22'],
         tb_h19=tbs['h19'],
-        hemisphere=hemisphere,
         shoremap=_get_shoremap(hemisphere=hemisphere),
         minic=_get_minic(hemisphere=hemisphere),
-        date=date,
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=(
             RSS_F17_NORTH_GRADIENT_THRESHOLDS

@@ -10,14 +10,12 @@ Note: the original Goddard code involves the following files:
     3: NT ice conc, including land spillover and valid ice masking
 """
 
-import datetime as dt
 from typing import Literal, cast
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
@@ -309,10 +307,8 @@ def nasateam(
     tb_v37: npt.NDArray,
     tb_v22: npt.NDArray,
     tb_h19: npt.NDArray,
-    hemisphere: Hemisphere,
     shoremap: npt.NDArray,
     minic: npt.NDArray,
-    date: dt.date,
     invalid_ice_mask: npt.NDArray[np.bool_],
     gradient_thresholds: dict[str, float],
     tiepoints: NasateamTiePoints,
