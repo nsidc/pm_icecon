@@ -137,6 +137,9 @@ def compute_nt_coefficients(tp: NasateamTiePoints) -> NasateamCoefficients:
     return coefs
 
 
+# TODO: consider caching this? Or maybe it would be better to pass `nasateam`
+# the polarization ratio and gradient ratio it needs directly in order to avoid
+# duplicate calculation for the weather filter?
 def compute_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> NasateamRatio:
     tb_diff = tb1 - tb2
     tb_sum = tb1 + tb2
@@ -173,51 +176,6 @@ def get_invalid_tbs_mask(
     invalid_tbs = ~is_valid_tbs
 
     return invalid_tbs
-
-
-def compute_nt_conc(
-    *,
-    coefs: NasateamCoefficients,
-    pr_1919: NasateamRatio,
-    gr_3719: NasateamRatio,
-) -> npt.NDArray:
-    """Compute NASA Team sea ice concentration estimate."""
-    pr_gr_product = pr_1919 * gr_3719
-
-    dd = (
-        coefs['E']
-        + coefs['F'] * pr_1919
-        + coefs['G'] * gr_3719
-        + coefs['H'] * pr_gr_product
-    )
-
-    fy = (
-        coefs['A']
-        + coefs['B'] * pr_1919
-        + coefs['C'] * gr_3719
-        + coefs['D'] * pr_gr_product
-    )
-
-    my = (
-        coefs['I']
-        + coefs['J'] * pr_1919
-        + coefs['K'] * gr_3719
-        + coefs['L'] * pr_gr_product
-    )
-
-    # Because we have not excluded missing-tb and weather-filtered points,
-    # it is possible for denominator 'dd' to have value of zero.  Remove
-    # this for division
-    dd[dd == 0] = 0.01  # This causes the denominator to become 1.0
-
-    conc = (fy + my) / dd * 100.0
-
-    # Clamp concentrations to be above 0. Later (after applying the spillover
-    # algorithm), concentrations will be clamped to 100 at the upper end. At
-    # this point, concentrations may be > 100.
-    conc[conc < 0] = 0
-
-    return conc
 
 
 def apply_nt_spillover(
@@ -295,6 +253,57 @@ def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
     return flagged_conc
 
 
+def calc_nasateam_conc(
+    *,
+    tb_v19: npt.NDArray,
+    tb_v37: npt.NDArray,
+    tb_h19: npt.NDArray,
+    tiepoints: NasateamTiePoints,
+) -> npt.NDArray:
+    """Return a sea ice concentration estimate at every grid cell."""
+    # Get gradient ratios and compute their product
+    pr_1919 = compute_ratio(tb_v19, tb_h19)
+    gr_3719 = compute_ratio(tb_v37, tb_v19)
+    pr_gr_product = pr_1919 * gr_3719
+
+    # Use tiepoints to compute algorithm coefficients and ...
+    coefs = compute_nt_coefficients(tiepoints)
+    dd = (
+        coefs['E']
+        + coefs['F'] * pr_1919
+        + coefs['G'] * gr_3719
+        + coefs['H'] * pr_gr_product
+    )
+
+    fy = (
+        coefs['A']
+        + coefs['B'] * pr_1919
+        + coefs['C'] * gr_3719
+        + coefs['D'] * pr_gr_product
+    )
+
+    my = (
+        coefs['I']
+        + coefs['J'] * pr_1919
+        + coefs['K'] * gr_3719
+        + coefs['L'] * pr_gr_product
+    )
+
+    # Because we have not excluded missing-tb and weather-filtered points,
+    # it is possible for denominator 'dd' to have value of zero.  Remove
+    # this for division
+    dd[dd == 0] = 0.01  # This causes the denominator to become 1.0
+
+    conc = (fy + my) / dd * 100.0
+
+    # Clamp concentrations to be above 0. Later (after applying the spillover
+    # algorithm), concentrations will be clamped to 100 at the upper end. At
+    # this point, concentrations may be > 100.
+    conc[conc < 0] = 0
+
+    return conc
+
+
 def goddard_nasateam(
     *,
     tb_v19: npt.NDArray,
@@ -306,42 +315,13 @@ def goddard_nasateam(
     invalid_ice_mask: npt.NDArray[np.bool_],
     gradient_thresholds: NasateamGradientRatioThresholds,
     tiepoints: NasateamTiePoints,
-):
+) -> xr.Dataset:
     """NASA Team algorithm as organized by the orignal code from GSFC."""
-    result = nasateam(
+    conc = calc_nasateam_conc(
         tb_v19=tb_v19,
         tb_v37=tb_v37,
-        tb_v22=tb_v22,
         tb_h19=tb_h19,
-        shoremap=shoremap,
-        minic=minic,
-        invalid_ice_mask=invalid_ice_mask,
-        gradient_thresholds=gradient_thresholds,
         tiepoints=tiepoints,
-    )
-
-    return result
-
-
-def nasateam(
-    *,
-    tb_v19: npt.NDArray,
-    tb_v37: npt.NDArray,
-    tb_v22: npt.NDArray,
-    tb_h19: npt.NDArray,
-    shoremap: npt.NDArray,
-    minic: npt.NDArray,
-    invalid_ice_mask: npt.NDArray[np.bool_],
-    gradient_thresholds: NasateamGradientRatioThresholds,
-    tiepoints: NasateamTiePoints,
-):
-    pr_1919 = compute_ratio(tb_v19, tb_h19)
-    gr_3719 = compute_ratio(tb_v37, tb_v19)
-    coefficients = compute_nt_coefficients(tiepoints)
-    conc = compute_nt_conc(
-        coefs=coefficients,
-        pr_1919=pr_1919,
-        gr_3719=gr_3719,
     )
 
     # Set invalid tbs and weather-filtered values
@@ -352,6 +332,7 @@ def nasateam(
     )
 
     gr_2219 = compute_ratio(tb_v22, tb_v19)
+    gr_3719 = compute_ratio(tb_v37, tb_v19)
     weather_filter_mask = get_weather_filter_mask(
         gr_2219=gr_2219,
         gr_3719=gr_3719,
