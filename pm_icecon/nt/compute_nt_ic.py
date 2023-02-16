@@ -21,7 +21,6 @@ from pm_icecon.nt._types import (
     NasateamCoefficients,
     NasateamGradientRatioThresholds,
     NasateamRatio,
-    NasateamRatios,
 )
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
@@ -138,34 +137,13 @@ def compute_nt_coefficients(tp: NasateamTiePoints) -> NasateamCoefficients:
     return coefs
 
 
-def _compute_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> NasateamRatio:
+def compute_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> NasateamRatio:
     tb_diff = tb1 - tb2
     tb_sum = tb1 + tb2
     tb_sum[tb_sum == 0] = 1  # Avoid div by zero
     ratio = NasateamRatio(np.divide(tb_diff, tb_sum))
 
     return ratio
-
-
-def compute_ratios(
-    *,
-    tb_h19: npt.NDArray,
-    tb_v19: npt.NDArray,
-    tb_v22: npt.NDArray,
-    tb_v37: npt.NDArray,
-) -> NasateamRatios:
-    """Return calculated gradient ratios."""
-    gr_3719 = _compute_ratio(tb_v37, tb_v19)
-    gr_2219 = _compute_ratio(tb_v22, tb_v19)
-    pr_1919 = _compute_ratio(tb_v19, tb_h19)
-
-    ratios = NasateamRatios(
-        gr_3719=gr_3719,
-        gr_2219=gr_2219,
-        pr_1919=pr_1919,
-    )
-
-    return ratios
 
 
 def get_weather_filter_mask(
@@ -357,18 +335,13 @@ def nasateam(
     gradient_thresholds: NasateamGradientRatioThresholds,
     tiepoints: NasateamTiePoints,
 ):
-    ratios = compute_ratios(
-        tb_h19=tb_h19,
-        tb_v19=tb_v19,
-        tb_v22=tb_v22,
-        tb_v37=tb_v37,
-    )
-
+    pr_1919 = compute_ratio(tb_v19, tb_h19)
+    gr_3719 = compute_ratio(tb_v37, tb_v19)
     coefficients = compute_nt_coefficients(tiepoints)
     conc = compute_nt_conc(
         coefs=coefficients,
-        pr_1919=ratios['pr_1919'],
-        gr_3719=ratios['gr_3719'],
+        pr_1919=pr_1919,
+        gr_3719=gr_3719,
     )
 
     # Set invalid tbs and weather-filtered values
@@ -377,9 +350,11 @@ def nasateam(
         tb_h19=tb_h19,
         tb_v37=tb_v37,
     )
+
+    gr_2219 = compute_ratio(tb_v22, tb_v19)
     weather_filter_mask = get_weather_filter_mask(
-        gr_2219=ratios['gr_2219'],
-        gr_3719=ratios['gr_3719'],
+        gr_2219=gr_2219,
+        gr_3719=gr_3719,
         gr_thresholds=gradient_thresholds,
     )
     conc[invalid_tb_mask | weather_filter_mask] = 0

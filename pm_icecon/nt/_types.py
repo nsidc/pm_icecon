@@ -21,17 +21,6 @@ class NasateamCoefficients(TypedDict):
 NasateamRatio = NewType('NasateamRatio', npt.NDArray)
 
 
-class NasateamRatios(TypedDict):
-    # gradient ratio for 22v vs 19v
-    gr_2219: NasateamRatio
-
-    # gradient ratio for 37v vs19v
-    gr_3719: NasateamRatio
-
-    # polarization ratio for 19v vs 19h
-    pr_1919: NasateamRatio
-
-
 NasateamGradientRatioThresholds = TypedDict(
     'NasateamGradientRatioThresholds',
     {
