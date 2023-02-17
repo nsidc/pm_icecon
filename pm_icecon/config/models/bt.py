@@ -69,8 +69,11 @@ class BootstrapParams(ConfigBaseModel):
     add1: float = 0.0
     add2: float = -2.0
 
-    # TODO: what do these represent?
+    # TODO: unify the units (percentages or fractions, not on each!) for these
+    # two paramters.
+    # The minimum ice concentration as a percentage (10 == 10%)
     minic: float = 10.0
+    # The maximum ice concentration as a fractional value (1 == 100%)
     maxic: float = 1.0
 
     # min/max tb range. Any tbs outside this range are masked.
