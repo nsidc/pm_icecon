@@ -54,7 +54,6 @@ def amsr2_bootstrap(
         tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         params=params,
         date=date,
-        hemisphere=hemisphere,
     )
 
     return conc_ds
@@ -90,7 +89,6 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         params=params,
         date=date,
-        hemisphere=hemisphere,
     )
 
     return conc_ds

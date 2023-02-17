@@ -16,7 +16,6 @@ import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Tiepoint
 from pm_icecon.config.models.bt import (
     BootstrapParams,
@@ -917,7 +916,6 @@ def goddard_bootstrap(
     tb_v22: npt.NDArray,
     params: BootstrapParams,
     date: dt.date,
-    hemisphere: Hemisphere,
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> xr.Dataset:
     """Bootstrap algorithm as organized by the orignal code from GSFC."""

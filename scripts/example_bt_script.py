@@ -50,5 +50,4 @@ if __name__ == '__main__':
         tb_v22=xr_tbs['v23'].data,
         params=bootstrap_params,
         date=date,
-        hemisphere=hemisphere,
     )

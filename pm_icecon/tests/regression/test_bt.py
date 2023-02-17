@@ -111,7 +111,6 @@ def _original_f18_example() -> xr.Dataset:
         ),
         params=params,
         date=date,
-        hemisphere=hemisphere,
     )
 
     return conc_ds
