@@ -909,7 +909,7 @@ def calc_bt_ice(
     return ic
 
 
-def bootstrap(
+def goddard_bootstrap(
     *,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
@@ -920,7 +920,7 @@ def bootstrap(
     hemisphere: Hemisphere,
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> xr.Dataset:
-    """Run the boostrap algorithm."""
+    """Bootstrap algorithm as organized by the orignal code from GSFC."""
     tb_mask = tb_data_mask(
         tbs=(
             tb_v37,
