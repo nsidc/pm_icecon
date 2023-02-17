@@ -137,9 +137,6 @@ def compute_nt_coefficients(tp: NasateamTiePoints) -> NasateamCoefficients:
     return coefs
 
 
-# TODO: consider caching this? Or maybe it would be better to pass `nasateam`
-# the polarization ratio and gradient ratio it needs directly in order to avoid
-# duplicate calculation for the weather filter?
 def compute_ratio(tb1: npt.NDArray, tb2: npt.NDArray) -> NasateamRatio:
     tb_diff = tb1 - tb2
     tb_sum = tb1 + tb2
