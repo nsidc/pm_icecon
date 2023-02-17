@@ -150,12 +150,14 @@ def get_weather_filter_mask(
     *,
     gr_2219: NasateamRatio,
     gr_3719: NasateamRatio,
-    gr_thresholds: NasateamGradientRatioThresholds,
+    gr_2219_threshold: float,
+    gr_3719_threshold: float,
 ) -> npt.NDArray[np.bool_]:
+    """Return a boolean array representing areas exceeding the given thresholds."""
     # fmt: off
     weather_filter_mask = (
-        (gr_2219 > gr_thresholds['2219'])
-        | (gr_3719 > gr_thresholds['3719'])
+        (gr_2219 > gr_2219_threshold)
+        | (gr_3719 > gr_3719_threshold)
     )
     # fmt: on
 
@@ -330,7 +332,8 @@ def goddard_nasateam(
     weather_filter_mask = get_weather_filter_mask(
         gr_2219=gr_2219,
         gr_3719=gr_3719,
-        gr_thresholds=gradient_thresholds,
+        gr_2219_threshold=gradient_thresholds['2219'],
+        gr_3719_threshold=gradient_thresholds['3719'],
     )
     conc[invalid_tb_mask | weather_filter_mask] = 0
 
