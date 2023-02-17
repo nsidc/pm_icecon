@@ -255,15 +255,12 @@ def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
 
 def calc_nasateam_conc(
     *,
-    tb_v19: npt.NDArray,
-    tb_v37: npt.NDArray,
-    tb_h19: npt.NDArray,
+    pr_1919: NasateamRatio,
+    gr_3719: NasateamRatio,
     tiepoints: NasateamTiePoints,
 ) -> npt.NDArray:
     """Return a sea ice concentration estimate at every grid cell."""
     # Get gradient ratios and compute their product
-    pr_1919 = compute_ratio(tb_v19, tb_h19)
-    gr_3719 = compute_ratio(tb_v37, tb_v19)
     pr_gr_product = pr_1919 * gr_3719
 
     # Use tiepoints to compute algorithm coefficients and ...
@@ -317,10 +314,11 @@ def goddard_nasateam(
     tiepoints: NasateamTiePoints,
 ) -> xr.Dataset:
     """NASA Team algorithm as organized by the orignal code from GSFC."""
+    pr_1919 = compute_ratio(tb_v19, tb_h19)
+    gr_3719 = compute_ratio(tb_v37, tb_v19)
     conc = calc_nasateam_conc(
-        tb_v19=tb_v19,
-        tb_v37=tb_v37,
-        tb_h19=tb_h19,
+        pr_1919=pr_1919,
+        gr_3719=gr_3719,
         tiepoints=tiepoints,
     )
 
@@ -332,7 +330,6 @@ def goddard_nasateam(
     )
 
     gr_2219 = compute_ratio(tb_v22, tb_v19)
-    gr_3719 = compute_ratio(tb_v37, tb_v19)
     weather_filter_mask = get_weather_filter_mask(
         gr_2219=gr_2219,
         gr_3719=gr_3719,
