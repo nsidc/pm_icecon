@@ -16,7 +16,7 @@ import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
-from pm_icecon.bt._types import Tiepoint
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -97,12 +97,13 @@ def xfer_class_tbs(
     }
 
 
-def ret_adj_adoff(*, wtp: Tiepoint, vh37: list[float], perc=0.92) -> float:
+def ret_adj_adoff(*, wtp: Tiepoint, vh37: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is two water tie points
     # vh37 is offset and slope
     wtp1, wtp2 = f(wtp[0]), f(wtp[1])
-    off, slp = f(vh37[0]), f(vh37[1])
+    off = vh37['offset']
+    slp = vh37['slope']
 
     x = ((wtp1 / slp) + wtp2 - off) / (slp + 1.0 / slp)
     y = slp * x + off
@@ -230,17 +231,21 @@ def ret_linfit_32(
     add,
     lnchk=1.5,
     water_mask,
+    # If any one of the rest of these arguments is given, the rest must also be
+    # non-None
     tba=None,
-    iceline=None,
+    iceline: Line | None = None,
     adoff=None,
-):
+) -> Line:
     # Reproduces both ret_linfit1() and ret_linfit2()
     # Note: lnline is two, 0 is offset, 1 is slope
     # Note: iceline is two, 0 is offset, 1 is slope
 
     not_land_or_masked = ~land_mask & ~tb_mask
-    if tba is not None:
-        is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
+    if tba is not None and iceline is not None and adoff is not None:
+        is_tba_le_modad = tba <= fadd(
+            fmul(tbx, iceline['slope']), fsub(iceline['offset'], adoff)
+        )
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
@@ -270,8 +275,9 @@ def ret_linfit_32(
 
     fit_off = fadd(intrca, add)
     fit_slp = f(slopeb)
+    line = Line(offset=fit_off, slope=fit_slp)
 
-    return [fit_off, fit_slp]
+    return line
 
 
 def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
@@ -477,10 +483,10 @@ def calc_rad_coeffs_32(
     *,
     itp,
     wtp,
-    vh37,
+    vh37: Line,
     itp2,
     wtp2,
-    v1937,
+    v1937: Line,
 ):
     # Compute radlsp, radoff, radlen vars
     radslp1 = fdiv(
@@ -489,10 +495,10 @@ def calc_rad_coeffs_32(
     )
     radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
     xint = fdiv(
-        fsub(f(radoff1), f(vh37[0])),
-        fsub(f(vh37[1]), f(radslp1)),
+        fsub(f(radoff1), f(vh37['offset'])),
+        fsub(f(vh37['slope']), f(radslp1)),
     )
-    yint = fadd(fmul(vh37[1], f(xint)), f(vh37[0]))
+    yint = fadd(fmul(vh37['slope'], f(xint)), f(vh37['offset']))
     radlen1 = fsqt(
         fadd(
             fsqr(fsub(f(xint), f(wtp[0]))),
@@ -506,10 +512,10 @@ def calc_rad_coeffs_32(
     )
     radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
     xint = fdiv(
-        fsub(f(radoff2), f(v1937[0])),
-        fsub(f(v1937[1]), f(radslp2)),
+        fsub(f(radoff2), f(v1937['offset'])),
+        fsub(f(v1937['slope']), f(radslp2)),
     )
-    yint = fadd(fmul(f(v1937[1]), f(xint)), f(v1937[0]))
+    yint = fadd(fmul(f(v1937['slope']), f(xint)), f(v1937['offset']))
     radlen2 = fsqt(
         fadd(
             fsqr(fsub(f(xint), f(wtp2[0]))),
@@ -811,9 +817,9 @@ def coastal_fix(arr, missval, landval, minic):
 def calc_bootstrap_conc(
     *,
     maxic,
-    vh37,
+    vh37: Line,
     adoff,
-    v1937,
+    v1937: Line,
     wtp,
     wtp2,
     itp,
@@ -842,7 +848,7 @@ def calc_bootstrap_conc(
     radlen2 = rad_coeffs['radlen2']
 
     # main calc_bt_ice() block
-    vh37chk = vh37[0] - adoff + vh37[1] * tb_v37
+    vh37chk = vh37['offset'] - adoff + vh37['slope'] * tb_v37
 
     # Compute radchk1
     is_check1 = tb_h37 > vh37chk
@@ -855,8 +861,8 @@ def calc_bootstrap_conc(
         tb_h37,
         wtp[0],
         wtp[1],
-        vh37[0],
-        vh37[1],
+        vh37['offset'],
+        vh37['slope'],
         missval,
         maxic,
     )
@@ -874,8 +880,8 @@ def calc_bootstrap_conc(
         tb_v19,
         wtp2[0],
         wtp2[1],
-        v1937[0],
-        v1937[1],
+        v1937['offset'],
+        v1937['slope'],
         missval,
         maxic,
     )

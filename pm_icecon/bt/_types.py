@@ -23,3 +23,8 @@ class ParaVals(TypedDict):
     wslope: float
     wtp: list[float]  # len 2
     wxlimt: float
+
+
+class Line(TypedDict):
+    offset: float
+    slope: float
