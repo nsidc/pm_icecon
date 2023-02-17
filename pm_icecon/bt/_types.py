@@ -1,5 +1,6 @@
 from typing import TypedDict
 
+# A tiepoint is a point (x, y) on a scatterplot of Tbs between two channels.
 Tiepoint = tuple[float, float]
 
 
