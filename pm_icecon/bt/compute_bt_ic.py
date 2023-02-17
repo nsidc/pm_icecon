@@ -205,22 +205,14 @@ def get_water_tiepoints(
     return water_tiepoints
 
 
-def linfit_32(xvals, yvals):
+def linfit(xvals, yvals):
     # Implement original Bootstrap linear-fit routine
     nvals = f(xvals.shape[0])
     sumx = np.sum(xvals, dtype=np.float64)
     sumy = np.sum(yvals, dtype=np.float64)
     sumx2 = np.sum(fsqr(xvals), dtype=np.float64)
-    # sumy2 is included in Bootstrap, but not used.
-    # sumy2 = np.sum(fsqr(yvals), dtype=np.float64)
     sumxy = np.sum(fmul(xvals, yvals), dtype=np.float64)
 
-    # float32 version
-    # delta = fsub(fmul(nvals, sumx2), fsqr(sumx))
-    # offset = fdiv(fsub(fmul(sumx2, sumy), fmul(sumx, sumxy)), delta)
-    # slope = fdiv(fsub(fmul(sumxy, nvals), fmul(sumx, sumy)), delta)
-
-    # float64 version
     delta = (nvals * sumx2) - sumx * sumx
     offset = ((sumx2 * sumy) - (sumx * sumxy)) / delta
     slope = ((sumxy * nvals) - (sumx * sumy)) / delta
@@ -263,7 +255,7 @@ def ret_linfit_32(
     xvals = tbx[is_valid].astype(np.float32).flatten().astype(np.float64)
     yvals = tby[is_valid].astype(np.float32).flatten().astype(np.float64)
 
-    intrca, slopeb = linfit_32(xvals, yvals)
+    intrca, slopeb = linfit(xvals, yvals)
 
     if slopeb > lnchk:
         raise BootstrapAlgError(
