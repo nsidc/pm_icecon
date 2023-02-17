@@ -132,11 +132,12 @@ def ret_wtp_32(
     # Note: this *really* should be done with np.percentile()
 
     pct = 0.02
+    n_bins = 1200
 
     # Compute quarter-Kelvin histograms
     histo, _ = np.histogram(
         tb[water_mask],
-        bins=1200,
+        bins=n_bins,
         range=(0, 300),
     )
     nvals = histo.sum()
@@ -147,11 +148,9 @@ def ret_wtp_32(
     ival = 0
     subtotal = 0
     thresh = f(nvals) * pct
-
-    while (ival < 1200) and (subtotal < thresh):
+    while (ival < n_bins) and (subtotal < thresh):
         subtotal += histo[ival]
         ival += 1
-
     ival -= 1  # undo last increment
 
     # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
