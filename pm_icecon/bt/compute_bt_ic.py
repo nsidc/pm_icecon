@@ -227,7 +227,7 @@ def ret_linfit_32(
     tb_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
-    lnline,
+    lnline: Line,
     add,
     lnchk=1.5,
     water_mask,
@@ -249,7 +249,7 @@ def ret_linfit_32(
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
+    is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline['slope']), lnline['offset'])
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
@@ -452,7 +452,7 @@ def ret_water_ssmi(
     v19,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    ln1,
+    ln1: Line,
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> npt.NDArray[np.bool_]:
@@ -468,7 +468,7 @@ def ret_water_ssmi(
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
-    watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
+    watchk4 = fadd(fmul(ln1['slope'], v37), ln1['offset'])
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     # TODO: where does this 230.0 value come from? Should it be configuratble?

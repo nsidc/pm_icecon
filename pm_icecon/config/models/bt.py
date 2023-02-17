@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
-from pm_icecon.bt._types import Tiepoint
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.base_model import ConfigBaseModel
 
 
@@ -60,7 +60,7 @@ class TbSetParams(ConfigBaseModel):
     `calc_rad_coeffs_32`.
     """
 
-    lnline: tuple[float, float]
+    lnline: Line
 
 
 class BootstrapParams(ConfigBaseModel):
