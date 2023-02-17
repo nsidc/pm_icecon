@@ -816,10 +816,8 @@ def coastal_fix(arr, missval, landval, minic):
     return arr2
 
 
-def calc_bt_ice(
+def calc_bootstrap_conc(
     *,
-    missval,
-    landval,
     maxic,
     vh37,
     adoff,
@@ -831,11 +829,10 @@ def calc_bt_ice(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    land_mask: npt.NDArray[np.bool_],
-    water_mask: npt.NDArray[np.bool_],
-    tb_mask: npt.NDArray[np.bool_],
+    # TODO: can/should we just use `nan`?
+    missval,
 ):
-
+    """Return a sea ice concentration estimate at every grid cell."""
     # ## LINES calculating radslp1 ... to radlen2 ###
     rad_coeffs = calc_rad_coeffs_32(
         itp=itp,
@@ -897,13 +894,10 @@ def calc_bt_ice(
     ic = icpix1
     ic[~is_check1] = icpix2[~is_check1]
 
+    # Scale concentrations to percentages. Values are fractional prior to this.
     is_ic_is_missval = ic == missval
     ic[is_ic_is_missval] = missval
     ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
-
-    ic[water_mask] = 0.0
-    ic[tb_mask] = 0.0
-    ic[land_mask] = landval
 
     return ic
 
@@ -977,25 +971,26 @@ def goddard_bootstrap(
         adoff=adoff,
     )
 
-    # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(
-        missval=missing_flag_value,
-        landval=DEFAULT_FLAG_VALUES.land,
+    # TODO: call this `conc` like we do in nasateam instead of `iceout`.
+    iceout = calc_bootstrap_conc(
         maxic=params.maxic,
         vh37=vh37,
         adoff=adoff,
-        itp=params.vh37_params.ice_tie_point,
-        itp2=params.v1937_params.ice_tie_point,
+        v1937=v1937,
         wtp=wtp,
         wtp2=wtp2,
-        v1937=v1937,
+        itp=params.vh37_params.ice_tie_point,
+        itp2=params.v1937_params.ice_tie_point,
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
-        land_mask=params.land_mask,
-        water_mask=water_mask,
-        tb_mask=tb_mask,
+        missval=missing_flag_value,
     )
+
+    # Apply masks and flag values
+    iceout[water_mask] = 0.0
+    iceout[tb_mask] = 0.0
+    iceout[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
     # *** Do sst cleaning ***
     print(f'before sst_clean, params:\n{params}')
