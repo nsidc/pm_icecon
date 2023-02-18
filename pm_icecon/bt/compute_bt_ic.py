@@ -488,10 +488,10 @@ def ret_water_ssmi(
 
 def calc_rad_coeffs_32(
     *,
-    itp,
+    itp: Tiepoint,
     wtp_37v37h: Tiepoint,
     vh37_line: Line,
-    itp2,
+    itp2: Tiepoint,
     wtp_37v19v: Tiepoint,
     v1937_line: Line,
 ):
@@ -827,10 +827,10 @@ def calc_bootstrap_conc(
     vh37_line: Line,
     adoff,
     v1937_line: Line,
-    wtp_37v37h,
-    wtp_37v19v,
-    itp,
-    itp2,
+    wtp_37v37h: Tiepoint,
+    wtp_37v19v: Tiepoint,
+    itp: Tiepoint,
+    itp2: Tiepoint,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
