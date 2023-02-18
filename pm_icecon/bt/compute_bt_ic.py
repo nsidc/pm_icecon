@@ -283,7 +283,11 @@ def ret_linfit_32(
     return line
 
 
-def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
+def ret_ic_32(*, tbx, tby, wtp: Tiepoint, iline: Line, baddata, maxic):
+    wtpx = wtp[0]
+    wtpy = wtp[1]
+    iline_off = iline['offset']
+    iline_slp = iline['slope']
 
     delta_x = tbx - wtpx
     is_deltax_eq_0 = delta_x == 0
@@ -485,18 +489,18 @@ def ret_water_ssmi(
 def calc_rad_coeffs_32(
     *,
     itp,
-    wtp,
+    wtp_37v37h: Tiepoint,
     vh37_line: Line,
     itp2,
-    wtp2,
+    wtp_37v19v: Tiepoint,
     v1937_line: Line,
 ):
     # Compute radlsp, radoff, radlen vars
     radslp1 = fdiv(
-        fsub(f(itp[1]), f(wtp[1])),
-        fsub(f(itp[0]), f(wtp[0])),
+        fsub(f(itp[1]), f(wtp_37v37h[1])),
+        fsub(f(itp[0]), f(wtp_37v37h[0])),
     )
-    radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
+    radoff1 = fsub(f(wtp_37v37h[1]), fmul(f(wtp_37v37h[0]), f(radslp1)))
     xint = fdiv(
         fsub(f(radoff1), f(vh37_line['offset'])),
         fsub(f(vh37_line['slope']), f(radslp1)),
@@ -504,16 +508,16 @@ def calc_rad_coeffs_32(
     yint = fadd(fmul(vh37_line['slope'], f(xint)), f(vh37_line['offset']))
     radlen1 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp[0]))),
-            fsqr(fsub(f(yint), f(wtp[1]))),
+            fsqr(fsub(f(xint), f(wtp_37v37h[0]))),
+            fsqr(fsub(f(yint), f(wtp_37v37h[1]))),
         )
     )
 
     radslp2 = fdiv(
-        fsub(f(itp2[1]), f(wtp2[1])),
-        fsub(f(itp2[0]), f(wtp2[0])),
+        fsub(f(itp2[1]), f(wtp_37v19v[1])),
+        fsub(f(itp2[0]), f(wtp_37v19v[0])),
     )
-    radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
+    radoff2 = fsub(f(wtp_37v19v[1]), fmul(f(wtp_37v19v[0]), f(radslp2)))
     xint = fdiv(
         fsub(f(radoff2), f(v1937_line['offset'])),
         fsub(f(v1937_line['slope']), f(radslp2)),
@@ -521,8 +525,8 @@ def calc_rad_coeffs_32(
     yint = fadd(fmul(f(v1937_line['slope']), f(xint)), f(v1937_line['offset']))
     radlen2 = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp2[0]))),
-            fsqr(fsub(f(yint), f(wtp2[1]))),
+            fsqr(fsub(f(xint), f(wtp_37v19v[0]))),
+            fsqr(fsub(f(yint), f(wtp_37v19v[1]))),
         )
     )
 
@@ -823,8 +827,8 @@ def calc_bootstrap_conc(
     vh37_line: Line,
     adoff,
     v1937_line: Line,
-    wtp,
-    wtp2,
+    wtp_37v37h,
+    wtp_37v19v,
     itp,
     itp2,
     tb_v37: npt.NDArray,
@@ -837,10 +841,10 @@ def calc_bootstrap_conc(
     # ## LINES calculating radslp1 ... to radlen2 ###
     rad_coeffs = calc_rad_coeffs_32(
         itp=itp,
-        wtp=wtp,
+        wtp_37v37h=wtp_37v37h,
         vh37_line=vh37_line,
         itp2=itp2,
-        wtp2=wtp2,
+        wtp_37v19v=wtp_37v19v,
         v1937_line=v1937_line,
     )
     radslp1 = rad_coeffs['radslp1']
@@ -857,17 +861,17 @@ def calc_bootstrap_conc(
     is_check1 = tb_h37 > vh37chk
     is_h37_lt_rc1 = tb_h37 < (radslp1 * tb_v37 + radoff1)
 
-    iclen1 = np.sqrt(np.square(tb_v37 - wtp[0]) + np.square(tb_h37 - wtp[1]))
+    iclen1 = np.sqrt(
+        np.square(tb_v37 - wtp_37v37h[0]) + np.square(tb_h37 - wtp_37v37h[1])
+    )
     is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1 = ret_ic_32(
-        tb_v37,
-        tb_h37,
-        wtp[0],
-        wtp[1],
-        vh37_line['offset'],
-        vh37_line['slope'],
-        missval,
-        maxic,
+        tbx=tb_v37,
+        tby=tb_h37,
+        wtp=wtp_37v37h,
+        iline=vh37_line,
+        baddata=missval,
+        maxic=maxic,
     )
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
     is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
@@ -876,17 +880,17 @@ def calc_bootstrap_conc(
     # Compute radchk2
     is_v19_lt_rc2 = tb_v19 < (radslp2 * tb_v37 + radoff2)
 
-    iclen2 = np.sqrt(np.square(tb_v37 - wtp2[0]) + np.square(tb_v19 - wtp2[1]))
+    iclen2 = np.sqrt(
+        np.square(tb_v37 - wtp_37v19v[0]) + np.square(tb_v19 - wtp_37v19v[1])
+    )
     is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2 = ret_ic_32(
-        tb_v37,
-        tb_v19,
-        wtp2[0],
-        wtp2[1],
-        v1937_line['offset'],
-        v1937_line['slope'],
-        missval,
-        maxic,
+        tbx=tb_v37,
+        tby=tb_v19,
+        wtp=wtp_37v19v,
+        iline=v1937_line,
+        baddata=missval,
+        maxic=maxic,
     )
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
@@ -978,8 +982,8 @@ def goddard_bootstrap(
         vh37_line=vh37_line,
         adoff=adoff,
         v1937_line=v1937_line,
-        wtp=wtp_37v37h,
-        wtp2=wtp_37v19v,
+        wtp_37v37h=wtp_37v37h,
+        wtp_37v19v=wtp_37v19v,
         itp=params.vh37_params.ice_tie_point,
         itp2=params.v1937_params.ice_tie_point,
         tb_v37=tb_v37,
