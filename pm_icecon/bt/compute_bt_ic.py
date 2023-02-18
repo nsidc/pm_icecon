@@ -97,12 +97,15 @@ def xfer_class_tbs(
     }
 
 
-def ret_adj_adoff(*, wtp: Tiepoint, vh37: Line, perc=0.92) -> float:
+# TODO: is this function really specific to 37v37h or should it be more generic?
+# If specific, also rename `wtp` and rename func to make this clear. If not,
+# rename `vh37` kwarg to e.g., 'line'?
+def ret_adj_adoff(*, wtp: Tiepoint, vh37_line: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is one water tie point
     wtp_x, wtp_y = f(wtp[0]), f(wtp[1])
-    off = vh37['offset']
-    slp = vh37['slope']
+    off = vh37_line['offset']
+    slp = vh37_line['slope']
 
     x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
     y = slp * x + off
@@ -483,10 +486,10 @@ def calc_rad_coeffs_32(
     *,
     itp,
     wtp,
-    vh37: Line,
+    vh37_line: Line,
     itp2,
     wtp2,
-    v1937: Line,
+    v1937_line: Line,
 ):
     # Compute radlsp, radoff, radlen vars
     radslp1 = fdiv(
@@ -495,10 +498,10 @@ def calc_rad_coeffs_32(
     )
     radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
     xint = fdiv(
-        fsub(f(radoff1), f(vh37['offset'])),
-        fsub(f(vh37['slope']), f(radslp1)),
+        fsub(f(radoff1), f(vh37_line['offset'])),
+        fsub(f(vh37_line['slope']), f(radslp1)),
     )
-    yint = fadd(fmul(vh37['slope'], f(xint)), f(vh37['offset']))
+    yint = fadd(fmul(vh37_line['slope'], f(xint)), f(vh37_line['offset']))
     radlen1 = fsqt(
         fadd(
             fsqr(fsub(f(xint), f(wtp[0]))),
@@ -512,10 +515,10 @@ def calc_rad_coeffs_32(
     )
     radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
     xint = fdiv(
-        fsub(f(radoff2), f(v1937['offset'])),
-        fsub(f(v1937['slope']), f(radslp2)),
+        fsub(f(radoff2), f(v1937_line['offset'])),
+        fsub(f(v1937_line['slope']), f(radslp2)),
     )
-    yint = fadd(fmul(f(v1937['slope']), f(xint)), f(v1937['offset']))
+    yint = fadd(fmul(f(v1937_line['slope']), f(xint)), f(v1937_line['offset']))
     radlen2 = fsqt(
         fadd(
             fsqr(fsub(f(xint), f(wtp2[0]))),
@@ -817,9 +820,9 @@ def coastal_fix(arr, missval, landval, minic):
 def calc_bootstrap_conc(
     *,
     maxic,
-    vh37: Line,
+    vh37_line: Line,
     adoff,
-    v1937: Line,
+    v1937_line: Line,
     wtp,
     wtp2,
     itp,
@@ -835,10 +838,10 @@ def calc_bootstrap_conc(
     rad_coeffs = calc_rad_coeffs_32(
         itp=itp,
         wtp=wtp,
-        vh37=vh37,
+        vh37_line=vh37_line,
         itp2=itp2,
         wtp2=wtp2,
-        v1937=v1937,
+        v1937_line=v1937_line,
     )
     radslp1 = rad_coeffs['radslp1']
     radoff1 = rad_coeffs['radoff1']
@@ -848,7 +851,7 @@ def calc_bootstrap_conc(
     radlen2 = rad_coeffs['radlen2']
 
     # main calc_bt_ice() block
-    vh37chk = vh37['offset'] - adoff + vh37['slope'] * tb_v37
+    vh37chk = vh37_line['offset'] - adoff + vh37_line['slope'] * tb_v37
 
     # Compute radchk1
     is_check1 = tb_h37 > vh37chk
@@ -861,8 +864,8 @@ def calc_bootstrap_conc(
         tb_h37,
         wtp[0],
         wtp[1],
-        vh37['offset'],
-        vh37['slope'],
+        vh37_line['offset'],
+        vh37_line['slope'],
         missval,
         maxic,
     )
@@ -880,8 +883,8 @@ def calc_bootstrap_conc(
         tb_v19,
         wtp2[0],
         wtp2[1],
-        v1937['offset'],
-        v1937['slope'],
+        v1937_line['offset'],
+        v1937_line['slope'],
         missval,
         maxic,
     )
@@ -934,7 +937,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    vh37 = ret_linfit_32(
+    vh37_line = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -953,10 +956,10 @@ def goddard_bootstrap(
         wtp_37v19v_default=params.v1937_params.water_tie_point,
     )
 
-    adoff = ret_adj_adoff(wtp=wtp_37v37h, vh37=vh37)
+    adoff = ret_adj_adoff(wtp=wtp_37v37h, vh37_line=vh37_line)
 
     # Try the ret_para... values for v1937
-    v1937 = ret_linfit_32(
+    v1937_line = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -965,16 +968,16 @@ def goddard_bootstrap(
         add=params.add2,
         water_mask=water_mask,
         tba=tb_h37,
-        iceline=vh37,
+        iceline=vh37_line,
         adoff=adoff,
     )
 
     # TODO: call this `conc` like we do in nasateam instead of `iceout`.
     iceout = calc_bootstrap_conc(
         maxic=params.maxic,
-        vh37=vh37,
+        vh37_line=vh37_line,
         adoff=adoff,
-        v1937=v1937,
+        v1937_line=v1937_line,
         wtp=wtp_37v37h,
         wtp2=wtp_37v19v,
         itp=params.vh37_params.ice_tie_point,
