@@ -488,17 +488,17 @@ def ret_water_ssmi(
 
 def calc_rad_coeffs_32(
     *,
-    itp: Tiepoint,
+    itp_37v37h: Tiepoint,
     wtp_37v37h: Tiepoint,
     vh37_line: Line,
-    itp2: Tiepoint,
+    itp_37v19v: Tiepoint,
     wtp_37v19v: Tiepoint,
     v1937_line: Line,
 ):
     # Compute radlsp, radoff, radlen vars
     radslp1 = fdiv(
-        fsub(f(itp[1]), f(wtp_37v37h[1])),
-        fsub(f(itp[0]), f(wtp_37v37h[0])),
+        fsub(f(itp_37v37h[1]), f(wtp_37v37h[1])),
+        fsub(f(itp_37v37h[0]), f(wtp_37v37h[0])),
     )
     radoff1 = fsub(f(wtp_37v37h[1]), fmul(f(wtp_37v37h[0]), f(radslp1)))
     xint = fdiv(
@@ -514,8 +514,8 @@ def calc_rad_coeffs_32(
     )
 
     radslp2 = fdiv(
-        fsub(f(itp2[1]), f(wtp_37v19v[1])),
-        fsub(f(itp2[0]), f(wtp_37v19v[0])),
+        fsub(f(itp_37v19v[1]), f(wtp_37v19v[1])),
+        fsub(f(itp_37v19v[0]), f(wtp_37v19v[0])),
     )
     radoff2 = fsub(f(wtp_37v19v[1]), fmul(f(wtp_37v19v[0]), f(radslp2)))
     xint = fdiv(
@@ -829,8 +829,8 @@ def calc_bootstrap_conc(
     v1937_line: Line,
     wtp_37v37h: Tiepoint,
     wtp_37v19v: Tiepoint,
-    itp: Tiepoint,
-    itp2: Tiepoint,
+    itp_37v37h: Tiepoint,
+    itp_37v19v: Tiepoint,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
@@ -840,10 +840,10 @@ def calc_bootstrap_conc(
     """Return a sea ice concentration estimate at every grid cell."""
     # ## LINES calculating radslp1 ... to radlen2 ###
     rad_coeffs = calc_rad_coeffs_32(
-        itp=itp,
+        itp_37v37h=itp_37v37h,
         wtp_37v37h=wtp_37v37h,
         vh37_line=vh37_line,
-        itp2=itp2,
+        itp_37v19v=itp_37v19v,
         wtp_37v19v=wtp_37v19v,
         v1937_line=v1937_line,
     )
@@ -984,8 +984,8 @@ def goddard_bootstrap(
         v1937_line=v1937_line,
         wtp_37v37h=wtp_37v37h,
         wtp_37v19v=wtp_37v19v,
-        itp=params.vh37_params.ice_tie_point,
-        itp2=params.v1937_params.ice_tie_point,
+        itp_37v37h=params.vh37_params.ice_tie_point,
+        itp_37v19v=params.v1937_params.ice_tie_point,
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
