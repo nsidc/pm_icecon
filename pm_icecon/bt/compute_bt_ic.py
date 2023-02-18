@@ -854,17 +854,6 @@ def calc_bootstrap_conc(
     radoff2 = rad_coeffs['radoff2']
     radlen2 = rad_coeffs['radlen2']
 
-    # main calc_bt_ice() block
-    vh37chk = vh37_line['offset'] - adoff + vh37_line['slope'] * tb_v37
-
-    # Compute radchk1
-    is_check1 = tb_h37 > vh37chk
-    is_h37_lt_rc1 = tb_h37 < (radslp1 * tb_v37 + radoff1)
-
-    iclen1 = np.sqrt(
-        np.square(tb_v37 - wtp_37v37h[0]) + np.square(tb_h37 - wtp_37v37h[1])
-    )
-    is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1 = ret_ic_32(
         tbx=tb_v37,
         tby=tb_h37,
@@ -873,17 +862,18 @@ def calc_bootstrap_conc(
         baddata=missval,
         maxic=maxic,
     )
+
+    # Compute radchk1
+    is_h37_lt_rc1 = tb_h37 < (radslp1 * tb_v37 + radoff1)
+
+    iclen1 = np.sqrt(
+        np.square(tb_v37 - wtp_37v37h[0]) + np.square(tb_h37 - wtp_37v37h[1])
+    )
+    is_iclen1_gt_radlen1 = iclen1 > radlen1
     icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
     is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
     icpix1[is_condition1] = iclen1[is_condition1] / radlen1
 
-    # Compute radchk2
-    is_v19_lt_rc2 = tb_v19 < (radslp2 * tb_v37 + radoff2)
-
-    iclen2 = np.sqrt(
-        np.square(tb_v37 - wtp_37v19v[0]) + np.square(tb_v19 - wtp_37v19v[1])
-    )
-    is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2 = ret_ic_32(
         tbx=tb_v37,
         tby=tb_v19,
@@ -892,11 +882,22 @@ def calc_bootstrap_conc(
         baddata=missval,
         maxic=maxic,
     )
+
+    # Compute radchk2
+    is_v19_lt_rc2 = tb_v19 < (radslp2 * tb_v37 + radoff2)
+
+    iclen2 = np.sqrt(
+        np.square(tb_v37 - wtp_37v19v[0]) + np.square(tb_v19 - wtp_37v19v[1])
+    )
+    is_iclen2_gt_radlen2 = iclen2 > radlen2
     icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
     is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
     icpix2[is_condition2] = iclen2[is_condition2] / radlen2
 
-    ic = icpix1
+    ic = icpix1.copy()
+
+    vh37chk = vh37_line['offset'] - adoff + vh37_line['slope'] * tb_v37
+    is_check1 = tb_h37 > vh37chk
     ic[~is_check1] = icpix2[~is_check1]
 
     # Scale concentrations to percentages. Values are fractional prior to this.
