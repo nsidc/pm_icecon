@@ -192,9 +192,9 @@ def get_water_tiepoints(
 
     # If the calculated wtps are within the bounds of the default (+/- 10), use
     # the calculated value.
-    if (wtp2_default[0] - 10) < wtp37v < (wtp2_default[0] + 10):
+    if _within_plusminus_10(wtp2_default[0], wtp37v):
         wtp2[0] = wtp37v
-    if (wtp2_default[1] - 10) < wtp19v < (wtp2_default[1] + 10):
+    if _within_plusminus_10(wtp2_default[1], wtp19v):
         wtp2[1] = wtp19v
 
     water_tiepoints: tuple[Tiepoint, Tiepoint] = (  # type: ignore[assignment]
