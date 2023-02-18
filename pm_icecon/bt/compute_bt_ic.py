@@ -99,22 +99,21 @@ def xfer_class_tbs(
 
 def ret_adj_adoff(*, wtp: Tiepoint, vh37: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
-    # wtp is two water tie points
-    # vh37 is offset and slope
-    wtp1, wtp2 = f(wtp[0]), f(wtp[1])
+    # wtp is one water tie point
+    wtp_x, wtp_y = f(wtp[0]), f(wtp[1])
     off = vh37['offset']
     slp = vh37['slope']
 
-    x = ((wtp1 / slp) + wtp2 - off) / (slp + 1.0 / slp)
+    x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
     y = slp * x + off
 
-    dx = wtp1 - x
+    dx = wtp_x - x
     dx2 = perc * dx
-    x2 = wtp1 - dx2
+    x2 = wtp_x - dx2
 
-    dy = y - wtp2
+    dy = y - wtp_y
     dy2 = perc * dy
-    y2 = wtp2 + dy2
+    y2 = wtp_y + dy2
 
     new_off = y2 - slp * x2
 
