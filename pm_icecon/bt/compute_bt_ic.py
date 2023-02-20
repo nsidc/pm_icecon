@@ -100,12 +100,12 @@ def xfer_class_tbs(
 # TODO: is this function really specific to 37v37h or should it be more generic?
 # If specific, also rename `wtp` and rename func to make this clear. If not,
 # rename `vh37` kwarg to e.g., 'line'?
-def ret_adj_adoff(*, wtp: Tiepoint, vh37_line: Line, perc=0.92) -> float:
+def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is one water tie point
     wtp_x, wtp_y = f(wtp[0]), f(wtp[1])
-    off = vh37_line['offset']
-    slp = vh37_line['slope']
+    off = line_37v37h['offset']
+    slp = line_37v37h['slope']
 
     x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
     y = slp * x + off
@@ -844,7 +844,7 @@ def _calc_frac_conc_for_tbset(
 def calc_bootstrap_conc(
     *,
     maxic_frac,
-    vh37_line: Line,
+    line_37v37h: Line,
     adoff,
     v1937_line: Line,
     wtp_37v37h: Tiepoint,
@@ -867,7 +867,7 @@ def calc_bootstrap_conc(
         tby=tb_h37,
         wtp=wtp_37v37h,
         itp=itp_37v37h,
-        line=vh37_line,
+        line=line_37v37h,
         missing_data_value=missval,
         maxic=maxic_frac,
     )
@@ -884,7 +884,7 @@ def calc_bootstrap_conc(
 
     ic_frac = ic_frac_37v37h.copy()
 
-    vh37chk = vh37_line['offset'] - adoff + vh37_line['slope'] * tb_v37
+    vh37chk = line_37v37h['offset'] - adoff + line_37v37h['slope'] * tb_v37
     is_check1 = tb_h37 > vh37chk
     ic_frac[~is_check1] = ic_frac_37v19v[~is_check1]
 
@@ -930,7 +930,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    vh37_line = ret_linfit_32(
+    line_37v37h = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -954,7 +954,7 @@ def goddard_bootstrap(
         tby=tb_v19,
     )
 
-    adoff = ret_adj_adoff(wtp=wtp_37v37h, vh37_line=vh37_line)
+    adoff = ret_adj_adoff(wtp=wtp_37v37h, line_37v37h=line_37v37h)
 
     # Try the ret_para... values for v1937
     v1937_line = ret_linfit_32(
@@ -966,14 +966,14 @@ def goddard_bootstrap(
         add=params.add2,
         water_mask=water_mask,
         tba=tb_h37,
-        iceline=vh37_line,
+        iceline=line_37v37h,
         adoff=adoff,
     )
 
     # TODO: call this `conc` like we do in nasateam instead of `iceout`.
     iceout = calc_bootstrap_conc(
         maxic_frac=params.maxic,
-        vh37_line=vh37_line,
+        line_37v37h=line_37v37h,
         adoff=adoff,
         v1937_line=v1937_line,
         wtp_37v37h=wtp_37v37h,
