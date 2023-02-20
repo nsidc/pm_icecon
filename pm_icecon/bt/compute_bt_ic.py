@@ -194,6 +194,9 @@ def get_water_tiepoint(
 
 def linfit(xvals, yvals):
     # Implement original Bootstrap linear-fit routine
+    # TODO: `np.polyfit(xvals, yvals, 1)` gives the same result to a few
+    # decimals. Regression tests pass using this builtin of numpy. Is it worth
+    # having this function for complete consistency with the Goddard code?
     nvals = f(xvals.shape[0])
     sumx = np.sum(xvals, dtype=np.float64)
     sumy = np.sum(yvals, dtype=np.float64)
