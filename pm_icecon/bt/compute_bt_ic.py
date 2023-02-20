@@ -819,6 +819,38 @@ def coastal_fix(arr, missval, landval, minic):
     return arr2
 
 
+def _calc_frac_conc_for_tbset(
+    *,
+    tbx,
+    tby,
+    wtp: Tiepoint,
+    itp: Tiepoint,
+    line: Line,
+    missing_data_value: float | int,
+    maxic,
+):
+    """Return fractional sea ice concentration for the given parameters."""
+    icpix1 = ret_ic_32(
+        tbx=tbx,
+        tby=tby,
+        wtp=wtp,
+        iline=line,
+        baddata=missing_data_value,
+        maxic=maxic,
+    )
+
+    icpix1 = rad_adjust_ic(
+        ic=icpix1,
+        tbx=tbx,
+        tby=tby,
+        itp=itp,
+        wtp=wtp,
+        line=line,
+    )
+
+    return icpix1
+
+
 def calc_bootstrap_conc(
     *,
     maxic,
@@ -833,43 +865,27 @@ def calc_bootstrap_conc(
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
     # TODO: can/should we just use `nan`?
-    missval,
+    missval: float | int,
 ):
     """Return a sea ice concentration estimate at every grid cell."""
-    icpix1 = ret_ic_32(
+    icpix1 = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_h37,
         wtp=wtp_37v37h,
-        iline=vh37_line,
-        baddata=missval,
-        maxic=maxic,
-    )
-
-    icpix1 = rad_adjust_ic(
-        ic=icpix1,
-        tbx=tb_v37,
-        tby=tb_h37,
         itp=itp_37v37h,
-        wtp=wtp_37v37h,
         line=vh37_line,
-    )
-
-    icpix2 = ret_ic_32(
-        tbx=tb_v37,
-        tby=tb_v19,
-        wtp=wtp_37v19v,
-        iline=v1937_line,
-        baddata=missval,
+        missing_data_value=missval,
         maxic=maxic,
     )
 
-    icpix2 = rad_adjust_ic(
-        ic=icpix2,
+    icpix2 = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_v19,
-        itp=itp_37v19v,
         wtp=wtp_37v19v,
+        itp=itp_37v19v,
         line=v1937_line,
+        missing_data_value=missval,
+        maxic=maxic,
     )
 
     ic = icpix1.copy()
