@@ -15,6 +15,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import xarray as xr
+from loguru import logger
 
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
@@ -622,7 +623,7 @@ def coastal_fix(arr, missval, landval, minic):
         try:
             temp[change_locs_k2p1] = 0
         except IndexError:
-            print('Fixing out of bounds error')
+            logger.debug('Fixing out of bounds error in `coastal_fix`')
             locs0 = change_locs_k2p1[0]
             locs1 = change_locs_k2p1[1]
 
