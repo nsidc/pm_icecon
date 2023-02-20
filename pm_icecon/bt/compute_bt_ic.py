@@ -466,6 +466,10 @@ def ret_water_ssmi(
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> npt.NDArray[np.bool_]:
+    """Return a water mask that has been weather filtered.
+
+    `True` indicates areas that are water and not weather masked.
+    """
     season_params = _get_wx_params(
         date=date,
         weather_filter_seasons=weather_filter_seasons,
