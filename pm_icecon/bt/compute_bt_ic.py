@@ -846,7 +846,7 @@ def calc_bootstrap_conc(
     maxic_frac,
     line_37v37h: Line,
     adoff,
-    v1937_line: Line,
+    line_37v19v: Line,
     wtp_37v37h: Tiepoint,
     wtp_37v19v: Tiepoint,
     itp_37v37h: Tiepoint,
@@ -877,7 +877,7 @@ def calc_bootstrap_conc(
         tby=tb_v19,
         wtp=wtp_37v19v,
         itp=itp_37v19v,
-        line=v1937_line,
+        line=line_37v19v,
         missing_data_value=missval,
         maxic=maxic_frac,
     )
@@ -957,7 +957,7 @@ def goddard_bootstrap(
     adoff = ret_adj_adoff(wtp=wtp_37v37h, line_37v37h=line_37v37h)
 
     # Try the ret_para... values for v1937
-    v1937_line = ret_linfit_32(
+    line_37v19v = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -975,7 +975,7 @@ def goddard_bootstrap(
         maxic_frac=params.maxic,
         line_37v37h=line_37v37h,
         adoff=adoff,
-        v1937_line=v1937_line,
+        line_37v19v=line_37v19v,
         wtp_37v37h=wtp_37v37h,
         wtp_37v19v=wtp_37v19v,
         itp_37v37h=params.vh37_params.ice_tie_point,
