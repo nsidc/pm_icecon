@@ -486,58 +486,36 @@ def ret_water_ssmi(
     return is_water
 
 
-def calc_rad_coeffs_32(
+def calc_rad_coeffs(
     *,
-    itp_37v37h: Tiepoint,
-    wtp_37v37h: Tiepoint,
-    vh37_line: Line,
-    itp_37v19v: Tiepoint,
-    wtp_37v19v: Tiepoint,
-    v1937_line: Line,
+    itp: Tiepoint,
+    wtp: Tiepoint,
+    line: Line,
 ):
-    # Compute radlsp, radoff, radlen vars
-    radslp1 = fdiv(
-        fsub(f(itp_37v37h[1]), f(wtp_37v37h[1])),
-        fsub(f(itp_37v37h[0]), f(wtp_37v37h[0])),
+    rad_slope = fdiv(
+        fsub(f(itp[1]), f(wtp[1])),
+        fsub(f(itp[0]), f(wtp[0])),
     )
-    radoff1 = fsub(f(wtp_37v37h[1]), fmul(f(wtp_37v37h[0]), f(radslp1)))
+    rad_offset = fsub(f(wtp[1]), fmul(f(wtp[0]), f(rad_slope)))
     xint = fdiv(
-        fsub(f(radoff1), f(vh37_line['offset'])),
-        fsub(f(vh37_line['slope']), f(radslp1)),
+        fsub(f(rad_offset), f(line['offset'])),
+        fsub(f(line['slope']), f(rad_slope)),
     )
-    yint = fadd(fmul(vh37_line['slope'], f(xint)), f(vh37_line['offset']))
-    radlen1 = fsqt(
+    yint = fadd(
+        fmul(
+            line['slope'],
+            f(xint),
+        ),
+        f(line['offset']),
+    )
+    rad_len = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp_37v37h[0]))),
-            fsqr(fsub(f(yint), f(wtp_37v37h[1]))),
+            fsqr(fsub(f(xint), f(wtp[0]))),
+            fsqr(fsub(f(yint), f(wtp[1]))),
         )
     )
 
-    radslp2 = fdiv(
-        fsub(f(itp_37v19v[1]), f(wtp_37v19v[1])),
-        fsub(f(itp_37v19v[0]), f(wtp_37v19v[0])),
-    )
-    radoff2 = fsub(f(wtp_37v19v[1]), fmul(f(wtp_37v19v[0]), f(radslp2)))
-    xint = fdiv(
-        fsub(f(radoff2), f(v1937_line['offset'])),
-        fsub(f(v1937_line['slope']), f(radslp2)),
-    )
-    yint = fadd(fmul(f(v1937_line['slope']), f(xint)), f(v1937_line['offset']))
-    radlen2 = fsqt(
-        fadd(
-            fsqr(fsub(f(xint), f(wtp_37v19v[0]))),
-            fsqr(fsub(f(yint), f(wtp_37v19v[1]))),
-        )
-    )
-
-    return {
-        'radslp1': radslp1,
-        'radoff1': radoff1,
-        'radlen1': radlen1,
-        'radslp2': radslp2,
-        'radoff2': radoff2,
-        'radlen2': radlen2,
-    }
+    return (rad_slope, rad_offset, rad_len)
 
 
 def sst_clean_sb2(*, iceout, missval, landval, invalid_ice_mask: npt.NDArray[np.bool_]):
@@ -839,20 +817,16 @@ def calc_bootstrap_conc(
 ):
     """Return a sea ice concentration estimate at every grid cell."""
     # ## LINES calculating radslp1 ... to radlen2 ###
-    rad_coeffs = calc_rad_coeffs_32(
-        itp_37v37h=itp_37v37h,
-        wtp_37v37h=wtp_37v37h,
-        vh37_line=vh37_line,
-        itp_37v19v=itp_37v19v,
-        wtp_37v19v=wtp_37v19v,
-        v1937_line=v1937_line,
+    radslp1, radoff1, radlen1 = calc_rad_coeffs(
+        itp=itp_37v37h,
+        wtp=wtp_37v37h,
+        line=vh37_line,
     )
-    radslp1 = rad_coeffs['radslp1']
-    radoff1 = rad_coeffs['radoff1']
-    radlen1 = rad_coeffs['radlen1']
-    radslp2 = rad_coeffs['radslp2']
-    radoff2 = rad_coeffs['radoff2']
-    radlen2 = rad_coeffs['radlen2']
+    radslp2, radoff2, radlen2 = calc_rad_coeffs(
+        itp=itp_37v19v,
+        wtp=wtp_37v19v,
+        line=v1937_line,
+    )
 
     icpix1 = ret_ic_32(
         tbx=tb_v37,
