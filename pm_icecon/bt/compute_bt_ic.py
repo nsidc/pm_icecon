@@ -128,7 +128,7 @@ def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
 # TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
 # (x or y)
 def _ret_wtp_32(
-    water_mask: npt.NDArray[np.bool_],
+    weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> float:
     """Return either the x or y of the wtp."""
@@ -141,7 +141,7 @@ def _ret_wtp_32(
 
     # Compute quarter-Kelvin histograms
     histo, _ = np.histogram(
-        tb[water_mask],
+        tb[weather_mask],
         bins=n_bins,
         range=(0, 300),
     )
@@ -168,7 +168,7 @@ def _ret_wtp_32(
 def get_water_tiepoint(
     *,
     wtp_default: Tiepoint,
-    water_mask: npt.NDArray[np.bool_],
+    weather_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
 ) -> Tiepoint:
@@ -177,8 +177,8 @@ def get_water_tiepoint(
     If the calculated wtpx and wtpy values are within +/- 10 of the
     `wtp_default`, use the newly calculated values.
     """
-    wtpx = _ret_wtp_32(water_mask, tbx)
-    wtpy = _ret_wtp_32(water_mask, tby)
+    wtpx = _ret_wtp_32(weather_mask, tbx)
+    wtpy = _ret_wtp_32(weather_mask, tby)
 
     new_wtp = list(copy.copy(wtp_default))
 
@@ -224,9 +224,10 @@ def ret_linfit_32(
     lnline: Line,
     add,
     lnchk=1.5,
-    water_mask,
+    weather_mask,
     # If any one of the rest of these arguments is given, the rest must also be
-    # non-None
+    # non-None. Currently only used for getting the v1937 line, in determining
+    # if pixels are valid for use.
     tba=None,
     iceline: Line | None = None,
     adoff=None,
@@ -245,7 +246,7 @@ def ret_linfit_32(
 
     is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline['slope']), lnline['offset'])
 
-    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
     icnt = np.sum(np.where(is_valid, 1, 0))
     if icnt <= 125:
@@ -476,7 +477,7 @@ def ret_water_ssmi(
 ) -> npt.NDArray[np.bool_]:
     """Return a water mask that has been weather filtered.
 
-    `True` indicates areas that are water and not weather masked.
+    `True` indicates areas that are water and are weather masked.
     """
     season_params = _get_wx_params(
         date=date,
@@ -923,7 +924,7 @@ def goddard_bootstrap(
         max_tb=params.maxtb,
     )
 
-    water_mask = ret_water_ssmi(
+    weather_mask = ret_water_ssmi(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,
@@ -942,19 +943,19 @@ def goddard_bootstrap(
         tby=tb_h37,
         lnline=params.vh37_params.lnline,
         add=params.add1,
-        water_mask=water_mask,
+        weather_mask=weather_mask,
     )
 
     wtp_37v37h = get_water_tiepoint(
         wtp_default=params.vh37_params.water_tie_point,
-        water_mask=water_mask,
+        weather_mask=weather_mask,
         tbx=tb_v37,
         tby=tb_h37,
     )
 
     wtp_37v19v = get_water_tiepoint(
         wtp_default=params.v1937_params.water_tie_point,
-        water_mask=water_mask,
+        weather_mask=weather_mask,
         tbx=tb_v37,
         tby=tb_v19,
     )
@@ -969,7 +970,7 @@ def goddard_bootstrap(
         tby=tb_v19,
         lnline=params.v1937_params.lnline,
         add=params.add2,
-        water_mask=water_mask,
+        weather_mask=weather_mask,
         tba=tb_h37,
         iceline=line_37v37h,
         adoff=adoff,
@@ -992,7 +993,7 @@ def goddard_bootstrap(
     )
 
     # Apply masks and flag values
-    iceout[water_mask] = 0.0
+    iceout[weather_mask] = 0.0
     iceout[tb_mask] = 0.0
     iceout[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
