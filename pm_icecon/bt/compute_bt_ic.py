@@ -172,6 +172,11 @@ def get_water_tiepoint(
     tbx,
     tby,
 ) -> Tiepoint:
+    """Return the deafult or calculate new wtp.
+
+    If the calculated wtpx and wtpy values are within +/- 10 of the
+    `wtp_default`, use the newly calculated values.
+    """
     wtpx = _ret_wtp_32(water_mask, tbx)
     wtpy = _ret_wtp_32(water_mask, tby)
 
