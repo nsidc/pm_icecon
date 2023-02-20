@@ -1,6 +1,12 @@
 from typing import TypedDict
 
 # A tiepoint is a point (x, y) on a scatterplot of Tbs between two channels.
+# TODO: consider making this a `Point` type or dataclass that will make it clear
+# that the first element is x and the second y.
+# TODO: another thought/idea: maybe we can have the x and y dimensions take a
+# name? E.g., x_name='37v' and y_name='37h' for wtp_37v37h? Or some other
+# wrapper container that captures the association between two channels,
+# tiepoints, and lnline>
 Tiepoint = tuple[float, float]
 
 
