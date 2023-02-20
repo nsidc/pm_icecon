@@ -125,10 +125,13 @@ def ret_adj_adoff(*, wtp: Tiepoint, vh37_line: Line, perc=0.92) -> float:
     return adoff
 
 
+# TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
+# (x or y)
 def ret_wtp_32(
     water_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> float:
+    """Return either the x or y of the wtp."""
     # Attempt to reproduce Goddard methodology for computing water tie point
 
     # Note: this *really* should be done with np.percentile()
@@ -162,51 +165,31 @@ def ret_wtp_32(
     return wtp
 
 
-def get_water_tiepoints(
+def get_water_tiepoint(
     *,
-    water_mask,
-    tb_v37,
-    tb_h37,
-    tb_v19,
-    wtp_37v37h_default: Tiepoint,
-    wtp_37v19v_default: Tiepoint,
-) -> tuple[Tiepoint, Tiepoint]:
+    wtp_default: Tiepoint,
+    water_mask: npt.NDArray[np.bool_],
+    tbx,
+    tby,
+) -> Tiepoint:
+    wtpx = ret_wtp_32(water_mask, tbx)
+    wtpy = ret_wtp_32(water_mask, tby)
+
+    new_wtp = list(copy.copy(wtp_default))
+
+    # If the calculated wtps are within the bounds of the default (+/- 10), use
+    # the calculated value.
     def _within_plusminus_10(target_value, value) -> bool:
         return (target_value - 10) < value < (target_value + 10)
 
-    # Get wtp1
-    wtp_37v37h = list(copy.copy(wtp_37v37h_default))
+    if _within_plusminus_10(wtp_default[0], wtpx):
+        new_wtp[0] = wtpx
+    if _within_plusminus_10(wtp_default[1], wtpy):
+        new_wtp[1] = wtpy
 
-    wtp37v = ret_wtp_32(water_mask, tb_v37)
-    wtp37h = ret_wtp_32(water_mask, tb_h37)
+    wtp_tuple = (new_wtp[0], new_wtp[1])
 
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    if _within_plusminus_10(wtp_37v37h_default[0], wtp37v):
-        wtp_37v37h[0] = wtp37v
-    if _within_plusminus_10(wtp_37v37h_default[1], wtp37h):
-        wtp_37v37h[1] = wtp37h
-
-    ######################################################
-
-    # get wtp_37v19v
-    wtp_37v19v = list(copy.copy(wtp_37v19v_default))
-
-    wtp19v = ret_wtp_32(water_mask, tb_v19)
-
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    if _within_plusminus_10(wtp_37v19v_default[0], wtp37v):
-        wtp_37v19v[0] = wtp37v
-    if _within_plusminus_10(wtp_37v19v_default[1], wtp19v):
-        wtp_37v19v[1] = wtp19v
-
-    water_tiepoints: tuple[Tiepoint, Tiepoint] = (  # type: ignore[assignment]
-        tuple(wtp_37v37h),
-        tuple(wtp_37v19v),
-    )
-
-    return water_tiepoints
+    return wtp_tuple
 
 
 def linfit(xvals, yvals):
@@ -950,13 +933,18 @@ def goddard_bootstrap(
         water_mask=water_mask,
     )
 
-    wtp_37v37h, wtp_37v19v = get_water_tiepoints(
+    wtp_37v37h = get_water_tiepoint(
+        wtp_default=params.vh37_params.water_tie_point,
         water_mask=water_mask,
-        tb_v37=tb_v37,
-        tb_h37=tb_h37,
-        tb_v19=tb_v19,
-        wtp_37v37h_default=params.vh37_params.water_tie_point,
-        wtp_37v19v_default=params.v1937_params.water_tie_point,
+        tbx=tb_v37,
+        tby=tb_h37,
+    )
+
+    wtp_37v19v = get_water_tiepoint(
+        wtp_default=params.v1937_params.water_tie_point,
+        water_mask=water_mask,
+        tbx=tb_v37,
+        tby=tb_v19,
     )
 
     adoff = ret_adj_adoff(wtp=wtp_37v37h, vh37_line=vh37_line)
