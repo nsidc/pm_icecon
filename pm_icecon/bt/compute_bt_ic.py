@@ -853,7 +853,7 @@ def _calc_frac_conc_for_tbset(
 
 def calc_bootstrap_conc(
     *,
-    maxic,
+    maxic_frac,
     vh37_line: Line,
     adoff,
     v1937_line: Line,
@@ -867,39 +867,43 @@ def calc_bootstrap_conc(
     # TODO: can/should we just use `nan`?
     missval: float | int,
 ):
-    """Return a sea ice concentration estimate at every grid cell."""
-    icpix1 = _calc_frac_conc_for_tbset(
+    """Return a sea ice concentration estimate at every grid cell.
+
+    Concentrations are given as percentage (0-100%).
+    """
+    # ic_frac == 'ice concentration fraction'
+    ic_frac_37v37h = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_h37,
         wtp=wtp_37v37h,
         itp=itp_37v37h,
         line=vh37_line,
         missing_data_value=missval,
-        maxic=maxic,
+        maxic=maxic_frac,
     )
 
-    icpix2 = _calc_frac_conc_for_tbset(
+    ic_frac_37v19v = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_v19,
         wtp=wtp_37v19v,
         itp=itp_37v19v,
         line=v1937_line,
         missing_data_value=missval,
-        maxic=maxic,
+        maxic=maxic_frac,
     )
 
-    ic = icpix1.copy()
+    ic_frac = ic_frac_37v37h.copy()
 
     vh37chk = vh37_line['offset'] - adoff + vh37_line['slope'] * tb_v37
     is_check1 = tb_h37 > vh37chk
-    ic[~is_check1] = icpix2[~is_check1]
+    ic_frac[~is_check1] = ic_frac_37v19v[~is_check1]
 
-    # Scale concentrations to percentages. Values are fractional prior to this.
-    is_ic_is_missval = ic == missval
-    ic[is_ic_is_missval] = missval
-    ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
+    # convert fractional sea ice concentrations to percentages
+    ic_perc = ic_frac.copy()
+    is_ic_frac_is_missval = ic_frac == missval
+    ic_perc[~is_ic_frac_is_missval] = ic_frac[~is_ic_frac_is_missval] * 100.0
 
-    return ic
+    return ic_perc
 
 
 def goddard_bootstrap(
@@ -973,7 +977,7 @@ def goddard_bootstrap(
 
     # TODO: call this `conc` like we do in nasateam instead of `iceout`.
     iceout = calc_bootstrap_conc(
-        maxic=params.maxic,
+        maxic_frac=params.maxic,
         vh37_line=vh37_line,
         adoff=adoff,
         v1937_line=v1937_line,
