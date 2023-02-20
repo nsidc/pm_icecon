@@ -324,6 +324,26 @@ def ret_ic_32(*, tbx, tby, wtp: Tiepoint, iline: Line, baddata, maxic):
     return ic
 
 
+def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
+    adjusted_ic = ic.copy()
+
+    radslp2, radoff2, radlen = calc_rad_coeffs(
+        itp=itp,
+        wtp=wtp,
+        line=line,
+    )
+
+    is_v19_lt_rc2 = tby < (radslp2 * tbx + radoff2)
+
+    iclen = np.sqrt(np.square(tbx - wtp[0]) + np.square(tby - wtp[1]))
+    is_iclen_gt_radlen = iclen > radlen
+    adjusted_ic[is_v19_lt_rc2 & is_iclen_gt_radlen] = 1.0
+    is_condition = is_v19_lt_rc2 & ~is_iclen_gt_radlen
+    adjusted_ic[is_condition] = iclen[is_condition] / radlen
+
+    return adjusted_ic
+
+
 def fadd(a: npt.ArrayLike, b: npt.ArrayLike):
     return np.add(a, b, dtype=np.float32)
 
@@ -816,18 +836,6 @@ def calc_bootstrap_conc(
     missval,
 ):
     """Return a sea ice concentration estimate at every grid cell."""
-    # ## LINES calculating radslp1 ... to radlen2 ###
-    radslp1, radoff1, radlen1 = calc_rad_coeffs(
-        itp=itp_37v37h,
-        wtp=wtp_37v37h,
-        line=vh37_line,
-    )
-    radslp2, radoff2, radlen2 = calc_rad_coeffs(
-        itp=itp_37v19v,
-        wtp=wtp_37v19v,
-        line=v1937_line,
-    )
-
     icpix1 = ret_ic_32(
         tbx=tb_v37,
         tby=tb_h37,
@@ -837,16 +845,14 @@ def calc_bootstrap_conc(
         maxic=maxic,
     )
 
-    # Compute radchk1
-    is_h37_lt_rc1 = tb_h37 < (radslp1 * tb_v37 + radoff1)
-
-    iclen1 = np.sqrt(
-        np.square(tb_v37 - wtp_37v37h[0]) + np.square(tb_h37 - wtp_37v37h[1])
+    icpix1 = rad_adjust_ic(
+        ic=icpix1,
+        tbx=tb_v37,
+        tby=tb_h37,
+        itp=itp_37v37h,
+        wtp=wtp_37v37h,
+        line=vh37_line,
     )
-    is_iclen1_gt_radlen1 = iclen1 > radlen1
-    icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
-    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
-    icpix1[is_condition1] = iclen1[is_condition1] / radlen1
 
     icpix2 = ret_ic_32(
         tbx=tb_v37,
@@ -857,16 +863,14 @@ def calc_bootstrap_conc(
         maxic=maxic,
     )
 
-    # Compute radchk2
-    is_v19_lt_rc2 = tb_v19 < (radslp2 * tb_v37 + radoff2)
-
-    iclen2 = np.sqrt(
-        np.square(tb_v37 - wtp_37v19v[0]) + np.square(tb_v19 - wtp_37v19v[1])
+    icpix2 = rad_adjust_ic(
+        ic=icpix2,
+        tbx=tb_v37,
+        tby=tb_v19,
+        itp=itp_37v19v,
+        wtp=wtp_37v19v,
+        line=v1937_line,
     )
-    is_iclen2_gt_radlen2 = iclen2 > radlen2
-    icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
-    is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
-    icpix2[is_condition2] = iclen2[is_condition2] / radlen2
 
     ic = icpix1.copy()
 
