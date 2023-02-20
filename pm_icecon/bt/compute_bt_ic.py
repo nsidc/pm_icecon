@@ -127,7 +127,7 @@ def ret_adj_adoff(*, wtp: Tiepoint, vh37_line: Line, perc=0.92) -> float:
 
 # TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
 # (x or y)
-def ret_wtp_32(
+def _ret_wtp_32(
     water_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> float:
@@ -172,8 +172,8 @@ def get_water_tiepoint(
     tbx,
     tby,
 ) -> Tiepoint:
-    wtpx = ret_wtp_32(water_mask, tbx)
-    wtpy = ret_wtp_32(water_mask, tby)
+    wtpx = _ret_wtp_32(water_mask, tbx)
+    wtpy = _ret_wtp_32(water_mask, tby)
 
     new_wtp = list(copy.copy(wtp_default))
 
