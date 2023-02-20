@@ -998,7 +998,6 @@ def goddard_bootstrap(
     iceout[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
     # *** Do sst cleaning ***
-    print(f'before sst_clean, params:\n{params}')
     iceout_sst = sst_clean_sb2(
         iceout=iceout,
         missval=missing_flag_value,
