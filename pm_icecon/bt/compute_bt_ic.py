@@ -234,9 +234,6 @@ def ret_linfit_32(
     adoff=None,
 ) -> Line:
     # Reproduces both ret_linfit1() and ret_linfit2()
-    # Note: lnline is two, 0 is offset, 1 is slope
-    # Note: iceline is two, 0 is offset, 1 is slope
-
     not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None and iceline is not None and adoff is not None:
         is_tba_le_modad = tba <= fadd(
