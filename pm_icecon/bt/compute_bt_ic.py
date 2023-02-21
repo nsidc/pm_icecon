@@ -314,14 +314,6 @@ def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
     return adjusted_ic
 
 
-def fsqr(a: npt.ArrayLike):
-    return np.square(a, dtype=np.float32)
-
-
-def fsqt(a: npt.ArrayLike):
-    return np.sqrt(a, dtype=np.float32)
-
-
 def _get_wx_params(
     *,
     date: dt.date,
@@ -475,7 +467,7 @@ def calc_rad_coeffs(
     xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
-    rad_len = fsqt(fsqr(xint - wtp[0]) + fsqr(yint - wtp[1]))
+    rad_len = np.sqrt(np.square(xint - wtp[0]) + np.square(yint - wtp[1]))
 
     return (rad_slope, rad_offset, rad_len)
 
