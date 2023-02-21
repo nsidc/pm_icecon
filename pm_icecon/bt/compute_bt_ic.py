@@ -73,15 +73,15 @@ def xfer_class_tbs(
     """
     # NRT regressions
     if sat == 'f17':
-        tb_v37 = fmul(1.0170066, tb_v37) + -4.9383355
-        tb_h37 = fmul(1.0009720, tb_h37) + -1.3709822
-        tb_v19 = fmul(1.0140723, tb_v19) + -3.4705583
-        tb_v22 = fmul(0.99652931, tb_v22) + -0.82305684
+        tb_v37 = (1.0170066 * tb_v37) + -4.9383355
+        tb_h37 = (1.0009720 * tb_h37) + -1.3709822
+        tb_v19 = (1.0140723 * tb_v19) + -3.4705583
+        tb_v22 = (0.99652931 * tb_v22) + -0.82305684
     elif sat == 'f18':
-        tb_v37 = fmul(1.0104497, tb_v37) + -3.3174017
-        tb_h37 = fmul(0.98914390, tb_h37) + 1.2031835
-        tb_v19 = fmul(1.0057373, tb_v19) + -0.92638520
-        tb_v22 = fmul(0.98793409, tb_v22) + 1.2108198
+        tb_v37 = (1.0104497 * tb_v37) + -3.3174017
+        tb_h37 = (0.98914390 * tb_h37) + 1.2031835
+        tb_v19 = (1.0057373 * tb_v19) + -0.92638520
+        tb_v22 = (0.98793409 * tb_v22) + 1.2108198
     else:
         raise UnexpectedSatelliteError(f'No such tb xform: {sat}')
 
@@ -213,12 +213,12 @@ def ret_linfit_32(
     # Reproduces both ret_linfit1() and ret_linfit2()
     not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None and iceline is not None and adoff is not None:
-        is_tba_le_modad = tba <= fmul(tbx, iceline['slope']) + iceline['offset'] - adoff
+        is_tba_le_modad = tba <= (tbx * iceline['slope']) + iceline['offset'] - adoff
 
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    is_tby_gt_lnline = tby > fmul(tbx, lnline['slope']) + lnline['offset']
+    is_tby_gt_lnline = tby > (tbx * lnline['slope']) + lnline['offset']
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
@@ -312,10 +312,6 @@ def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
     adjusted_ic[is_condition] = iclen[is_condition] / radlen
 
     return adjusted_ic
-
-
-def fmul(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.multiply(a, b, dtype=np.float32)
 
 
 def fdiv(a: npt.ArrayLike, b: npt.ArrayLike):
@@ -458,9 +454,9 @@ def get_weather_mask(
 
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = fmul(wslope, v22) + wintrc
+    watchk1 = (wslope * v22) + wintrc
     watchk2 = v22 - v19
-    watchk4 = fmul(ln1['slope'], v37) + ln1['offset']
+    watchk4 = (ln1['slope'] * v37) + ln1['offset']
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     # TODO: where does this 230.0 value come from? Should it be configuratble?
@@ -481,12 +477,12 @@ def calc_rad_coeffs(
         itp[1] - wtp[1],
         itp[0] - wtp[0],
     )
-    rad_offset = wtp[1] - fmul(wtp[0], rad_slope)
+    rad_offset = wtp[1] - (wtp[0] * rad_slope)
     xint = fdiv(
         rad_offset - line['offset'],
         line['slope'] - rad_slope,
     )
-    yint = fmul(line['slope'], xint) + line['offset']
+    yint = (line['slope'] * xint) + line['offset']
 
     rad_len = fsqt(fsqr(xint - wtp[0]) + fsqr(yint - wtp[1]))
 
