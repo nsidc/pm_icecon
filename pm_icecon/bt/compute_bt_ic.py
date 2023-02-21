@@ -273,7 +273,7 @@ def ret_linfit_32(
     return line
 
 
-def ret_ic_32(*, tbx, tby, wtp: Tiepoint, iline: Line, baddata, maxic):
+def ret_ic_32(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
     wtpx = wtp[0]
     wtpy = wtp[1]
     iline_off = iline['offset']
@@ -305,7 +305,7 @@ def ret_ic_32(*, tbx, tby, wtp: Tiepoint, iline: Line, baddata, maxic):
     ic_block2 = length1 / length2
     ic_block2[ic_block2 < 0] = 0
     ic_block2[ic_block2 > maxic] = maxic
-    ic_block2[~is_slp_diff_ne_0] = baddata
+    ic_block2[~is_slp_diff_ne_0] = missing_flag_value
 
     # Assume ic is block2, then overwrite if block1
     ic = ic_block2
@@ -834,21 +834,21 @@ def _calc_frac_conc_for_tbset(
     wtp: Tiepoint,
     itp: Tiepoint,
     line: Line,
-    missing_data_value: float | int,
+    missing_flag_value: float | int,
     maxic,
 ):
     """Return fractional sea ice concentration for the given parameters."""
-    icpix1 = ret_ic_32(
+    ic = ret_ic_32(
         tbx=tbx,
         tby=tby,
         wtp=wtp,
         iline=line,
-        baddata=missing_data_value,
+        missing_flag_value=missing_flag_value,
         maxic=maxic,
     )
 
-    icpix1 = rad_adjust_ic(
-        ic=icpix1,
+    ic_adjusted = rad_adjust_ic(
+        ic=ic,
         tbx=tbx,
         tby=tby,
         itp=itp,
@@ -856,7 +856,7 @@ def _calc_frac_conc_for_tbset(
         line=line,
     )
 
-    return icpix1
+    return ic_adjusted
 
 
 def calc_bootstrap_conc(
@@ -873,7 +873,7 @@ def calc_bootstrap_conc(
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
     # TODO: can/should we just use `nan`?
-    missval: float | int,
+    missing_flag_value: float | int,
 ):
     """Return a sea ice concentration estimate at every grid cell.
 
@@ -886,7 +886,7 @@ def calc_bootstrap_conc(
         wtp=wtp_37v37h,
         itp=itp_37v37h,
         line=line_37v37h,
-        missing_data_value=missval,
+        missing_flag_value=missing_flag_value,
         maxic=maxic_frac,
     )
 
@@ -896,7 +896,7 @@ def calc_bootstrap_conc(
         wtp=wtp_37v19v,
         itp=itp_37v19v,
         line=line_37v19v,
-        missing_data_value=missval,
+        missing_flag_value=missing_flag_value,
         maxic=maxic_frac,
     )
 
@@ -908,8 +908,10 @@ def calc_bootstrap_conc(
 
     # convert fractional sea ice concentrations to percentages
     ic_perc = ic_frac.copy()
-    is_ic_frac_is_missval = ic_frac == missval
-    ic_perc[~is_ic_frac_is_missval] = ic_frac[~is_ic_frac_is_missval] * 100.0
+    # TODO/NOTE: if we treat missing as `np.nan`, this comparison does not
+    # work. `np.nan != np.nan`.
+    is_missing = ic_frac == missing_flag_value
+    ic_perc[~is_missing] = ic_frac[~is_missing] * 100.0
 
     return ic_perc
 
@@ -999,7 +1001,7 @@ def goddard_bootstrap(
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
-        missval=missing_flag_value,
+        missing_flag_value=missing_flag_value,
     )
 
     # Apply masks and flag values
