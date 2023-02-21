@@ -535,13 +535,22 @@ def calc_rad_coeffs(
     return (rad_slope, rad_offset, rad_len)
 
 
-def sst_clean_sb2(*, iceout, missval, landval, invalid_ice_mask: npt.NDArray[np.bool_]):
-    # implement fortran's sst_clean_sb2() routine
-    is_not_land = iceout != landval
-    is_not_miss = iceout != missval
+def apply_invalid_ice_mask(
+    *,
+    conc,
+    missing_flag_value,
+    land_flag_value,
+    invalid_ice_mask: npt.NDArray[np.bool_],
+):
+    """Set all `invalid_ice_mask`ed areas that are not missing or land to 0.
+
+    Implementation of GSFC fortran `sst_clean_sb2()` routine.
+    """
+    is_not_land = conc != land_flag_value
+    is_not_miss = conc != missing_flag_value
     is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
 
-    ice_sst = iceout.copy()
+    ice_sst = conc.copy()
     ice_sst[is_not_land_miss_sst] = 0.0
 
     return ice_sst
@@ -999,16 +1008,19 @@ def goddard_bootstrap(
     iceout[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
     # *** Do sst cleaning ***
-    iceout_sst = sst_clean_sb2(
-        iceout=iceout,
-        missval=missing_flag_value,
-        landval=DEFAULT_FLAG_VALUES.land,
+    iceout_sst = apply_invalid_ice_mask(
+        conc=iceout,
+        missing_flag_value=missing_flag_value,
+        land_flag_value=DEFAULT_FLAG_VALUES.land,
         invalid_ice_mask=params.invalid_ice_mask,
     )
 
     # *** Do spatial interp ***
     iceout_fix = coastal_fix(
-        iceout_sst, missing_flag_value, DEFAULT_FLAG_VALUES.land, params.minic
+        iceout_sst,
+        missing_flag_value,
+        DEFAULT_FLAG_VALUES.land,
+        params.minic,
     )
     iceout_fix[iceout_fix < params.minic] = 0
 
