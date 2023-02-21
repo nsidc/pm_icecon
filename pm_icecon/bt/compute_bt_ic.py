@@ -314,10 +314,6 @@ def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
     return adjusted_ic
 
 
-def fdiv(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.divide(a, b, dtype=np.float32)
-
-
 def fsqr(a: npt.ArrayLike):
     return np.square(a, dtype=np.float32)
 
@@ -473,15 +469,10 @@ def calc_rad_coeffs(
     wtp: Tiepoint,
     line: Line,
 ):
-    rad_slope = fdiv(
-        itp[1] - wtp[1],
-        itp[0] - wtp[0],
-    )
+    rad_slope = (itp[1] - wtp[1]) / (itp[0] - wtp[0])
+
     rad_offset = wtp[1] - (wtp[0] * rad_slope)
-    xint = fdiv(
-        rad_offset - line['offset'],
-        line['slope'] - rad_slope,
-    )
+    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
     rad_len = fsqt(fsqr(xint - wtp[0]) + fsqr(yint - wtp[1]))

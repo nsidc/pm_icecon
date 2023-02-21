@@ -25,10 +25,6 @@ from pm_icecon.nt._types import (
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 
 
-def fdiv(a, b):
-    return np.divide(a, b, dtype=np.float32)
-
-
 def compute_nt_coefficients(tp: NasateamTiePoints) -> NasateamCoefficients:
     """Compute coefficients for the NT algorithm.
 
