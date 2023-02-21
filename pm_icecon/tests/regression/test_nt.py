@@ -8,7 +8,7 @@ from numpy.testing import assert_almost_equal
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import CDR_TESTDATA_DIR
 from pm_icecon.interpolation import spatial_interp_tbs
-from pm_icecon.nt.compute_nt_ic import nasateam
+from pm_icecon.nt.compute_nt_ic import goddard_nasateam
 from pm_icecon.nt.masks import get_ps25_sst_mask
 from pm_icecon.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,
@@ -69,15 +69,13 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
 
     invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
 
-    conc_ds = nasateam(
+    conc_ds = goddard_nasateam(
         tb_v19=tbs['v19'],
         tb_v37=tbs['v37'],
         tb_v22=tbs['v22'],
         tb_h19=tbs['h19'],
-        hemisphere=hemisphere,
         shoremap=_get_shoremap(hemisphere=hemisphere),
         minic=_get_minic(hemisphere=hemisphere),
-        date=date,
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=(
             RSS_F17_NORTH_GRADIENT_THRESHOLDS

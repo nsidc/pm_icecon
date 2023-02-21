@@ -8,7 +8,7 @@ from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.constants import CDR_TESTDATA_DIR
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
-from pm_icecon.nt.compute_nt_ic import nasateam
+from pm_icecon.nt.compute_nt_ic import goddard_nasateam
 from pm_icecon.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,
     RSS_F17_SOUTH_GRADIENT_THRESHOLDS,
@@ -63,15 +63,13 @@ def amsr2_nasateam(
         ' Do we need new ones for AMSR2? How do we get them?'
     )
 
-    conc_ds = nasateam(
+    conc_ds = goddard_nasateam(
         tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
         tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
         tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         tb_h19=spatial_interp_tbs(xr_tbs['h18'].data),
-        hemisphere=hemisphere,
         shoremap=shoremap,
         minic=minic,
-        date=date,
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=gradient_thresholds,
         tiepoints=get_tiepoints(satellite='u2', hemisphere=hemisphere),
