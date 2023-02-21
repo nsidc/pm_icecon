@@ -459,9 +459,7 @@ def _get_wx_params(
     )
 
 
-# TODO: change the name of this function. Or, do we need different conditions
-# for non SSMI data?
-def ret_water_ssmi(
+def get_weather_mask(
     *,
     v37,
     h37,
@@ -475,7 +473,8 @@ def ret_water_ssmi(
 ) -> npt.NDArray[np.bool_]:
     """Return a water mask that has been weather filtered.
 
-    `True` indicates areas that are water and are weather masked.
+    `True` indicates areas that are water and are weather masked. I.e., `True`
+    values should be treated as open ocean.
     """
     season_params = _get_wx_params(
         date=date,
@@ -937,7 +936,7 @@ def goddard_bootstrap(
         max_tb=params.maxtb,
     )
 
-    weather_mask = ret_water_ssmi(
+    weather_mask = get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,
