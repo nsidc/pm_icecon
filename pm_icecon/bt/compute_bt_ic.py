@@ -556,18 +556,24 @@ def apply_invalid_ice_mask(
     return ice_sst
 
 
-def coastal_fix(arr, missval, landval, minic):
+def coastal_fix(
+    *,
+    conc: npt.NDArray,
+    missing_flag_value,
+    land_flag_value,
+    minic,
+):
     # Apply coastal_fix() routine per Bootstrap
 
     # Calculate 'temp' array
     #   -1 is no ice
     #    1 is safe from removal
     #    0 is might-be-removed
-    temp = np.ones_like(arr, dtype=np.int16)
-    is_land_or_lowice = (arr == landval) | ((arr >= 0) & (arr < minic))
+    temp = np.ones_like(conc, dtype=np.int16)
+    is_land_or_lowice = (conc == land_flag_value) | ((conc >= 0) & (conc < minic))
     temp[is_land_or_lowice] = -1
 
-    is_seaice = (arr > 0) & (arr <= 100.0)
+    is_seaice = (conc > 0) & (conc <= 100.0)
 
     off_set = (
         np.array((0, 1)),
@@ -581,13 +587,13 @@ def coastal_fix(arr, missval, landval, minic):
         offn2 = -2 * offp1  # offp1 * -2
 
         # Compute shifted grids
-        rolled_offn1 = np.roll(arr, offp1, axis=(1, 0))  # land
-        rolled_off00 = arr  # .  k1p0 k2p0
-        rolled_offp1 = np.roll(arr, offn1, axis=(1, 0))  # k1 k2p1
-        rolled_offp2 = np.roll(arr, offn2, axis=(1, 0))  # k2
+        rolled_offn1 = np.roll(conc, offp1, axis=(1, 0))  # land
+        rolled_off00 = conc.copy()  # .  k1p0 k2p0
+        rolled_offp1 = np.roll(conc, offn1, axis=(1, 0))  # k1 k2p1
+        rolled_offp2 = np.roll(conc, offn2, axis=(1, 0))  # k2
 
-        # is_rolled_land = rolled_offn1 == landval
-        is_rolled_land = rolled_offn1 == landval
+        # is_rolled_land = rolled_offn1 == land_flag_value
+        is_rolled_land = rolled_offn1 == land_flag_value
 
         is_k1 = (
             (is_seaice)
@@ -605,20 +611,20 @@ def coastal_fix(arr, missval, landval, minic):
         is_k1p0 = (
             (is_k1)
             & (rolled_off00 > 0)
-            & (rolled_off00 != missval)
-            & (rolled_off00 != landval)
+            & (rolled_off00 != missing_flag_value)
+            & (rolled_off00 != land_flag_value)
         )
         is_k2p0 = (
             (is_k2)
             & (rolled_off00 > 0)
-            & (rolled_off00 != missval)
-            & (rolled_off00 != landval)
+            & (rolled_off00 != missing_flag_value)
+            & (rolled_off00 != land_flag_value)
         )
         is_k2p1 = (
             (is_k2)
             & (rolled_offp1 > 0)
-            & (rolled_offp1 != missval)
-            & (rolled_offp1 != landval)
+            & (rolled_offp1 != missing_flag_value)
+            & (rolled_offp1 != land_flag_value)
         )
 
         temp[is_k1p0] = 0
@@ -652,10 +658,10 @@ def coastal_fix(arr, missval, landval, minic):
 
     # HERE: temp array has been set
 
-    # Calculate 'arr2' array
-    # This is initially a copy of the arr array, but then has values
+    # Calculate 'conc2' array
+    # This is initially a copy of the conc array, but then has values
     #   set to zero where 'appropriate' based on the temp array
-    arr2 = arr.copy()
+    conc2 = conc.copy()
 
     # This is very complicated to figure out as modification
     # of the series of off_sets.  Simply coding each of the
@@ -663,9 +669,9 @@ def coastal_fix(arr, missval, landval, minic):
 
     # Note: some of these conditional arrays might be set more than 1x
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (0, 1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (0, 1), axis=(1, 0))  # land check
+    is_rolled_land = land_check == land_flag_value
 
     # For offp1 of [0, 1], the rolls are:
     tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
@@ -685,14 +691,14 @@ def coastal_fix(arr, missval, landval, minic):
 
     is_tip0jp1_eq0 = tip0jp1 == 0
 
-    # Changing arr2(i,j+1) to 0
+    # Changing conc2(i,j+1) to 0
     locs_ip0jp1 = np.where(
         is_considered & is_tip1jp1_lt0 & is_tim1jp1_lt0 & is_tip0jp1_eq0
     )
-    change_locs_arr2_ip0jp1 = tuple([locs_ip0jp1[0] + 1, locs_ip0jp1[1] + 0])
-    arr2[change_locs_arr2_ip0jp1] = 0
+    change_locs_conc2_ip0jp1 = tuple([locs_ip0jp1[0] + 1, locs_ip0jp1[1] + 0])
+    conc2[change_locs_conc2_ip0jp1] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jp1_lt0
@@ -700,14 +706,14 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip1jp0_lt0
         & is_tim1jp0_lt0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
-    # Second arr2 change section
+    # Second conc2 change section
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (0, -1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (0, -1), axis=(1, 0))  # land check
+    is_rolled_land = land_check == land_flag_value
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -726,14 +732,14 @@ def coastal_fix(arr, missval, landval, minic):
     is_tip1jp0_le0 = tip1jp0 <= 0
     is_tim1jp0_le0 = tim1jp0 <= 0
 
-    # Changing arr2(i,j-1) to 0
+    # Changing conc2(i,j-1) to 0
     locs_ip0jm1 = np.where(
         is_considered & is_tip1jm1_le0 & is_tim1jm1_le0 & is_tip0jm1_eq0
     )
-    change_locs_arr2_ip0jm1 = tuple([locs_ip0jm1[0] - 1, locs_ip0jm1[1] + 0])
-    arr2[change_locs_arr2_ip0jm1] = 0
+    change_locs_conc2_ip0jm1 = tuple([locs_ip0jm1[0] - 1, locs_ip0jm1[1] + 0])
+    conc2[change_locs_conc2_ip0jm1] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jm1_le0
@@ -741,14 +747,14 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip1jp0_le0
         & is_tim1jp0_le0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
-    # Third arr2 change section
+    # Third conc2 change section
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (1, 0), axis=(1, 0))
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (1, 0), axis=(1, 0))
+    is_rolled_land = land_check == land_flag_value
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -764,14 +770,14 @@ def coastal_fix(arr, missval, landval, minic):
     is_tip0jm1_le0 = tip0jm1 <= 0
     is_tip0jp1_le0 = tip0jp1 <= 0
 
-    # Changing arr2(i+1,j) to 0
+    # Changing conc2(i+1,j) to 0
     locs_ip1jp0 = np.where(
         is_considered & is_tip1jp1_le0 & is_tip1jp1_le0 & is_tip1jp0_eq0
     )
-    change_locs_arr2_ip1jp0 = tuple([locs_ip1jp0[0] + 0, locs_ip1jp0[1] + 1])
-    arr2[change_locs_arr2_ip1jp0] = 0
+    change_locs_conc2_ip1jp0 = tuple([locs_ip1jp0[0] + 0, locs_ip1jp0[1] + 1])
+    conc2[change_locs_conc2_ip1jp0] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jp1_le0
@@ -779,14 +785,14 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip0jm1_le0
         & is_tip0jp1_le0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
     # Fourth section
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (-1, 0), axis=(1, 0))
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (-1, 0), axis=(1, 0))
+    is_rolled_land = land_check == land_flag_value
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -804,14 +810,14 @@ def coastal_fix(arr, missval, landval, minic):
     is_tip0jm1_le0 = tip0jm1 <= 0
     is_tip0jp1_le0 = tip0jp1 <= 0
 
-    # Changing arr2(i-1,j) to 0
+    # Changing conc2(i-1,j) to 0
     locs_im1jp0 = np.where(
         is_considered & is_tim1jm1_le0 & is_tim1jp1_le0 & is_tim1jp0_eq0
     )
-    change_locs_arr2_im1jp0 = tuple([locs_im1jp0[0] + 0, locs_im1jp0[1] - 1])
-    arr2[change_locs_arr2_im1jp0] = 0
+    change_locs_conc2_im1jp0 = tuple([locs_im1jp0[0] + 0, locs_im1jp0[1] - 1])
+    conc2[change_locs_conc2_im1jp0] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tim1jm1_le0
@@ -819,10 +825,10 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip0jm1_le0
         & is_tip0jp1_le0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
-    return arr2
+    return conc2
 
 
 def _calc_frac_conc_for_tbset(
@@ -972,7 +978,6 @@ def goddard_bootstrap(
 
     adoff = ret_adj_adoff(wtp=wtp_37v37h, line_37v37h=line_37v37h)
 
-    # Try the ret_para... values for v1937
     line_37v19v = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
@@ -986,8 +991,7 @@ def goddard_bootstrap(
         adoff=adoff,
     )
 
-    # TODO: call this `conc` like we do in nasateam instead of `iceout`.
-    iceout = calc_bootstrap_conc(
+    conc = calc_bootstrap_conc(
         maxic_frac=params.maxic,
         line_37v37h=line_37v37h,
         adoff=adoff,
@@ -1003,27 +1007,25 @@ def goddard_bootstrap(
     )
 
     # Apply masks and flag values
-    iceout[weather_mask] = 0.0
-    iceout[tb_mask] = 0.0
-    iceout[params.land_mask] = DEFAULT_FLAG_VALUES.land
+    conc[weather_mask] = 0.0
+    conc[tb_mask] = 0.0
+    conc[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
-    # *** Do sst cleaning ***
-    iceout_sst = apply_invalid_ice_mask(
-        conc=iceout,
+    conc = apply_invalid_ice_mask(
+        conc=conc,
         missing_flag_value=missing_flag_value,
         land_flag_value=DEFAULT_FLAG_VALUES.land,
         invalid_ice_mask=params.invalid_ice_mask,
     )
 
-    # *** Do spatial interp ***
-    iceout_fix = coastal_fix(
-        iceout_sst,
-        missing_flag_value,
-        DEFAULT_FLAG_VALUES.land,
-        params.minic,
+    conc = coastal_fix(
+        conc=conc,
+        missing_flag_value=missing_flag_value,
+        land_flag_value=DEFAULT_FLAG_VALUES.land,
+        minic=params.minic,
     )
-    iceout_fix[iceout_fix < params.minic] = 0
+    conc[conc < params.minic] = 0
 
-    ds = xr.Dataset({'conc': (('y', 'x'), iceout_fix)})
+    ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
     return ds
