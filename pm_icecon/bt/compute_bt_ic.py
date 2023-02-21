@@ -27,11 +27,6 @@ from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 
-def f(num):
-    # return float32 of num
-    return np.float32(num)
-
-
 # TODO: this function very similar to `get_invalid_tbs_mask` in `compute_nt_ic`.
 def tb_data_mask(
     *,
@@ -104,7 +99,7 @@ def xfer_class_tbs(
 def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp is one water tie point
-    wtp_x, wtp_y = f(wtp[0]), f(wtp[1])
+    wtp_x, wtp_y = wtp[0], wtp[1]
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
 
@@ -153,7 +148,7 @@ def _ret_wtp_32(
 
     ival = 0
     subtotal = 0
-    thresh = f(nvals) * pct
+    thresh = nvals * pct
     while (ival < n_bins) and (subtotal < thresh):
         subtotal += histo[ival]
         ival += 1
@@ -161,7 +156,7 @@ def _ret_wtp_32(
 
     # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
     # returns...
-    wtp = f(ival) * 0.25
+    wtp = ival * 0.25
 
     return wtp
 
@@ -253,7 +248,7 @@ def ret_linfit_32(
         )
 
     fit_off = fadd(intrca, add)
-    fit_slp = f(slopeb)
+    fit_slp = slopeb
     line = Line(offset=fit_off, slope=fit_slp)
 
     return line
@@ -472,7 +467,7 @@ def get_weather_mask(
 
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
+    watchk1 = fadd(fmul(wslope, v22), wintrc)
     watchk2 = fsub(v22, v19)
     watchk4 = fadd(fmul(ln1['slope'], v37), ln1['offset'])
 
@@ -492,25 +487,25 @@ def calc_rad_coeffs(
     line: Line,
 ):
     rad_slope = fdiv(
-        fsub(f(itp[1]), f(wtp[1])),
-        fsub(f(itp[0]), f(wtp[0])),
+        fsub(itp[1], wtp[1]),
+        fsub(itp[0], wtp[0]),
     )
-    rad_offset = fsub(f(wtp[1]), fmul(f(wtp[0]), f(rad_slope)))
+    rad_offset = fsub(wtp[1], fmul(wtp[0], rad_slope))
     xint = fdiv(
-        fsub(f(rad_offset), f(line['offset'])),
-        fsub(f(line['slope']), f(rad_slope)),
+        fsub(rad_offset, line['offset']),
+        fsub(line['slope'], rad_slope),
     )
     yint = fadd(
         fmul(
             line['slope'],
-            f(xint),
+            xint,
         ),
-        f(line['offset']),
+        line['offset'],
     )
     rad_len = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp[0]))),
-            fsqr(fsub(f(yint), f(wtp[1]))),
+            fsqr(fsub(xint, wtp[0])),
+            fsqr(fsub(yint, wtp[1])),
         )
     )
 
