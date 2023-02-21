@@ -42,7 +42,7 @@ def test_bt_amsr2_regression():
         assert_almost_equal(
             regression_ds.conc.data,
             actual_ds.conc.data,
-            decimal=1,
+            decimal=3,
         )
 
 
@@ -126,5 +126,5 @@ def test_bt_f18_regression():
     assert_almost_equal(
         regression_ds.conc.data,
         actual_ds.conc.data,
-        decimal=1,
+        decimal=3,
     )
