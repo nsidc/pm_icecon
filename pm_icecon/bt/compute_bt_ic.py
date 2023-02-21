@@ -123,7 +123,7 @@ def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
 
 # TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
 # (x or y)
-def _ret_wtp_32(
+def _ret_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> float:
@@ -173,8 +173,8 @@ def get_water_tiepoint(
     If the calculated wtpx and wtpy values are within +/- 10 of the
     `wtp_default`, use the newly calculated values.
     """
-    wtpx = _ret_wtp_32(weather_mask, tbx)
-    wtpy = _ret_wtp_32(weather_mask, tby)
+    wtpx = _ret_wtp(weather_mask, tbx)
+    wtpy = _ret_wtp(weather_mask, tby)
 
     new_wtp = list(copy.copy(wtp_default))
 
@@ -193,7 +193,7 @@ def get_water_tiepoint(
     return wtp_tuple
 
 
-def ret_linfit_32(
+def ret_linfit(
     *,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
@@ -253,7 +253,7 @@ def ret_linfit_32(
     return line
 
 
-def ret_ic_32(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
+def ret_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
     wtpx = wtp[0]
     wtpy = wtp[1]
     iline_off = iline['offset']
@@ -779,7 +779,7 @@ def _calc_frac_conc_for_tbset(
     maxic,
 ):
     """Return fractional sea ice concentration for the given parameters."""
-    ic = ret_ic_32(
+    ic = ret_ic(
         tbx=tbx,
         tby=tby,
         wtp=wtp,
@@ -891,7 +891,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    line_37v37h = ret_linfit_32(
+    line_37v37h = ret_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -917,7 +917,7 @@ def goddard_bootstrap(
 
     adoff = ret_adj_adoff(wtp=wtp_37v37h, line_37v37h=line_37v37h)
 
-    line_37v19v = ret_linfit_32(
+    line_37v19v = ret_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
