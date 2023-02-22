@@ -96,7 +96,7 @@ def xfer_class_tbs(
 # TODO: is this function really specific to 37v37h or should it be more generic?
 # If specific, also rename `wtp` and rename func to make this clear. If not,
 # rename `vh37` kwarg to e.g., 'line'?
-def ret_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
+def get_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
     """Return the AD line offset.
 
     The AD line offset is used to determine between which tb set should be used
@@ -130,7 +130,7 @@ def ret_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> fl
 
 # TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
 # (x or y)
-def _ret_wtp(
+def _get_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> float:
@@ -180,8 +180,8 @@ def get_water_tiepoint(
     If the calculated wtpx and wtpy values are within +/- 10 of the
     `wtp_default`, use the newly calculated values.
     """
-    wtpx = _ret_wtp(weather_mask, tbx)
-    wtpy = _ret_wtp(weather_mask, tby)
+    wtpx = _get_wtp(weather_mask, tbx)
+    wtpy = _get_wtp(weather_mask, tby)
 
     new_wtp = list(copy.copy(wtp_default))
 
@@ -200,7 +200,7 @@ def get_water_tiepoint(
     return wtp_tuple
 
 
-def ret_linfit(
+def get_linfit(
     *,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
@@ -217,7 +217,7 @@ def ret_linfit(
     iceline: Line | None = None,
     ad_line_offset=None,
 ) -> Line:
-    # Reproduces both ret_linfit1() and ret_linfit2()
+    # Reproduces both get_linfit1() and get_linfit2()
     not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None and iceline is not None and ad_line_offset is not None:
         is_tba_le_modad = (
@@ -258,7 +258,7 @@ def ret_linfit(
     return line
 
 
-def ret_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
+def get_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
     wtpx = wtp[0]
     wtpy = wtp[1]
     iline_off = iline['offset']
@@ -784,7 +784,7 @@ def _calc_frac_conc_for_tbset(
     maxic,
 ):
     """Return fractional sea ice concentration for the given parameters."""
-    ic = ret_ic(
+    ic = get_ic(
         tbx=tbx,
         tby=tby,
         wtp=wtp,
@@ -896,7 +896,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    line_37v37h = ret_linfit(
+    line_37v37h = get_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -920,9 +920,9 @@ def goddard_bootstrap(
         tby=tb_v19,
     )
 
-    ad_line_offset = ret_adj_ad_line_offset(wtp=wtp_37v37h, line_37v37h=line_37v37h)
+    ad_line_offset = get_adj_ad_line_offset(wtp=wtp_37v37h, line_37v37h=line_37v37h)
 
-    line_37v19v = ret_linfit(
+    line_37v19v = get_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
