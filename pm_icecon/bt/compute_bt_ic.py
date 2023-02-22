@@ -214,7 +214,6 @@ def ret_linfit(
     not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None and iceline is not None and adoff is not None:
         is_tba_le_modad = tba <= (tbx * iceline['slope']) + iceline['offset'] - adoff
-
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
