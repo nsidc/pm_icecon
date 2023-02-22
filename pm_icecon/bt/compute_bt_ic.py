@@ -302,18 +302,18 @@ def get_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
 def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
     adjusted_ic = ic.copy()
 
-    radslp2, rad_line_offset2, radlen = calc_rad_coeffs(
+    radslp, rad_line_offset, radlen = calc_rad_coeffs(
         itp=itp,
         wtp=wtp,
         line=line,
     )
 
-    is_v19_lt_rc2 = tby < (radslp2 * tbx + rad_line_offset2)
+    is_v19_lt_rc = tby < (radslp * tbx + rad_line_offset)
 
     iclen = np.sqrt(np.square(tbx - wtp[0]) + np.square(tby - wtp[1]))
     is_iclen_gt_radlen = iclen > radlen
-    adjusted_ic[is_v19_lt_rc2 & is_iclen_gt_radlen] = 1.0
-    is_condition = is_v19_lt_rc2 & ~is_iclen_gt_radlen
+    adjusted_ic[is_v19_lt_rc & is_iclen_gt_radlen] = 1.0
+    is_condition = is_v19_lt_rc & ~is_iclen_gt_radlen
     adjusted_ic[is_condition] = iclen[is_condition] / radlen
 
     return adjusted_ic
