@@ -234,12 +234,9 @@ def ret_linfit(
     if icnt <= 125:
         raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
 
-    xvals = tbx[is_valid].flatten()
-    yvals = tby[is_valid].flatten()
-
     slopeb, intrca = np.polyfit(
-        x=xvals,
-        y=yvals,
+        x=tbx[is_valid],
+        y=tby[is_valid],
         deg=1,
     )
 
