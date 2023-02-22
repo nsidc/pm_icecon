@@ -97,7 +97,14 @@ def xfer_class_tbs(
 # If specific, also rename `wtp` and rename func to make this clear. If not,
 # rename `vh37` kwarg to e.g., 'line'?
 def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
-    # replaces ret_adj_adoff()
+    """Return the AD line offset.
+
+    The AD line offset is used to determine between which tb set should be used
+    to calculate a pixel's ice concentration. For the Goddard bootstrap
+    algorithm, data points above the offset AD line (appox. AD - 5K) use
+    HV37. For data points below the offset AD line, the V1937 tbs et is used
+    instead.
+    """
     # wtp is one water tie point
     wtp_x, wtp_y = wtp[0], wtp[1]
     off = line_37v37h['offset']
