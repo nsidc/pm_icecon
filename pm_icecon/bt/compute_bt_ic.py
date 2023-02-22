@@ -96,7 +96,7 @@ def xfer_class_tbs(
 # TODO: is this function really specific to 37v37h or should it be more generic?
 # If specific, also rename `wtp` and rename func to make this clear. If not,
 # rename `vh37` kwarg to e.g., 'line'?
-def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
+def ret_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
     """Return the AD line offset.
 
     The AD line offset is used to determine between which tb set should be used
@@ -123,9 +123,9 @@ def ret_adj_adoff(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
 
     new_off = y2 - slp * x2
 
-    adoff = off - new_off
+    ad_line_offset = off - new_off
 
-    return adoff
+    return ad_line_offset
 
 
 # TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
@@ -215,12 +215,14 @@ def ret_linfit(
     # if pixels are valid for use.
     tba=None,
     iceline: Line | None = None,
-    adoff=None,
+    ad_line_offset=None,
 ) -> Line:
     # Reproduces both ret_linfit1() and ret_linfit2()
     not_land_or_masked = ~land_mask & ~tb_mask
-    if tba is not None and iceline is not None and adoff is not None:
-        is_tba_le_modad = tba <= (tbx * iceline['slope']) + iceline['offset'] - adoff
+    if tba is not None and iceline is not None and ad_line_offset is not None:
+        is_tba_le_modad = (
+            tba <= (tbx * iceline['slope']) + iceline['offset'] - ad_line_offset
+        )
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
@@ -303,13 +305,13 @@ def ret_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
 def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
     adjusted_ic = ic.copy()
 
-    radslp2, radoff2, radlen = calc_rad_coeffs(
+    radslp2, rad_line_offset2, radlen = calc_rad_coeffs(
         itp=itp,
         wtp=wtp,
         line=line,
     )
 
-    is_v19_lt_rc2 = tby < (radslp2 * tbx + radoff2)
+    is_v19_lt_rc2 = tby < (radslp2 * tbx + rad_line_offset2)
 
     iclen = np.sqrt(np.square(tbx - wtp[0]) + np.square(tby - wtp[1]))
     is_iclen_gt_radlen = iclen > radlen
@@ -810,7 +812,7 @@ def calc_bootstrap_conc(
     *,
     maxic_frac,
     line_37v37h: Line,
-    adoff,
+    ad_line_offset,
     line_37v19v: Line,
     wtp_37v37h: Tiepoint,
     wtp_37v19v: Tiepoint,
@@ -849,7 +851,7 @@ def calc_bootstrap_conc(
 
     ic_frac = ic_frac_37v37h.copy()
 
-    vh37chk = line_37v37h['offset'] - adoff + line_37v37h['slope'] * tb_v37
+    vh37chk = line_37v37h['offset'] - ad_line_offset + line_37v37h['slope'] * tb_v37
     is_check1 = tb_h37 > vh37chk
     ic_frac[~is_check1] = ic_frac_37v19v[~is_check1]
 
@@ -921,7 +923,7 @@ def goddard_bootstrap(
         tby=tb_v19,
     )
 
-    adoff = ret_adj_adoff(wtp=wtp_37v37h, line_37v37h=line_37v37h)
+    ad_line_offset = ret_adj_ad_line_offset(wtp=wtp_37v37h, line_37v37h=line_37v37h)
 
     line_37v19v = ret_linfit(
         land_mask=params.land_mask,
@@ -933,13 +935,13 @@ def goddard_bootstrap(
         weather_mask=weather_mask,
         tba=tb_h37,
         iceline=line_37v37h,
-        adoff=adoff,
+        ad_line_offset=ad_line_offset,
     )
 
     conc = calc_bootstrap_conc(
         maxic_frac=params.maxic,
         line_37v37h=line_37v37h,
-        adoff=adoff,
+        ad_line_offset=ad_line_offset,
         line_37v19v=line_37v19v,
         wtp_37v37h=wtp_37v37h,
         wtp_37v19v=wtp_37v19v,
