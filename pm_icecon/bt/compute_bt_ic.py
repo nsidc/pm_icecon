@@ -462,8 +462,8 @@ def calc_rad_coeffs(
     line: Line,
 ):
     rad_slope = (itp[1] - wtp[1]) / (itp[0] - wtp[0])
-
     rad_offset = wtp[1] - (wtp[0] * rad_slope)
+
     xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
