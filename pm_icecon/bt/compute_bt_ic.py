@@ -215,7 +215,7 @@ def get_linfit(
     # if pixels are valid for use.
     tba=None,
     iceline: Line | None = None,
-    ad_line_offset=None,
+    ad_line_offset: float | None = None,
 ) -> Line:
     # Reproduces both get_linfit1() and get_linfit2()
     not_land_or_masked = ~land_mask & ~tb_mask
@@ -809,7 +809,7 @@ def calc_bootstrap_conc(
     *,
     maxic_frac,
     line_37v37h: Line,
-    ad_line_offset,
+    ad_line_offset: float,
     line_37v19v: Line,
     wtp_37v37h: Tiepoint,
     wtp_37v19v: Tiepoint,
