@@ -42,7 +42,7 @@ def test_bt_amsr2_regression():
         assert_almost_equal(
             regression_ds.conc.data,
             actual_ds.conc.data,
-            decimal=1,
+            decimal=3,
         )
 
 
@@ -91,7 +91,7 @@ def _original_f18_example() -> xr.Dataset:
         # Read int16 scaled by 10 and return float32 unscaled
         raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
-        return bt.fdiv(raw.astype(np.float32), 10)
+        return raw.astype(np.float32) / 10
 
     for tb in ('v19', 'h37', 'v37', 'v22'):
         otbs[tb] = _read_tb_field(
@@ -126,5 +126,5 @@ def test_bt_f18_regression():
     assert_almost_equal(
         regression_ds.conc.data,
         actual_ds.conc.data,
-        decimal=1,
+        decimal=3,
     )

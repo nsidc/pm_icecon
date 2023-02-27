@@ -27,11 +27,6 @@ from pm_icecon.constants import DEFAULT_FLAG_VALUES
 from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
 
 
-def f(num):
-    # return float32 of num
-    return np.float32(num)
-
-
 # TODO: this function very similar to `get_invalid_tbs_mask` in `compute_nt_ic`.
 def tb_data_mask(
     *,
@@ -78,15 +73,15 @@ def xfer_class_tbs(
     """
     # NRT regressions
     if sat == 'f17':
-        tb_v37 = fadd(fmul(1.0170066, tb_v37), -4.9383355)
-        tb_h37 = fadd(fmul(1.0009720, tb_h37), -1.3709822)
-        tb_v19 = fadd(fmul(1.0140723, tb_v19), -3.4705583)
-        tb_v22 = fadd(fmul(0.99652931, tb_v22), -0.82305684)
+        tb_v37 = (1.0170066 * tb_v37) + -4.9383355
+        tb_h37 = (1.0009720 * tb_h37) + -1.3709822
+        tb_v19 = (1.0140723 * tb_v19) + -3.4705583
+        tb_v22 = (0.99652931 * tb_v22) + -0.82305684
     elif sat == 'f18':
-        tb_v37 = fadd(fmul(1.0104497, tb_v37), -3.3174017)
-        tb_h37 = fadd(fmul(0.98914390, tb_h37), 1.2031835)
-        tb_v19 = fadd(fmul(1.0057373, tb_v19), -0.92638520)
-        tb_v22 = fadd(fmul(0.98793409, tb_v22), 1.2108198)
+        tb_v37 = (1.0104497 * tb_v37) + -3.3174017
+        tb_h37 = (0.98914390 * tb_h37) + 1.2031835
+        tb_v19 = (1.0057373 * tb_v19) + -0.92638520
+        tb_v22 = (0.98793409 * tb_v22) + 1.2108198
     else:
         raise UnexpectedSatelliteError(f'No such tb xform: {sat}')
 
@@ -104,7 +99,7 @@ def xfer_class_tbs(
 def ret_adj_adoff(*, wtp_set: TiepointSet, line_37v37h: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
     # wtp_set is one water tie point
-    wtp_x, wtp_y = f(wtp_set[0]), f(wtp_set[1])
+    wtp_x, wtp_y = wtp_set[0], wtp_set[1]
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
 
@@ -128,7 +123,7 @@ def ret_adj_adoff(*, wtp_set: TiepointSet, line_37v37h: Line, perc=0.92) -> floa
 
 # TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
 # (x or y)
-def _ret_wtp_32(
+def _ret_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> Tiepoint:
@@ -151,15 +146,13 @@ def _ret_wtp_32(
 
     ival = 0
     subtotal = 0
-    thresh = f(nvals) * pct
+    thresh = nvals * pct
     while (ival < n_bins) and (subtotal < thresh):
         subtotal += histo[ival]
         ival += 1
     ival -= 1  # undo last increment
 
-    # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
-    # returns...
-    wtp = f(ival) * 0.25
+    wtp = Tiepoint(ival * 0.25)
 
     return wtp
 
@@ -176,8 +169,8 @@ def get_water_tiepoint_set(
     If the calculated water tiepoints are within +/- 10 of the
     `wtp_set_default`, use the newly calculated values.
     """
-    wtpx = _ret_wtp_32(weather_mask, tbx)
-    wtpy = _ret_wtp_32(weather_mask, tby)
+    wtpx = _ret_wtp(weather_mask, tbx)
+    wtpy = _ret_wtp(weather_mask, tby)
 
     new_wtp_set = list(copy.copy(wtp_set_default))
 
@@ -196,7 +189,7 @@ def get_water_tiepoint_set(
     return wtp_set_tuple
 
 
-def ret_linfit_32(
+def ret_linfit(
     *,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
@@ -216,13 +209,11 @@ def ret_linfit_32(
     # Reproduces both ret_linfit1() and ret_linfit2()
     not_land_or_masked = ~land_mask & ~tb_mask
     if tba is not None and iceline is not None and adoff is not None:
-        is_tba_le_modad = tba <= fadd(
-            fmul(tbx, iceline['slope']), fsub(iceline['offset'], adoff)
-        )
+        is_tba_le_modad = tba <= (tbx * iceline['slope']) + iceline['offset'] - adoff
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline['slope']), lnline['offset'])
+    is_tby_gt_lnline = tby > (tbx * lnline['slope']) + lnline['offset']
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
@@ -230,8 +221,8 @@ def ret_linfit_32(
     if icnt <= 125:
         raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
 
-    xvals = tbx[is_valid].astype(np.float32).flatten().astype(np.float64)
-    yvals = tby[is_valid].astype(np.float32).flatten().astype(np.float64)
+    xvals = tbx[is_valid].flatten()
+    yvals = tby[is_valid].flatten()
 
     slopeb, intrca = np.polyfit(
         x=xvals,
@@ -250,16 +241,14 @@ def ret_linfit_32(
             ' sure how the default values of (`iceline`) were originally chosen.'
         )
 
-    fit_off = fadd(intrca, add)
-    fit_slp = f(slopeb)
+    fit_off = intrca + add
+    fit_slp = slopeb
     line = Line(offset=fit_off, slope=fit_slp)
 
     return line
 
 
-def ret_ic_32(
-    *, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, maxic
-):
+def ret_ic(*, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, maxic):
     wtp_x = wtp_set[0]
     wtp_y = wtp_set[1]
     iline_off = iline['offset']
@@ -326,30 +315,6 @@ def rad_adjust_ic(
     adjusted_ic[is_condition] = iclen[is_condition] / radlen
 
     return adjusted_ic
-
-
-def fadd(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.add(a, b, dtype=np.float32)
-
-
-def fsub(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.subtract(a, b, dtype=np.float32)
-
-
-def fmul(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.multiply(a, b, dtype=np.float32)
-
-
-def fdiv(a: npt.ArrayLike, b: npt.ArrayLike):
-    return np.divide(a, b, dtype=np.float32)
-
-
-def fsqr(a: npt.ArrayLike):
-    return np.square(a, dtype=np.float32)
-
-
-def fsqt(a: npt.ArrayLike):
-    return np.sqrt(a, dtype=np.float32)
 
 
 def _get_wx_params(
@@ -480,9 +445,9 @@ def get_weather_mask(
 
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
-    watchk2 = fsub(v22, v19)
-    watchk4 = fadd(fmul(ln1['slope'], v37), ln1['offset'])
+    watchk1 = (wslope * v22) + wintrc
+    watchk2 = v22 - v19
+    watchk4 = (ln1['slope'] * v37) + ln1['offset']
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     # TODO: where does this 230.0 value come from? Should it be configuratble?
@@ -499,28 +464,13 @@ def calc_rad_coeffs(
     wtp_set: TiepointSet,
     line: Line,
 ):
-    rad_slope = fdiv(
-        fsub(f(itp_set[1]), f(wtp_set[1])),
-        fsub(f(itp_set[0]), f(wtp_set[0])),
-    )
-    rad_offset = fsub(f(wtp_set[1]), fmul(f(wtp_set[0]), f(rad_slope)))
-    xint = fdiv(
-        fsub(f(rad_offset), f(line['offset'])),
-        fsub(f(line['slope']), f(rad_slope)),
-    )
-    yint = fadd(
-        fmul(
-            line['slope'],
-            f(xint),
-        ),
-        f(line['offset']),
-    )
-    rad_len = fsqt(
-        fadd(
-            fsqr(fsub(f(xint), f(wtp_set[0]))),
-            fsqr(fsub(f(yint), f(wtp_set[1]))),
-        )
-    )
+    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
+    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
+
+    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
+    yint = (line['slope'] * xint) + line['offset']
+
+    rad_len = np.sqrt(np.square(xint - wtp_set[0]) + np.square(yint - wtp_set[1]))
 
     return (rad_slope, rad_offset, rad_len)
 
@@ -832,7 +782,7 @@ def _calc_frac_conc_for_tbset(
     maxic,
 ):
     """Return fractional sea ice concentration for the given parameters."""
-    ic = ret_ic_32(
+    ic = ret_ic(
         tbx=tbx,
         tby=tby,
         wtp_set=wtp_set,
@@ -944,7 +894,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    line_37v37h = ret_linfit_32(
+    line_37v37h = ret_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -970,7 +920,7 @@ def goddard_bootstrap(
 
     adoff = ret_adj_adoff(wtp_set=wtp_set_37v37h, line_37v37h=line_37v37h)
 
-    line_37v19v = ret_linfit_32(
+    line_37v19v = ret_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
