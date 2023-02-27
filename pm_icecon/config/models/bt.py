@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
-from pm_icecon.bt._types import Line, Tiepoint
+from pm_icecon.bt._types import Line, TiepointSet
 from pm_icecon.config.models.base_model import ConfigBaseModel
 
 
@@ -46,15 +46,15 @@ class TbSetParams(ConfigBaseModel):
     Bootstrap code currently expects one of two sets of Tbs: vh37 or v1937.
     """
 
-    water_tie_point: Tiepoint
-    """Starting or 'default' water tie point (wtp) for this Tb set.
+    water_tie_point_set: TiepointSet
+    """Starting or 'default' water tie point set for this Tb set.
 
     A new wtp is calculated and used if the calculated wtp is within +/- 10 of
     the given wtp.
     """
 
-    ice_tie_point: Tiepoint
-    """Ice tie point (itp) for this Tb set.
+    ice_tie_point_set: TiepointSet
+    """Ice tie point set (itp) for this Tb set.
 
     Used to calculate the coefficients `radslp` `radoff` `radlen`. See
     `calc_rad_coeffs_32`.
