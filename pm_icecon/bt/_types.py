@@ -36,5 +36,12 @@ class ParaVals(TypedDict):
 
 
 class Line(TypedDict):
+    """A line (e.g., the AD line in the bootstrap alg).
+
+    Note:
+    The common formulation for a line is: `y=mx+b` where `m` is the `slope` and
+    `b` is the offset.
+    """
+
     offset: float
     slope: float
