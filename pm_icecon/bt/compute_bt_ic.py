@@ -219,6 +219,9 @@ def get_linfit(
 ) -> Line:
     # Reproduces both get_linfit1() and get_linfit2()
     not_land_or_masked = ~land_mask & ~tb_mask
+    # tba is always tb_h37, which is the x-axis of the 37h37v tbset.
+    # The iceline is always the v19v37 lnline (ln == linear?).
+    # ad_line_offset is calculated from the 37v37h tbset.
     if tba is not None and iceline is not None and ad_line_offset is not None:
         is_tba_le_modad = (
             tba <= (tbx * iceline['slope']) + iceline['offset'] - ad_line_offset
