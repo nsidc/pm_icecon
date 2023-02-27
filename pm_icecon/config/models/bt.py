@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import numpy.typing as npt
 
-from pm_icecon.bt._types import Tiepoint
+from pm_icecon.bt._types import Line, TiepointSet
 from pm_icecon.config.models.base_model import ConfigBaseModel
 
 
@@ -46,21 +46,21 @@ class TbSetParams(ConfigBaseModel):
     Bootstrap code currently expects one of two sets of Tbs: vh37 or v1937.
     """
 
-    water_tie_point: Tiepoint
-    """Starting or 'default' water tie point (wtp) for this Tb set.
+    water_tie_point_set: TiepointSet
+    """Starting or 'default' water tie point set for this Tb set.
 
     A new wtp is calculated and used if the calculated wtp is within +/- 10 of
     the given wtp.
     """
 
-    ice_tie_point: Tiepoint
-    """Ice tie point (itp) for this Tb set.
+    ice_tie_point_set: TiepointSet
+    """Ice tie point set (itp) for this Tb set.
 
     Used to calculate the coefficients `radslp` `radoff` `radlen`. See
     `calc_rad_coeffs_32`.
     """
 
-    lnline: tuple[float, float]
+    lnline: Line
 
 
 class BootstrapParams(ConfigBaseModel):
@@ -69,8 +69,11 @@ class BootstrapParams(ConfigBaseModel):
     add1: float = 0.0
     add2: float = -2.0
 
-    # TODO: what do these represent?
+    # TODO: unify the units (percentages or fractions, not on each!) for these
+    # two paramters.
+    # The minimum ice concentration as a percentage (10 == 10%)
     minic: float = 10.0
+    # The maximum ice concentration as a fractional value (1 == 100%)
     maxic: float = 1.0
 
     # min/max tb range. Any tbs outside this range are masked.

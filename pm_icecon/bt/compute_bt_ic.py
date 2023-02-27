@@ -15,9 +15,9 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import xarray as xr
+from loguru import logger
 
-from pm_icecon._types import Hemisphere
-from pm_icecon.bt._types import Tiepoint
+from pm_icecon.bt._types import Line, Tiepoint, TiepointSet
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -98,23 +98,26 @@ def xfer_class_tbs(
     }
 
 
-def ret_adj_adoff(*, wtp: Tiepoint, vh37: list[float], perc=0.92) -> float:
+# TODO: is this function really specific to 37v37h or should it be more generic?
+# If specific, also rename `wtp` and rename func to make this clear. If not,
+# rename `vh37` kwarg to e.g., 'line'?
+def ret_adj_adoff(*, wtp_set: TiepointSet, line_37v37h: Line, perc=0.92) -> float:
     # replaces ret_adj_adoff()
-    # wtp is two water tie points
-    # vh37 is offset and slope
-    wtp1, wtp2 = f(wtp[0]), f(wtp[1])
-    off, slp = f(vh37[0]), f(vh37[1])
+    # wtp_set is one water tie point
+    wtp_x, wtp_y = f(wtp_set[0]), f(wtp_set[1])
+    off = line_37v37h['offset']
+    slp = line_37v37h['slope']
 
-    x = ((wtp1 / slp) + wtp2 - off) / (slp + 1.0 / slp)
+    x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
     y = slp * x + off
 
-    dx = wtp1 - x
+    dx = wtp_x - x
     dx2 = perc * dx
-    x2 = wtp1 - dx2
+    x2 = wtp_x - dx2
 
-    dy = y - wtp2
+    dy = y - wtp_y
     dy2 = perc * dy
-    y2 = wtp2 + dy2
+    y2 = wtp_y + dy2
 
     new_off = y2 - slp * x2
 
@@ -123,20 +126,22 @@ def ret_adj_adoff(*, wtp: Tiepoint, vh37: list[float], perc=0.92) -> float:
     return adoff
 
 
-def ret_wtp_32(
-    water_mask: npt.NDArray[np.bool_],
+# TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
+# (x or y)
+def _ret_wtp_32(
+    weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
-) -> float:
+) -> Tiepoint:
+    """Return the calculated water tiepoint (wtp) for the given Tbs."""
     # Attempt to reproduce Goddard methodology for computing water tie point
-
     # Note: this *really* should be done with np.percentile()
-
     pct = 0.02
+    n_bins = 1200
 
     # Compute quarter-Kelvin histograms
     histo, _ = np.histogram(
-        tb[water_mask],
-        bins=1200,
+        tb[weather_mask],
+        bins=n_bins,
         range=(0, 300),
     )
     nvals = histo.sum()
@@ -147,11 +152,9 @@ def ret_wtp_32(
     ival = 0
     subtotal = 0
     thresh = f(nvals) * pct
-
-    while (ival < 1200) and (subtotal < thresh):
+    while (ival < n_bins) and (subtotal < thresh):
         subtotal += histo[ival]
         ival += 1
-
     ival -= 1  # undo last increment
 
     # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
@@ -161,72 +164,36 @@ def ret_wtp_32(
     return wtp
 
 
-def get_water_tiepoints(
+def get_water_tiepoint_set(
     *,
-    water_mask,
-    tb_v37,
-    tb_h37,
-    tb_v19,
-    wtp1_default: Tiepoint,
-    wtp2_default: Tiepoint,
-) -> tuple[Tiepoint, Tiepoint]:
+    wtp_set_default: TiepointSet,
+    weather_mask: npt.NDArray[np.bool_],
+    tbx,
+    tby,
+) -> TiepointSet:
+    """Return the deafult or calculate new water tiepoint set.
+
+    If the calculated water tiepoints are within +/- 10 of the
+    `wtp_set_default`, use the newly calculated values.
+    """
+    wtpx = _ret_wtp_32(weather_mask, tbx)
+    wtpy = _ret_wtp_32(weather_mask, tby)
+
+    new_wtp_set = list(copy.copy(wtp_set_default))
+
+    # If the calculated wtps are within the bounds of the default (+/- 10), use
+    # the calculated value.
     def _within_plusminus_10(target_value, value) -> bool:
         return (target_value - 10) < value < (target_value + 10)
 
-    # Get wtp1
-    wtp1 = list(copy.copy(wtp1_default))
+    if _within_plusminus_10(wtp_set_default[0], wtpx):
+        new_wtp_set[0] = wtpx
+    if _within_plusminus_10(wtp_set_default[1], wtpy):
+        new_wtp_set[1] = wtpy
 
-    wtp37v = ret_wtp_32(water_mask, tb_v37)
-    wtp37h = ret_wtp_32(water_mask, tb_h37)
+    wtp_set_tuple = (new_wtp_set[0], new_wtp_set[1])
 
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    if _within_plusminus_10(wtp1_default[0], wtp37v):
-        wtp1[0] = wtp37v
-    if _within_plusminus_10(wtp1_default[1], wtp37h):
-        wtp1[1] = wtp37h
-
-    # get wtp2
-    wtp2 = list(copy.copy(wtp2_default))
-
-    wtp19v = ret_wtp_32(water_mask, tb_v19)
-
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    if (wtp2_default[0] - 10) < wtp37v < (wtp2_default[0] + 10):
-        wtp2[0] = wtp37v
-    if (wtp2_default[1] - 10) < wtp19v < (wtp2_default[1] + 10):
-        wtp2[1] = wtp19v
-
-    water_tiepoints: tuple[Tiepoint, Tiepoint] = (  # type: ignore[assignment]
-        tuple(wtp1),
-        tuple(wtp2),
-    )
-
-    return water_tiepoints
-
-
-def linfit_32(xvals, yvals):
-    # Implement original Bootstrap linear-fit routine
-    nvals = f(xvals.shape[0])
-    sumx = np.sum(xvals, dtype=np.float64)
-    sumy = np.sum(yvals, dtype=np.float64)
-    sumx2 = np.sum(fsqr(xvals), dtype=np.float64)
-    # sumy2 is included in Bootstrap, but not used.
-    # sumy2 = np.sum(fsqr(yvals), dtype=np.float64)
-    sumxy = np.sum(fmul(xvals, yvals), dtype=np.float64)
-
-    # float32 version
-    # delta = fsub(fmul(nvals, sumx2), fsqr(sumx))
-    # offset = fdiv(fsub(fmul(sumx2, sumy), fmul(sumx, sumxy)), delta)
-    # slope = fdiv(fsub(fmul(sumxy, nvals), fmul(sumx, sumy)), delta)
-
-    # float64 version
-    delta = (nvals * sumx2) - sumx * sumx
-    offset = ((sumx2 * sumy) - (sumx * sumxy)) / delta
-    slope = ((sumxy * nvals) - (sumx * sumy)) / delta
-
-    return offset, slope
+    return wtp_set_tuple
 
 
 def ret_linfit_32(
@@ -235,27 +202,29 @@ def ret_linfit_32(
     tb_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
-    lnline,
+    lnline: Line,
     add,
     lnchk=1.5,
-    water_mask,
+    weather_mask,
+    # If any one of the rest of these arguments is given, the rest must also be
+    # non-None. Currently only used for getting the v1937 line, in determining
+    # if pixels are valid for use.
     tba=None,
-    iceline=None,
+    iceline: Line | None = None,
     adoff=None,
-):
+) -> Line:
     # Reproduces both ret_linfit1() and ret_linfit2()
-    # Note: lnline is two, 0 is offset, 1 is slope
-    # Note: iceline is two, 0 is offset, 1 is slope
-
     not_land_or_masked = ~land_mask & ~tb_mask
-    if tba is not None:
-        is_tba_le_modad = tba <= fadd(fmul(tbx, iceline[1]), fsub(iceline[0], adoff))
+    if tba is not None and iceline is not None and adoff is not None:
+        is_tba_le_modad = tba <= fadd(
+            fmul(tbx, iceline['slope']), fsub(iceline['offset'], adoff)
+        )
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline[1]), lnline[0])
+    is_tby_gt_lnline = tby > fadd(fmul(tbx, lnline['slope']), lnline['offset'])
 
-    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
     icnt = np.sum(np.where(is_valid, 1, 0))
     if icnt <= 125:
@@ -264,7 +233,11 @@ def ret_linfit_32(
     xvals = tbx[is_valid].astype(np.float32).flatten().astype(np.float64)
     yvals = tby[is_valid].astype(np.float32).flatten().astype(np.float64)
 
-    intrca, slopeb = linfit_32(xvals, yvals)
+    slopeb, intrca = np.polyfit(
+        x=xvals,
+        y=yvals,
+        deg=1,
+    )
 
     if slopeb > lnchk:
         raise BootstrapAlgError(
@@ -279,25 +252,32 @@ def ret_linfit_32(
 
     fit_off = fadd(intrca, add)
     fit_slp = f(slopeb)
+    line = Line(offset=fit_off, slope=fit_slp)
 
-    return [fit_off, fit_slp]
+    return line
 
 
-def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
+def ret_ic_32(
+    *, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, maxic
+):
+    wtp_x = wtp_set[0]
+    wtp_y = wtp_set[1]
+    iline_off = iline['offset']
+    iline_slp = iline['slope']
 
-    delta_x = tbx - wtpx
+    delta_x = tbx - wtp_x
     is_deltax_eq_0 = delta_x == 0
 
     # block1
     y_intercept = iline_off + iline_slp * tbx
-    length1 = tby - wtpy
-    length2 = y_intercept - wtpy
+    length1 = tby - wtp_y
+    length2 = y_intercept - wtp_y
     ic_block1 = length1 / length2
     ic_block1[ic_block1 < 0] = 0
     ic_block1[ic_block1 > maxic] = maxic
 
     # block2
-    delta_y = tby - wtpy
+    delta_y = tby - wtp_y
     slope = delta_y / delta_x
     offset = tby - (slope * tbx)
     slp_diff = iline_slp - slope
@@ -306,18 +286,46 @@ def ret_ic_32(tbx, tby, wtpx, wtpy, iline_off, iline_slp, baddata, maxic):
 
     x_intercept = (offset - iline_off) / slp_diff
     y_intercept = offset + (slope * x_intercept)
-    length1 = np.sqrt(np.square(tbx - wtpx) + np.square(tby - wtpy))
-    length2 = np.sqrt(np.square(x_intercept - wtpx) + np.square(y_intercept - wtpy))
+    length1 = np.sqrt(np.square(tbx - wtp_x) + np.square(tby - wtp_y))
+    length2 = np.sqrt(np.square(x_intercept - wtp_x) + np.square(y_intercept - wtp_y))
     ic_block2 = length1 / length2
     ic_block2[ic_block2 < 0] = 0
     ic_block2[ic_block2 > maxic] = maxic
-    ic_block2[~is_slp_diff_ne_0] = baddata
+    ic_block2[~is_slp_diff_ne_0] = missing_flag_value
 
     # Assume ic is block2, then overwrite if block1
     ic = ic_block2
     ic[is_deltax_eq_0] = ic_block1[is_deltax_eq_0]
 
     return ic
+
+
+def rad_adjust_ic(
+    *,
+    ic,
+    tbx,
+    tby,
+    itp_set: TiepointSet,
+    wtp_set: TiepointSet,
+    line: Line,
+):
+    adjusted_ic = ic.copy()
+
+    radslp2, radoff2, radlen = calc_rad_coeffs(
+        itp_set=itp_set,
+        wtp_set=wtp_set,
+        line=line,
+    )
+
+    is_v19_lt_rc2 = tby < (radslp2 * tbx + radoff2)
+
+    iclen = np.sqrt(np.square(tbx - wtp_set[0]) + np.square(tby - wtp_set[1]))
+    is_iclen_gt_radlen = iclen > radlen
+    adjusted_ic[is_v19_lt_rc2 & is_iclen_gt_radlen] = 1.0
+    is_condition = is_v19_lt_rc2 & ~is_iclen_gt_radlen
+    adjusted_ic[is_condition] = iclen[is_condition] / radlen
+
+    return adjusted_ic
 
 
 def fadd(a: npt.ArrayLike, b: npt.ArrayLike):
@@ -445,9 +453,7 @@ def _get_wx_params(
     )
 
 
-# TODO: change the name of this function. Or, do we need different conditions
-# for non SSMI data?
-def ret_water_ssmi(
+def get_weather_mask(
     *,
     v37,
     h37,
@@ -455,10 +461,15 @@ def ret_water_ssmi(
     v19,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    ln1,
+    ln1: Line,
     date: dt.date,
     weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> npt.NDArray[np.bool_]:
+    """Return a water mask that has been weather filtered.
+
+    `True` indicates areas that are water and are weather masked. I.e., `True`
+    values should be treated as open ocean.
+    """
     season_params = _get_wx_params(
         date=date,
         weather_filter_seasons=weather_filter_seasons,
@@ -471,7 +482,7 @@ def ret_water_ssmi(
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = fadd(fmul(f(wslope), v22), f(wintrc))
     watchk2 = fsub(v22, v19)
-    watchk4 = fadd(fmul(ln1[1], v37), ln1[0])
+    watchk4 = fadd(fmul(ln1['slope'], v37), ln1['offset'])
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     # TODO: where does this 230.0 value come from? Should it be configuratble?
@@ -482,84 +493,77 @@ def ret_water_ssmi(
     return is_water
 
 
-def calc_rad_coeffs_32(
+def calc_rad_coeffs(
     *,
-    itp,
-    wtp,
-    vh37,
-    itp2,
-    wtp2,
-    v1937,
+    itp_set: TiepointSet,
+    wtp_set: TiepointSet,
+    line: Line,
 ):
-    # Compute radlsp, radoff, radlen vars
-    radslp1 = fdiv(
-        fsub(f(itp[1]), f(wtp[1])),
-        fsub(f(itp[0]), f(wtp[0])),
+    rad_slope = fdiv(
+        fsub(f(itp_set[1]), f(wtp_set[1])),
+        fsub(f(itp_set[0]), f(wtp_set[0])),
     )
-    radoff1 = fsub(f(wtp[1]), fmul(f(wtp[0]), f(radslp1)))
+    rad_offset = fsub(f(wtp_set[1]), fmul(f(wtp_set[0]), f(rad_slope)))
     xint = fdiv(
-        fsub(f(radoff1), f(vh37[0])),
-        fsub(f(vh37[1]), f(radslp1)),
+        fsub(f(rad_offset), f(line['offset'])),
+        fsub(f(line['slope']), f(rad_slope)),
     )
-    yint = fadd(fmul(vh37[1], f(xint)), f(vh37[0]))
-    radlen1 = fsqt(
+    yint = fadd(
+        fmul(
+            line['slope'],
+            f(xint),
+        ),
+        f(line['offset']),
+    )
+    rad_len = fsqt(
         fadd(
-            fsqr(fsub(f(xint), f(wtp[0]))),
-            fsqr(fsub(f(yint), f(wtp[1]))),
+            fsqr(fsub(f(xint), f(wtp_set[0]))),
+            fsqr(fsub(f(yint), f(wtp_set[1]))),
         )
     )
 
-    radslp2 = fdiv(
-        fsub(f(itp2[1]), f(wtp2[1])),
-        fsub(f(itp2[0]), f(wtp2[0])),
-    )
-    radoff2 = fsub(f(wtp2[1]), fmul(f(wtp2[0]), f(radslp2)))
-    xint = fdiv(
-        fsub(f(radoff2), f(v1937[0])),
-        fsub(f(v1937[1]), f(radslp2)),
-    )
-    yint = fadd(fmul(f(v1937[1]), f(xint)), f(v1937[0]))
-    radlen2 = fsqt(
-        fadd(
-            fsqr(fsub(f(xint), f(wtp2[0]))),
-            fsqr(fsub(f(yint), f(wtp2[1]))),
-        )
-    )
-
-    return {
-        'radslp1': radslp1,
-        'radoff1': radoff1,
-        'radlen1': radlen1,
-        'radslp2': radslp2,
-        'radoff2': radoff2,
-        'radlen2': radlen2,
-    }
+    return (rad_slope, rad_offset, rad_len)
 
 
-def sst_clean_sb2(*, iceout, missval, landval, invalid_ice_mask: npt.NDArray[np.bool_]):
-    # implement fortran's sst_clean_sb2() routine
-    is_not_land = iceout != landval
-    is_not_miss = iceout != missval
+def apply_invalid_ice_mask(
+    *,
+    conc,
+    missing_flag_value,
+    land_flag_value,
+    invalid_ice_mask: npt.NDArray[np.bool_],
+):
+    """Set all `invalid_ice_mask`ed areas that are not missing or land to 0.
+
+    Implementation of GSFC fortran `sst_clean_sb2()` routine.
+    """
+    is_not_land = conc != land_flag_value
+    is_not_miss = conc != missing_flag_value
     is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
 
-    ice_sst = iceout.copy()
+    ice_sst = conc.copy()
     ice_sst[is_not_land_miss_sst] = 0.0
 
     return ice_sst
 
 
-def coastal_fix(arr, missval, landval, minic):
+def coastal_fix(
+    *,
+    conc: npt.NDArray,
+    missing_flag_value,
+    land_flag_value,
+    minic,
+):
     # Apply coastal_fix() routine per Bootstrap
 
     # Calculate 'temp' array
     #   -1 is no ice
     #    1 is safe from removal
     #    0 is might-be-removed
-    temp = np.ones_like(arr, dtype=np.int16)
-    is_land_or_lowice = (arr == landval) | ((arr >= 0) & (arr < minic))
+    temp = np.ones_like(conc, dtype=np.int16)
+    is_land_or_lowice = (conc == land_flag_value) | ((conc >= 0) & (conc < minic))
     temp[is_land_or_lowice] = -1
 
-    is_seaice = (arr > 0) & (arr <= 100.0)
+    is_seaice = (conc > 0) & (conc <= 100.0)
 
     off_set = (
         np.array((0, 1)),
@@ -573,13 +577,13 @@ def coastal_fix(arr, missval, landval, minic):
         offn2 = -2 * offp1  # offp1 * -2
 
         # Compute shifted grids
-        rolled_offn1 = np.roll(arr, offp1, axis=(1, 0))  # land
-        rolled_off00 = arr  # .  k1p0 k2p0
-        rolled_offp1 = np.roll(arr, offn1, axis=(1, 0))  # k1 k2p1
-        rolled_offp2 = np.roll(arr, offn2, axis=(1, 0))  # k2
+        rolled_offn1 = np.roll(conc, offp1, axis=(1, 0))  # land
+        rolled_off00 = conc.copy()  # .  k1p0 k2p0
+        rolled_offp1 = np.roll(conc, offn1, axis=(1, 0))  # k1 k2p1
+        rolled_offp2 = np.roll(conc, offn2, axis=(1, 0))  # k2
 
-        # is_rolled_land = rolled_offn1 == landval
-        is_rolled_land = rolled_offn1 == landval
+        # is_rolled_land = rolled_offn1 == land_flag_value
+        is_rolled_land = rolled_offn1 == land_flag_value
 
         is_k1 = (
             (is_seaice)
@@ -597,20 +601,20 @@ def coastal_fix(arr, missval, landval, minic):
         is_k1p0 = (
             (is_k1)
             & (rolled_off00 > 0)
-            & (rolled_off00 != missval)
-            & (rolled_off00 != landval)
+            & (rolled_off00 != missing_flag_value)
+            & (rolled_off00 != land_flag_value)
         )
         is_k2p0 = (
             (is_k2)
             & (rolled_off00 > 0)
-            & (rolled_off00 != missval)
-            & (rolled_off00 != landval)
+            & (rolled_off00 != missing_flag_value)
+            & (rolled_off00 != land_flag_value)
         )
         is_k2p1 = (
             (is_k2)
             & (rolled_offp1 > 0)
-            & (rolled_offp1 != missval)
-            & (rolled_offp1 != landval)
+            & (rolled_offp1 != missing_flag_value)
+            & (rolled_offp1 != land_flag_value)
         )
 
         temp[is_k1p0] = 0
@@ -624,7 +628,7 @@ def coastal_fix(arr, missval, landval, minic):
         try:
             temp[change_locs_k2p1] = 0
         except IndexError:
-            print('Fixing out of bounds error')
+            logger.debug('Fixing out of bounds error in `coastal_fix`')
             locs0 = change_locs_k2p1[0]
             locs1 = change_locs_k2p1[1]
 
@@ -644,10 +648,10 @@ def coastal_fix(arr, missval, landval, minic):
 
     # HERE: temp array has been set
 
-    # Calculate 'arr2' array
-    # This is initially a copy of the arr array, but then has values
+    # Calculate 'conc2' array
+    # This is initially a copy of the conc array, but then has values
     #   set to zero where 'appropriate' based on the temp array
-    arr2 = arr.copy()
+    conc2 = conc.copy()
 
     # This is very complicated to figure out as modification
     # of the series of off_sets.  Simply coding each of the
@@ -655,9 +659,9 @@ def coastal_fix(arr, missval, landval, minic):
 
     # Note: some of these conditional arrays might be set more than 1x
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (0, 1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (0, 1), axis=(1, 0))  # land check
+    is_rolled_land = land_check == land_flag_value
 
     # For offp1 of [0, 1], the rolls are:
     tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
@@ -677,14 +681,14 @@ def coastal_fix(arr, missval, landval, minic):
 
     is_tip0jp1_eq0 = tip0jp1 == 0
 
-    # Changing arr2(i,j+1) to 0
+    # Changing conc2(i,j+1) to 0
     locs_ip0jp1 = np.where(
         is_considered & is_tip1jp1_lt0 & is_tim1jp1_lt0 & is_tip0jp1_eq0
     )
-    change_locs_arr2_ip0jp1 = tuple([locs_ip0jp1[0] + 1, locs_ip0jp1[1] + 0])
-    arr2[change_locs_arr2_ip0jp1] = 0
+    change_locs_conc2_ip0jp1 = tuple([locs_ip0jp1[0] + 1, locs_ip0jp1[1] + 0])
+    conc2[change_locs_conc2_ip0jp1] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jp1_lt0
@@ -692,14 +696,14 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip1jp0_lt0
         & is_tim1jp0_lt0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
-    # Second arr2 change section
+    # Second conc2 change section
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (0, -1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (0, -1), axis=(1, 0))  # land check
+    is_rolled_land = land_check == land_flag_value
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -718,14 +722,14 @@ def coastal_fix(arr, missval, landval, minic):
     is_tip1jp0_le0 = tip1jp0 <= 0
     is_tim1jp0_le0 = tim1jp0 <= 0
 
-    # Changing arr2(i,j-1) to 0
+    # Changing conc2(i,j-1) to 0
     locs_ip0jm1 = np.where(
         is_considered & is_tip1jm1_le0 & is_tim1jm1_le0 & is_tip0jm1_eq0
     )
-    change_locs_arr2_ip0jm1 = tuple([locs_ip0jm1[0] - 1, locs_ip0jm1[1] + 0])
-    arr2[change_locs_arr2_ip0jm1] = 0
+    change_locs_conc2_ip0jm1 = tuple([locs_ip0jm1[0] - 1, locs_ip0jm1[1] + 0])
+    conc2[change_locs_conc2_ip0jm1] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jm1_le0
@@ -733,14 +737,14 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip1jp0_le0
         & is_tim1jp0_le0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
-    # Third arr2 change section
+    # Third conc2 change section
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (1, 0), axis=(1, 0))
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (1, 0), axis=(1, 0))
+    is_rolled_land = land_check == land_flag_value
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -756,14 +760,14 @@ def coastal_fix(arr, missval, landval, minic):
     is_tip0jm1_le0 = tip0jm1 <= 0
     is_tip0jp1_le0 = tip0jp1 <= 0
 
-    # Changing arr2(i+1,j) to 0
+    # Changing conc2(i+1,j) to 0
     locs_ip1jp0 = np.where(
         is_considered & is_tip1jp1_le0 & is_tip1jp1_le0 & is_tip1jp0_eq0
     )
-    change_locs_arr2_ip1jp0 = tuple([locs_ip1jp0[0] + 0, locs_ip1jp0[1] + 1])
-    arr2[change_locs_arr2_ip1jp0] = 0
+    change_locs_conc2_ip1jp0 = tuple([locs_ip1jp0[0] + 0, locs_ip1jp0[1] + 1])
+    conc2[change_locs_conc2_ip1jp0] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jp1_le0
@@ -771,14 +775,14 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip0jm1_le0
         & is_tip0jp1_le0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
     # Fourth section
 
-    # Compute shifted arr grid, for land check
-    land_check = np.roll(arr, (-1, 0), axis=(1, 0))
-    is_rolled_land = land_check == landval
+    # Compute shifted conc grid, for land check
+    land_check = np.roll(conc, (-1, 0), axis=(1, 0))
+    is_rolled_land = land_check == land_flag_value
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -796,14 +800,14 @@ def coastal_fix(arr, missval, landval, minic):
     is_tip0jm1_le0 = tip0jm1 <= 0
     is_tip0jp1_le0 = tip0jp1 <= 0
 
-    # Changing arr2(i-1,j) to 0
+    # Changing conc2(i-1,j) to 0
     locs_im1jp0 = np.where(
         is_considered & is_tim1jm1_le0 & is_tim1jp1_le0 & is_tim1jp0_eq0
     )
-    change_locs_arr2_im1jp0 = tuple([locs_im1jp0[0] + 0, locs_im1jp0[1] - 1])
-    arr2[change_locs_arr2_im1jp0] = 0
+    change_locs_conc2_im1jp0 = tuple([locs_im1jp0[0] + 0, locs_im1jp0[1] - 1])
+    conc2[change_locs_conc2_im1jp0] = 0
 
-    # Changing arr2(i,j) to 0
+    # Changing conc2(i,j) to 0
     locs_ip0jp0 = np.where(
         is_considered
         & is_tim1jm1_le0
@@ -811,105 +815,102 @@ def coastal_fix(arr, missval, landval, minic):
         & is_tip0jm1_le0
         & is_tip0jp1_le0
     )
-    change_locs_arr2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    arr2[change_locs_arr2_ip0jp0] = 0
+    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+    conc2[change_locs_conc2_ip0jp0] = 0
 
-    return arr2
+    return conc2
 
 
-def calc_bt_ice(
+def _calc_frac_conc_for_tbset(
     *,
-    missval,
-    landval,
+    tbx,
+    tby,
+    wtp_set: TiepointSet,
+    itp_set: TiepointSet,
+    line: Line,
+    missing_flag_value: float | int,
     maxic,
-    vh37,
+):
+    """Return fractional sea ice concentration for the given parameters."""
+    ic = ret_ic_32(
+        tbx=tbx,
+        tby=tby,
+        wtp_set=wtp_set,
+        iline=line,
+        missing_flag_value=missing_flag_value,
+        maxic=maxic,
+    )
+
+    ic_adjusted = rad_adjust_ic(
+        ic=ic,
+        tbx=tbx,
+        tby=tby,
+        itp_set=itp_set,
+        wtp_set=wtp_set,
+        line=line,
+    )
+
+    return ic_adjusted
+
+
+def calc_bootstrap_conc(
+    *,
+    maxic_frac,
+    line_37v37h: Line,
     adoff,
-    v1937,
-    wtp,
-    wtp2,
-    itp,
-    itp2,
+    line_37v19v: Line,
+    wtp_set_37v37h: TiepointSet,
+    wtp_set_37v19v: TiepointSet,
+    itp_set_37v37h: TiepointSet,
+    itp_set_37v19v: TiepointSet,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    land_mask: npt.NDArray[np.bool_],
-    water_mask: npt.NDArray[np.bool_],
-    tb_mask: npt.NDArray[np.bool_],
+    # TODO: can/should we just use `nan`?
+    missing_flag_value: float | int,
 ):
+    """Return a sea ice concentration estimate at every grid cell.
 
-    # ## LINES calculating radslp1 ... to radlen2 ###
-    rad_coeffs = calc_rad_coeffs_32(
-        itp=itp,
-        wtp=wtp,
-        vh37=vh37,
-        itp2=itp2,
-        wtp2=wtp2,
-        v1937=v1937,
+    Concentrations are given as percentage (0-100%).
+    """
+    # ic_frac == 'ice concentration fraction'
+    ic_frac_37v37h = _calc_frac_conc_for_tbset(
+        tbx=tb_v37,
+        tby=tb_h37,
+        wtp_set=wtp_set_37v37h,
+        itp_set=itp_set_37v37h,
+        line=line_37v37h,
+        missing_flag_value=missing_flag_value,
+        maxic=maxic_frac,
     )
-    radslp1 = rad_coeffs['radslp1']
-    radoff1 = rad_coeffs['radoff1']
-    radlen1 = rad_coeffs['radlen1']
-    radslp2 = rad_coeffs['radslp2']
-    radoff2 = rad_coeffs['radoff2']
-    radlen2 = rad_coeffs['radlen2']
 
-    # main calc_bt_ice() block
-    vh37chk = vh37[0] - adoff + vh37[1] * tb_v37
+    ic_frac_37v19v = _calc_frac_conc_for_tbset(
+        tbx=tb_v37,
+        tby=tb_v19,
+        wtp_set=wtp_set_37v19v,
+        itp_set=itp_set_37v19v,
+        line=line_37v19v,
+        missing_flag_value=missing_flag_value,
+        maxic=maxic_frac,
+    )
 
-    # Compute radchk1
+    ic_frac = ic_frac_37v37h.copy()
+
+    vh37chk = line_37v37h['offset'] - adoff + line_37v37h['slope'] * tb_v37
     is_check1 = tb_h37 > vh37chk
-    is_h37_lt_rc1 = tb_h37 < (radslp1 * tb_v37 + radoff1)
+    ic_frac[~is_check1] = ic_frac_37v19v[~is_check1]
 
-    iclen1 = np.sqrt(np.square(tb_v37 - wtp[0]) + np.square(tb_h37 - wtp[1]))
-    is_iclen1_gt_radlen1 = iclen1 > radlen1
-    icpix1 = ret_ic_32(
-        tb_v37,
-        tb_h37,
-        wtp[0],
-        wtp[1],
-        vh37[0],
-        vh37[1],
-        missval,
-        maxic,
-    )
-    icpix1[is_h37_lt_rc1 & is_iclen1_gt_radlen1] = 1.0
-    is_condition1 = is_h37_lt_rc1 & ~(iclen1 > radlen1)
-    icpix1[is_condition1] = iclen1[is_condition1] / radlen1
+    # convert fractional sea ice concentrations to percentages
+    ic_perc = ic_frac.copy()
+    # TODO/NOTE: if we treat missing as `np.nan`, this comparison does not
+    # work. `np.nan != np.nan`.
+    is_missing = ic_frac == missing_flag_value
+    ic_perc[~is_missing] = ic_frac[~is_missing] * 100.0
 
-    # Compute radchk2
-    is_v19_lt_rc2 = tb_v19 < (radslp2 * tb_v37 + radoff2)
-
-    iclen2 = np.sqrt(np.square(tb_v37 - wtp2[0]) + np.square(tb_v19 - wtp2[1]))
-    is_iclen2_gt_radlen2 = iclen2 > radlen2
-    icpix2 = ret_ic_32(
-        tb_v37,
-        tb_v19,
-        wtp2[0],
-        wtp2[1],
-        v1937[0],
-        v1937[1],
-        missval,
-        maxic,
-    )
-    icpix2[is_v19_lt_rc2 & is_iclen2_gt_radlen2] = 1.0
-    is_condition2 = is_v19_lt_rc2 & ~is_iclen2_gt_radlen2
-    icpix2[is_condition2] = iclen2[is_condition2] / radlen2
-
-    ic = icpix1
-    ic[~is_check1] = icpix2[~is_check1]
-
-    is_ic_is_missval = ic == missval
-    ic[is_ic_is_missval] = missval
-    ic[~is_ic_is_missval] = ic[~is_ic_is_missval] * 100.0
-
-    ic[water_mask] = 0.0
-    ic[tb_mask] = 0.0
-    ic[land_mask] = landval
-
-    return ic
+    return ic_perc
 
 
-def bootstrap(
+def goddard_bootstrap(
     *,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
@@ -917,10 +918,9 @@ def bootstrap(
     tb_v22: npt.NDArray,
     params: BootstrapParams,
     date: dt.date,
-    hemisphere: Hemisphere,
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> xr.Dataset:
-    """Run the boostrap algorithm."""
+    """Bootstrap algorithm as organized by the orignal code from GSFC."""
     tb_mask = tb_data_mask(
         tbs=(
             tb_v37,
@@ -932,7 +932,7 @@ def bootstrap(
         max_tb=params.maxtb,
     )
 
-    water_mask = ret_water_ssmi(
+    weather_mask = get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,
@@ -944,76 +944,80 @@ def bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    vh37 = ret_linfit_32(
+    line_37v37h = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
         tby=tb_h37,
         lnline=params.vh37_params.lnline,
         add=params.add1,
-        water_mask=water_mask,
+        weather_mask=weather_mask,
     )
 
-    wtp, wtp2 = get_water_tiepoints(
-        water_mask=water_mask,
-        tb_v37=tb_v37,
-        tb_h37=tb_h37,
-        tb_v19=tb_v19,
-        wtp1_default=params.vh37_params.water_tie_point,
-        wtp2_default=params.v1937_params.water_tie_point,
+    wtp_set_37v37h = get_water_tiepoint_set(
+        wtp_set_default=params.vh37_params.water_tie_point_set,
+        weather_mask=weather_mask,
+        tbx=tb_v37,
+        tby=tb_h37,
     )
 
-    adoff = ret_adj_adoff(wtp=wtp, vh37=vh37)
+    wtp_set_37v19v = get_water_tiepoint_set(
+        wtp_set_default=params.v1937_params.water_tie_point_set,
+        weather_mask=weather_mask,
+        tbx=tb_v37,
+        tby=tb_v19,
+    )
 
-    # Try the ret_para... values for v1937
-    v1937 = ret_linfit_32(
+    adoff = ret_adj_adoff(wtp_set=wtp_set_37v37h, line_37v37h=line_37v37h)
+
+    line_37v19v = ret_linfit_32(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
         tby=tb_v19,
         lnline=params.v1937_params.lnline,
         add=params.add2,
-        water_mask=water_mask,
+        weather_mask=weather_mask,
         tba=tb_h37,
-        iceline=vh37,
+        iceline=line_37v37h,
         adoff=adoff,
     )
 
-    # ## LINES with loop calling (in part) ret_ic() ###
-    iceout = calc_bt_ice(
-        missval=missing_flag_value,
-        landval=DEFAULT_FLAG_VALUES.land,
-        maxic=params.maxic,
-        vh37=vh37,
+    conc = calc_bootstrap_conc(
+        maxic_frac=params.maxic,
+        line_37v37h=line_37v37h,
         adoff=adoff,
-        itp=params.vh37_params.ice_tie_point,
-        itp2=params.v1937_params.ice_tie_point,
-        wtp=wtp,
-        wtp2=wtp2,
-        v1937=v1937,
+        line_37v19v=line_37v19v,
+        wtp_set_37v37h=wtp_set_37v37h,
+        wtp_set_37v19v=wtp_set_37v19v,
+        itp_set_37v37h=params.vh37_params.ice_tie_point_set,
+        itp_set_37v19v=params.v1937_params.ice_tie_point_set,
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
-        land_mask=params.land_mask,
-        water_mask=water_mask,
-        tb_mask=tb_mask,
+        missing_flag_value=missing_flag_value,
     )
 
-    # *** Do sst cleaning ***
-    print(f'before sst_clean, params:\n{params}')
-    iceout_sst = sst_clean_sb2(
-        iceout=iceout,
-        missval=missing_flag_value,
-        landval=DEFAULT_FLAG_VALUES.land,
+    # Apply masks and flag values
+    conc[weather_mask] = 0.0
+    conc[tb_mask] = 0.0
+    conc[params.land_mask] = DEFAULT_FLAG_VALUES.land
+
+    conc = apply_invalid_ice_mask(
+        conc=conc,
+        missing_flag_value=missing_flag_value,
+        land_flag_value=DEFAULT_FLAG_VALUES.land,
         invalid_ice_mask=params.invalid_ice_mask,
     )
 
-    # *** Do spatial interp ***
-    iceout_fix = coastal_fix(
-        iceout_sst, missing_flag_value, DEFAULT_FLAG_VALUES.land, params.minic
+    conc = coastal_fix(
+        conc=conc,
+        missing_flag_value=missing_flag_value,
+        land_flag_value=DEFAULT_FLAG_VALUES.land,
+        minic=params.minic,
     )
-    iceout_fix[iceout_fix < params.minic] = 0
+    conc[conc < params.minic] = 0
 
-    ds = xr.Dataset({'conc': (('y', 'x'), iceout_fix)})
+    ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
     return ds

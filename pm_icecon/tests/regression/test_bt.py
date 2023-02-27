@@ -100,7 +100,7 @@ def _original_f18_example() -> xr.Dataset:
             ).resolve()
         )
 
-    conc_ds = bt.bootstrap(
+    conc_ds = bt.goddard_bootstrap(
         # Apply expected transformation for F18 CLASS data.
         **xfer_class_tbs(  # type: ignore[arg-type]
             tb_v37=spatial_interp_tbs(otbs['v37']),
@@ -111,7 +111,6 @@ def _original_f18_example() -> xr.Dataset:
         ),
         params=params,
         date=date,
-        hemisphere=hemisphere,
     )
 
     return conc_ds

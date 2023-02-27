@@ -47,14 +47,13 @@ def amsr2_bootstrap(
         **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
     )
 
-    conc_ds = bt.bootstrap(
+    conc_ds = bt.goddard_bootstrap(
         tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
         tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
         tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
         tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         params=params,
         date=date,
-        hemisphere=hemisphere,
     )
 
     return conc_ds
@@ -83,14 +82,13 @@ def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
         **A2L1C_NORTH_PARAMS,
     )
 
-    conc_ds = bt.bootstrap(
+    conc_ds = bt.goddard_bootstrap(
         tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
         tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
         tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
         tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         params=params,
         date=date,
-        hemisphere=hemisphere,
     )
 
     return conc_ds

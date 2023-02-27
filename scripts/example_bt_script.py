@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.compute_bt_ic import bootstrap
+from pm_icecon.bt.compute_bt_ic import goddard_bootstrap
 from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
@@ -43,12 +43,11 @@ if __name__ == '__main__':
     )
 
     # Run the bootstrap algoirthm and get the result back as an xarray dataset.
-    conc_ds = bootstrap(
+    conc_ds = goddard_bootstrap(
         tb_v37=xr_tbs['v36'].data,
         tb_h37=xr_tbs['h36'].data,
         tb_v19=xr_tbs['v18'].data,
         tb_v22=xr_tbs['v23'].data,
         params=bootstrap_params,
         date=date,
-        hemisphere=hemisphere,
     )
