@@ -205,16 +205,18 @@ def get_linfit(
     *,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    tbx,
-    tby,
+    tbx: npt.NDArray,
+    tby: npt.NDArray,
     lnline: Line,
-    add,
-    lnchk=1.5,
-    weather_mask,
+    add: float,
+    weather_mask: npt.NDArray[np.bool_],
+    # If the calculated slope is larger than `lnchk`, a `BootstrapAlgError` is
+    # raised.
+    lnchk: float = 1.5,
     # If any one of the rest of these arguments is given, the rest must also be
     # non-None. Currently only used for getting the v1937 line, in determining
     # if pixels are valid for use.
-    tba=None,
+    tba: npt.NDArray | None = None,
     iceline: Line | None = None,
     ad_line_offset: float | None = None,
 ) -> Line:
