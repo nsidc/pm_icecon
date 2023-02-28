@@ -17,7 +17,7 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 
-from pm_icecon.bt._types import Line, Tiepoint
+from pm_icecon.bt._types import Line, Tiepoint, TiepointSet
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -96,7 +96,12 @@ def xfer_class_tbs(
 # TODO: is this function really specific to 37v37h or should it be more generic?
 # If specific, also rename `wtp` and rename func to make this clear. If not,
 # rename `vh37` kwarg to e.g., 'line'?
-def get_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> float:
+def get_adj_ad_line_offset(
+    *,
+    wtp_set: TiepointSet,
+    line_37v37h: Line,
+    perc=0.92,
+) -> float:
     """Return the AD line offset.
 
     The AD line offset is used to determine between which tb set should be used
@@ -105,8 +110,8 @@ def get_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> fl
     HV37. For data points below the offset AD line, the V1937 tbs et is used
     instead.
     """
-    # wtp is one water tie point
-    wtp_x, wtp_y = wtp[0], wtp[1]
+    wtp_x, wtp_y = wtp_set[0], wtp_set[1]
+
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
 
@@ -133,12 +138,10 @@ def get_adj_ad_line_offset(*, wtp: Tiepoint, line_37v37h: Line, perc=0.92) -> fl
 def _get_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
-) -> float:
-    """Return either the x or y of the wtp."""
+) -> Tiepoint:
+    """Return the calculated water tiepoint (wtp) for the given Tbs."""
     # Attempt to reproduce Goddard methodology for computing water tie point
-
     # Note: this *really* should be done with np.percentile()
-
     pct = 0.02
     n_bins = 1200
 
@@ -161,43 +164,41 @@ def _get_wtp(
         ival += 1
     ival -= 1  # undo last increment
 
-    # TODO: this expression returns `np.float64`, NOT `np.float32` like `f`
-    # returns...
-    wtp = ival * 0.25
+    wtp = Tiepoint(ival * 0.25)
 
     return wtp
 
 
-def get_water_tiepoint(
+def get_water_tiepoint_set(
     *,
-    wtp_default: Tiepoint,
+    wtp_set_default: TiepointSet,
     weather_mask: npt.NDArray[np.bool_],
     tbx,
     tby,
-) -> Tiepoint:
-    """Return the deafult or calculate new wtp.
+) -> TiepointSet:
+    """Return the deafult or calculate new water tiepoint set.
 
-    If the calculated wtpx and wtpy values are within +/- 10 of the
-    `wtp_default`, use the newly calculated values.
+    If the calculated water tiepoints are within +/- 10 of the
+    `wtp_set_default`, use the newly calculated values.
     """
     wtpx = _get_wtp(weather_mask, tbx)
     wtpy = _get_wtp(weather_mask, tby)
 
-    new_wtp = list(copy.copy(wtp_default))
+    new_wtp_set = list(copy.copy(wtp_set_default))
 
     # If the calculated wtps are within the bounds of the default (+/- 10), use
     # the calculated value.
     def _within_plusminus_10(target_value, value) -> bool:
         return (target_value - 10) < value < (target_value + 10)
 
-    if _within_plusminus_10(wtp_default[0], wtpx):
-        new_wtp[0] = wtpx
-    if _within_plusminus_10(wtp_default[1], wtpy):
-        new_wtp[1] = wtpy
+    if _within_plusminus_10(wtp_set_default[0], wtpx):
+        new_wtp_set[0] = wtpx
+    if _within_plusminus_10(wtp_set_default[1], wtpy):
+        new_wtp_set[1] = wtpy
 
-    wtp_tuple = (new_wtp[0], new_wtp[1])
+    wtp_set_tuple = (new_wtp_set[0], new_wtp_set[1])
 
-    return wtp_tuple
+    return wtp_set_tuple
 
 
 def get_linfit(
@@ -261,25 +262,26 @@ def get_linfit(
     return line
 
 
-def get_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
-    wtpx = wtp[0]
-    wtpy = wtp[1]
+def get_ic(*, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, maxic):
+    wtp_x = wtp_set[0]
+    wtp_y = wtp_set[1]
+
     iline_off = iline['offset']
     iline_slp = iline['slope']
 
-    delta_x = tbx - wtpx
+    delta_x = tbx - wtp_x
     is_deltax_eq_0 = delta_x == 0
 
     # block1
     y_intercept = iline_off + iline_slp * tbx
-    length1 = tby - wtpy
-    length2 = y_intercept - wtpy
+    length1 = tby - wtp_y
+    length2 = y_intercept - wtp_y
     ic_block1 = length1 / length2
     ic_block1[ic_block1 < 0] = 0
     ic_block1[ic_block1 > maxic] = maxic
 
     # block2
-    delta_y = tby - wtpy
+    delta_y = tby - wtp_y
     slope = delta_y / delta_x
     offset = tby - (slope * tbx)
     slp_diff = iline_slp - slope
@@ -288,8 +290,8 @@ def get_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
 
     x_intercept = (offset - iline_off) / slp_diff
     y_intercept = offset + (slope * x_intercept)
-    length1 = np.sqrt(np.square(tbx - wtpx) + np.square(tby - wtpy))
-    length2 = np.sqrt(np.square(x_intercept - wtpx) + np.square(y_intercept - wtpy))
+    length1 = np.sqrt(np.square(tbx - wtp_x) + np.square(tby - wtp_y))
+    length2 = np.sqrt(np.square(x_intercept - wtp_x) + np.square(y_intercept - wtp_y))
     ic_block2 = length1 / length2
     ic_block2[ic_block2 < 0] = 0
     ic_block2[ic_block2 > maxic] = maxic
@@ -302,18 +304,26 @@ def get_ic(*, tbx, tby, wtp: Tiepoint, iline: Line, missing_flag_value, maxic):
     return ic
 
 
-def rad_adjust_ic(*, ic, tbx, tby, itp: Tiepoint, wtp: Tiepoint, line: Line):
+def rad_adjust_ic(
+    *,
+    ic,
+    tbx,
+    tby,
+    itp_set: TiepointSet,
+    wtp_set: TiepointSet,
+    line: Line,
+):
     adjusted_ic = ic.copy()
 
     radslp, rad_line_offset, radlen = calc_rad_coeffs(
-        itp=itp,
-        wtp=wtp,
+        itp_set=itp_set,
+        wtp_set=wtp_set,
         line=line,
     )
 
     is_v19_lt_rc = tby < (radslp * tbx + rad_line_offset)
 
-    iclen = np.sqrt(np.square(tbx - wtp[0]) + np.square(tby - wtp[1]))
+    iclen = np.sqrt(np.square(tbx - wtp_set[0]) + np.square(tby - wtp_set[1]))
     is_iclen_gt_radlen = iclen > radlen
     adjusted_ic[is_v19_lt_rc & is_iclen_gt_radlen] = 1.0
     is_condition = is_v19_lt_rc & ~is_iclen_gt_radlen
@@ -465,17 +475,17 @@ def get_weather_mask(
 
 def calc_rad_coeffs(
     *,
-    itp: Tiepoint,
-    wtp: Tiepoint,
+    itp_set: TiepointSet,
+    wtp_set: TiepointSet,
     line: Line,
 ):
-    rad_slope = (itp[1] - wtp[1]) / (itp[0] - wtp[0])
-    rad_offset = wtp[1] - (wtp[0] * rad_slope)
+    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
+    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
 
     xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
-    rad_len = np.sqrt(np.square(xint - wtp[0]) + np.square(yint - wtp[1]))
+    rad_len = np.sqrt(np.square(xint - wtp_set[0]) + np.square(yint - wtp_set[1]))
 
     return (rad_slope, rad_offset, rad_len)
 
@@ -780,8 +790,8 @@ def _calc_frac_conc_for_tbset(
     *,
     tbx,
     tby,
-    wtp: Tiepoint,
-    itp: Tiepoint,
+    wtp_set: TiepointSet,
+    itp_set: TiepointSet,
     line: Line,
     missing_flag_value: float | int,
     maxic,
@@ -790,7 +800,7 @@ def _calc_frac_conc_for_tbset(
     ic = get_ic(
         tbx=tbx,
         tby=tby,
-        wtp=wtp,
+        wtp_set=wtp_set,
         iline=line,
         missing_flag_value=missing_flag_value,
         maxic=maxic,
@@ -800,8 +810,8 @@ def _calc_frac_conc_for_tbset(
         ic=ic,
         tbx=tbx,
         tby=tby,
-        itp=itp,
-        wtp=wtp,
+        itp_set=itp_set,
+        wtp_set=wtp_set,
         line=line,
     )
 
@@ -814,10 +824,10 @@ def calc_bootstrap_conc(
     line_37v37h: Line,
     ad_line_offset: float,
     line_37v19v: Line,
-    wtp_37v37h: Tiepoint,
-    wtp_37v19v: Tiepoint,
-    itp_37v37h: Tiepoint,
-    itp_37v19v: Tiepoint,
+    wtp_set_37v37h: TiepointSet,
+    wtp_set_37v19v: TiepointSet,
+    itp_set_37v37h: TiepointSet,
+    itp_set_37v19v: TiepointSet,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
@@ -832,8 +842,8 @@ def calc_bootstrap_conc(
     ic_frac_37v37h = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_h37,
-        wtp=wtp_37v37h,
-        itp=itp_37v37h,
+        wtp_set=wtp_set_37v37h,
+        itp_set=itp_set_37v37h,
         line=line_37v37h,
         missing_flag_value=missing_flag_value,
         maxic=maxic_frac,
@@ -842,8 +852,8 @@ def calc_bootstrap_conc(
     ic_frac_37v19v = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_v19,
-        wtp=wtp_37v19v,
-        itp=itp_37v19v,
+        wtp_set=wtp_set_37v19v,
+        itp_set=itp_set_37v19v,
         line=line_37v19v,
         missing_flag_value=missing_flag_value,
         maxic=maxic_frac,
@@ -909,21 +919,24 @@ def goddard_bootstrap(
         weather_mask=weather_mask,
     )
 
-    wtp_37v37h = get_water_tiepoint(
-        wtp_default=params.vh37_params.water_tie_point,
+    wtp_set_37v37h = get_water_tiepoint_set(
+        wtp_set_default=params.vh37_params.water_tie_point_set,
         weather_mask=weather_mask,
         tbx=tb_v37,
         tby=tb_h37,
     )
 
-    wtp_37v19v = get_water_tiepoint(
-        wtp_default=params.v1937_params.water_tie_point,
+    wtp_set_37v19v = get_water_tiepoint_set(
+        wtp_set_default=params.v1937_params.water_tie_point_set,
         weather_mask=weather_mask,
         tbx=tb_v37,
         tby=tb_v19,
     )
 
-    ad_line_offset = get_adj_ad_line_offset(wtp=wtp_37v37h, line_37v37h=line_37v37h)
+    ad_line_offset = get_adj_ad_line_offset(
+        wtp_set=wtp_set_37v37h,
+        line_37v37h=line_37v37h,
+    )
 
     line_37v19v = get_linfit(
         land_mask=params.land_mask,
@@ -943,10 +956,10 @@ def goddard_bootstrap(
         line_37v37h=line_37v37h,
         ad_line_offset=ad_line_offset,
         line_37v19v=line_37v19v,
-        wtp_37v37h=wtp_37v37h,
-        wtp_37v19v=wtp_37v19v,
-        itp_37v37h=params.vh37_params.ice_tie_point,
-        itp_37v19v=params.v1937_params.ice_tie_point,
+        wtp_set_37v37h=wtp_set_37v37h,
+        wtp_set_37v19v=wtp_set_37v19v,
+        itp_set_37v37h=params.vh37_params.ice_tie_point_set,
+        itp_set_37v19v=params.v1937_params.ice_tie_point_set,
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,

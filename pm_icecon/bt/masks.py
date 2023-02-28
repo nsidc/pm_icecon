@@ -44,7 +44,7 @@ def get_ps_invalid_ice_mask(
         elif resolution == '25':
             sst_fn = Path(
                 BT_GODDARD_ANCILLARY_DIR
-                / f'/SH_{date:%m}_SST_avhrr_threshold_{date:%m}_fixd.int'
+                / f'SH_{date:%m}_SST_avhrr_threshold_{date:%m}_fixd.int'
             )
             sst_mask = np.fromfile(sst_fn, dtype=np.int16).reshape(
                 get_ps25_grid_shape(hemisphere=hemisphere)
