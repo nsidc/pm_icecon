@@ -329,12 +329,12 @@ def _rad_adjust_ic(
         line=line,
     )
 
-    is_v19_lt_rc = tby < (radslp * tbx + rad_line_offset)
+    is_tby_lt_rc = tby < (radslp * tbx + rad_line_offset)
 
     iclen = np.sqrt(np.square(tbx - wtp_set[0]) + np.square(tby - wtp_set[1]))
     is_iclen_gt_radlen = iclen > radlen
-    adjusted_ic[is_v19_lt_rc & is_iclen_gt_radlen] = 1.0
-    is_condition = is_v19_lt_rc & ~is_iclen_gt_radlen
+    adjusted_ic[is_tby_lt_rc & is_iclen_gt_radlen] = 1.0
+    is_condition = is_tby_lt_rc & ~is_iclen_gt_radlen
     adjusted_ic[is_condition] = iclen[is_condition] / radlen
 
     return adjusted_ic
