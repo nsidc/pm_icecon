@@ -132,8 +132,6 @@ def get_adj_ad_line_offset(
     return ad_line_offset
 
 
-# TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
-# (x or y)
 def _get_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
