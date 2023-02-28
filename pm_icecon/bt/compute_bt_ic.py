@@ -870,11 +870,15 @@ def calc_bootstrap_conc(
         maxic=maxic_frac,
     )
 
+    # Initialize the ice fraction from the 37v37h tbset. These values will be
+    # preserved for pixels where tb_h37 is above the 37v37h AD line.
     ic_frac = ic_frac_37v37h.copy()
-
-    vh37chk = line_37v37h['offset'] - ad_line_offset + line_37v37h['slope'] * tb_v37
-    is_check1 = tb_h37 > vh37chk
-    ic_frac[~is_check1] = ic_frac_37v19v[~is_check1]
+    # Use conc from the 37v19v tbset when tb_h37 is below the 37v37h AD line.
+    ad_line_37v37h_y_vals = (
+        line_37v37h['offset'] - ad_line_offset + line_37v37h['slope'] * tb_v37
+    )
+    h37_below_37v37h_ad_line = tb_h37 <= ad_line_37v37h_y_vals
+    ic_frac[h37_below_37v37h_ad_line] = ic_frac_37v19v[h37_below_37v37h_ad_line]
 
     # convert fractional sea ice concentrations to percentages
     ic_perc = ic_frac.copy()
