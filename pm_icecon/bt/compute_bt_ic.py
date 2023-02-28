@@ -210,9 +210,9 @@ def get_linfit(
     lnline: Line,
     add: float,
     weather_mask: npt.NDArray[np.bool_],
-    # If the calculated slope is larger than `lnchk`, a `BootstrapAlgError` is
-    # raised.
-    lnchk: float = 1.5,
+    # If the calculated slope is larger than `max_slope`, a `BootstrapAlgError`
+    # is raised.
+    max_slope: float = 1.5,
     # If any one of the rest of these arguments is given, the rest must also be
     # non-None. Currently only used for getting the v1937 line, in determining
     # if pixels are valid for use.
@@ -246,9 +246,9 @@ def get_linfit(
         deg=1,
     )
 
-    if slopeb > lnchk:
+    if slopeb > max_slope:
         raise BootstrapAlgError(
-            f'lnchk failed. {slopeb=} > {lnchk=}. '
+            f'Line slope check failed. {slopeb=} > {max_slope=}. '
             'This may need some additional investigation! The code from Goddard would'
             ' fall back on defaults defined by the `iceline` parameter if this'
             ' condition was met. However, it is probably better to investigate'
