@@ -162,11 +162,17 @@ def cli(
 
 
 if __name__ == '__main__':
+    # vvvv MODIFY THESE PARAMETERS AS NEEDED vvvv
+    start_date = dt.date(2012, 7, 2)
+    end_date = dt.date(2021, 2, 11)
+    resolution: AU_SI_RESOLUTIONS = '12'
+    output_dir = CDR_DATA_DIR
+    # ^^^^ MODIFY THESE PARAMETERS AS NEEDED ^^^^
     for hemisphere in get_args(Hemisphere):
         create_cdr_for_date_range(
-            start_date=dt.date(2012, 7, 2),
-            end_date=dt.date(2021, 2, 11),
+            start_date=start_date,
+            end_date=end_date,
             hemisphere=hemisphere,
-            resolution='12',
-            output_dir=CDR_DATA_DIR,
+            resolution=resolution,
+            output_dir=output_dir,
         )

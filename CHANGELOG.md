@@ -1,3 +1,10 @@
+# NEXT_RELEASE
+
+* Bootstrap: stop wrapping data computations in functions that cast data to
+  `np.float32`. This was done originally to exactly match the outputs of the
+  Fortran code provided to us by GSFC.
+* Replace custom `linfit` function used by bootstrap algorithm with `numpy.polyfit`.
+
 # 0.1.1
 
 * Packaging fixup: include `py.typed` in built package so that other libraries

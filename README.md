@@ -137,6 +137,29 @@ nh_cdr_20210101 = amsr2_cdr(
 )
 ```
 
+The `cdr` subcommand of the CLI can be used to generate NetCDF files containing
+CDR-like concentration estimates:
+
+```
+$ ./scripts/cli.sh cdr --help
+Usage: python -m pm_icecon.cli.entrypoint cdr [OPTIONS]
+
+  Run the CDR algorithm with AMSR2 data.
+
+Options:
+  -d, --date [%Y-%m-%d]           [required]
+  -h, --hemisphere [north|south]  [required]
+  -o, --output-dir DIRECTORY      [required]
+  -r, --resolution [25|12]        [required]
+  --help                          Show this message and exit.
+```
+
+If NetCDF files for both hemispheres over a range of dates is desired, modify
+the `start_date` and `end_date` in the `__main__` section of the `cdr` module and invoke it directly. This will produce netCDF files in the `CDR_DATA_DIR` by defualt.
+```
+python pm_icecon/cdr.py
+```
+
 NOTE: the CDR code is currently defined with hard-coded defaults that expect
 access to NSIDC's virtual machine infrastructure.
 
