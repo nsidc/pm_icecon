@@ -273,7 +273,6 @@ def _get_ic(
     """Get fractional ice concentration without rad adjustment."""
     wtp_x = wtp_set[0]
     wtp_y = wtp_set[1]
-
     iline_off = iline['offset']
     iline_slp = iline['slope']
 
