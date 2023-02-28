@@ -236,9 +236,9 @@ def get_linfit(
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
-    icnt = np.sum(np.where(is_valid, 1, 0))
-    if icnt <= 125:
-        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
+    num_valid_pixels = is_valid.sum()
+    if num_valid_pixels <= 125:
+        raise BootstrapAlgError(f'Insufficient valid linfit points: {num_valid_pixels}')
 
     slopeb, intrca = np.polyfit(
         x=tbx[is_valid],
