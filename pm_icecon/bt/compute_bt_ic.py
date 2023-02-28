@@ -264,7 +264,16 @@ def get_linfit(
     return line
 
 
-def get_ic(*, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, maxic):
+def _get_ic(
+    *,
+    tbx: npt.NDArray,
+    tby: npt.NDArray,
+    wtp_set: TiepointSet,
+    iline: Line,
+    missing_flag_value,
+    maxic: float,
+):
+    """Get fractional ice concentration without rad adjustment."""
     wtp_x = wtp_set[0]
     wtp_y = wtp_set[1]
 
@@ -306,11 +315,11 @@ def get_ic(*, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, m
     return ic
 
 
-def rad_adjust_ic(
+def _rad_adjust_ic(
     *,
-    ic,
-    tbx,
-    tby,
+    ic: npt.NDArray,
+    tbx: npt.NDArray,
+    tby: npt.NDArray,
     itp_set: TiepointSet,
     wtp_set: TiepointSet,
     line: Line,
@@ -799,7 +808,7 @@ def _calc_frac_conc_for_tbset(
     maxic,
 ):
     """Return fractional sea ice concentration for the given parameters."""
-    ic = get_ic(
+    ic = _get_ic(
         tbx=tbx,
         tby=tby,
         wtp_set=wtp_set,
@@ -808,7 +817,7 @@ def _calc_frac_conc_for_tbset(
         maxic=maxic,
     )
 
-    ic_adjusted = rad_adjust_ic(
+    ic_adjusted = _rad_adjust_ic(
         ic=ic,
         tbx=tbx,
         tby=tby,
