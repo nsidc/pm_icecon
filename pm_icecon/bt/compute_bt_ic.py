@@ -111,7 +111,6 @@ def get_adj_ad_line_offset(
     instead.
     """
     wtp_x, wtp_y = wtp_set[0], wtp_set[1]
-
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
 
