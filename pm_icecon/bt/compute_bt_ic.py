@@ -96,9 +96,20 @@ def xfer_class_tbs(
 # TODO: is this function really specific to 37v37h or should it be more generic?
 # If specific, also rename `wtp` and rename func to make this clear. If not,
 # rename `vh37` kwarg to e.g., 'line'?
-def ret_adj_adoff(*, wtp_set: TiepointSet, line_37v37h: Line, perc=0.92) -> float:
-    # replaces ret_adj_adoff()
-    # wtp_set is one water tie point
+def get_adj_ad_line_offset(
+    *,
+    wtp_set: TiepointSet,
+    line_37v37h: Line,
+    perc=0.92,
+) -> float:
+    """Return the AD line offset.
+
+    The AD line offset is used to determine between which tb set should be used
+    to calculate a pixel's ice concentration. For the Goddard bootstrap
+    algorithm, data points above the offset AD line (appox. AD - 5K) use
+    HV37. For data points below the offset AD line, the V1937 tbs et is used
+    instead.
+    """
     wtp_x, wtp_y = wtp_set[0], wtp_set[1]
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
@@ -116,14 +127,12 @@ def ret_adj_adoff(*, wtp_set: TiepointSet, line_37v37h: Line, perc=0.92) -> floa
 
     new_off = y2 - slp * x2
 
-    adoff = off - new_off
+    ad_line_offset = off - new_off
 
-    return adoff
+    return ad_line_offset
 
 
-# TODO: rename. This doesn't actually return a wtp, it retuns one of it's terms
-# (x or y)
-def _ret_wtp(
+def _get_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> Tiepoint:
@@ -169,8 +178,8 @@ def get_water_tiepoint_set(
     If the calculated water tiepoints are within +/- 10 of the
     `wtp_set_default`, use the newly calculated values.
     """
-    wtpx = _ret_wtp(weather_mask, tbx)
-    wtpy = _ret_wtp(weather_mask, tby)
+    wtpx = _get_wtp(weather_mask, tbx)
+    wtpy = _get_wtp(weather_mask, tby)
 
     new_wtp_set = list(copy.copy(wtp_set_default))
 
@@ -189,27 +198,34 @@ def get_water_tiepoint_set(
     return wtp_set_tuple
 
 
-def ret_linfit(
+def get_linfit(
     *,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    tbx,
-    tby,
+    tbx: npt.NDArray,
+    tby: npt.NDArray,
     lnline: Line,
-    add,
-    lnchk=1.5,
-    weather_mask,
+    add: float,
+    weather_mask: npt.NDArray[np.bool_],
+    # If the calculated slope is larger than `max_slope`, a `BootstrapAlgError`
+    # is raised.
+    max_slope: float = 1.5,
     # If any one of the rest of these arguments is given, the rest must also be
     # non-None. Currently only used for getting the v1937 line, in determining
     # if pixels are valid for use.
-    tba=None,
+    tba: npt.NDArray | None = None,
     iceline: Line | None = None,
-    adoff=None,
+    ad_line_offset: float | None = None,
 ) -> Line:
-    # Reproduces both ret_linfit1() and ret_linfit2()
+    """Reproduce both `ret_linfit1()` and `ret_linfit2()` from GSFC code."""
     not_land_or_masked = ~land_mask & ~tb_mask
-    if tba is not None and iceline is not None and adoff is not None:
-        is_tba_le_modad = tba <= (tbx * iceline['slope']) + iceline['offset'] - adoff
+    # tba is always tb_h37, which is the x-axis of the 37h37v tbset.
+    # The iceline is always the v19v37 lnline (ln == linear?).
+    # ad_line_offset is calculated from the 37v37h tbset.
+    if tba is not None and iceline is not None and ad_line_offset is not None:
+        is_tba_le_modad = (
+            tba <= (tbx * iceline['slope']) + iceline['offset'] - ad_line_offset
+        )
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
@@ -217,22 +233,19 @@ def ret_linfit(
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
-    icnt = np.sum(np.where(is_valid, 1, 0))
-    if icnt <= 125:
-        raise BootstrapAlgError(f'Insufficient valid linfit points: {icnt}')
-
-    xvals = tbx[is_valid].flatten()
-    yvals = tby[is_valid].flatten()
+    num_valid_pixels = is_valid.sum()
+    if num_valid_pixels <= 125:
+        raise BootstrapAlgError(f'Insufficient valid linfit points: {num_valid_pixels}')
 
     slopeb, intrca = np.polyfit(
-        x=xvals,
-        y=yvals,
+        x=tbx[is_valid],
+        y=tby[is_valid],
         deg=1,
     )
 
-    if slopeb > lnchk:
+    if slopeb > max_slope:
         raise BootstrapAlgError(
-            f'lnchk failed. {slopeb=} > {lnchk=}. '
+            f'Line slope check failed. {slopeb=} > {max_slope=}. '
             'This may need some additional investigation! The code from Goddard would'
             ' fall back on defaults defined by the `iceline` parameter if this'
             ' condition was met. However, it is probably better to investigate'
@@ -248,7 +261,16 @@ def ret_linfit(
     return line
 
 
-def ret_ic(*, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, maxic):
+def _get_ic(
+    *,
+    tbx: npt.NDArray,
+    tby: npt.NDArray,
+    wtp_set: TiepointSet,
+    iline: Line,
+    missing_flag_value,
+    maxic: float,
+):
+    """Get fractional ice concentration without rad adjustment."""
     wtp_x = wtp_set[0]
     wtp_y = wtp_set[1]
     iline_off = iline['offset']
@@ -289,29 +311,63 @@ def ret_ic(*, tbx, tby, wtp_set: TiepointSet, iline: Line, missing_flag_value, m
     return ic
 
 
-def rad_adjust_ic(
+def _get_len_between_points(
     *,
-    ic,
-    tbx,
-    tby,
+    x1: npt.NDArray | float,
+    y1: npt.NDArray | float,
+    x2: npt.NDArray | float,
+    y2: npt.NDArray | float,
+) -> npt.NDArray:
+    """Return the length between (x1, y1) and (x2, y2).
+
+    In practice, this is used for finding the distance between a tiepoint set
+    and a tbset. E.g., the distance between 37v19v and the water tiepoint set
+    for 37v19v.
+    """
+    length = np.sqrt(np.square(x1 - x2) + np.square(y1 - y2))
+
+    return length
+
+
+def calc_rad_coeffs(
+    *,
+    itp_set: TiepointSet,
+    wtp_set: TiepointSet,
+    line: Line,
+):
+    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
+    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
+
+    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
+    yint = (line['slope'] * xint) + line['offset']
+
+    rad_len = _get_len_between_points(x1=xint, x2=wtp_set[0], y1=yint, y2=wtp_set[1])
+
+    return (rad_slope, rad_offset, rad_len)
+
+
+def _rad_adjust_ic(
+    *,
+    ic: npt.NDArray,
+    tbx: npt.NDArray,
+    tby: npt.NDArray,
     itp_set: TiepointSet,
     wtp_set: TiepointSet,
     line: Line,
 ):
     adjusted_ic = ic.copy()
 
-    radslp2, radoff2, radlen = calc_rad_coeffs(
+    radslp, rad_line_offset, radlen = calc_rad_coeffs(
         itp_set=itp_set,
         wtp_set=wtp_set,
         line=line,
     )
 
-    is_v19_lt_rc2 = tby < (radslp2 * tbx + radoff2)
-
-    iclen = np.sqrt(np.square(tbx - wtp_set[0]) + np.square(tby - wtp_set[1]))
+    is_tby_lt_rc = tby < (radslp * tbx + rad_line_offset)
+    iclen = _get_len_between_points(x1=tbx, x2=wtp_set[0], y1=tby, y2=wtp_set[1])
     is_iclen_gt_radlen = iclen > radlen
-    adjusted_ic[is_v19_lt_rc2 & is_iclen_gt_radlen] = 1.0
-    is_condition = is_v19_lt_rc2 & ~is_iclen_gt_radlen
+    adjusted_ic[is_tby_lt_rc & is_iclen_gt_radlen] = 1.0
+    is_condition = is_tby_lt_rc & ~is_iclen_gt_radlen
     adjusted_ic[is_condition] = iclen[is_condition] / radlen
 
     return adjusted_ic
@@ -456,23 +512,6 @@ def get_weather_mask(
     is_water = not_land_or_masked & is_cond1 & is_cond2
 
     return is_water
-
-
-def calc_rad_coeffs(
-    *,
-    itp_set: TiepointSet,
-    wtp_set: TiepointSet,
-    line: Line,
-):
-    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
-    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
-
-    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
-    yint = (line['slope'] * xint) + line['offset']
-
-    rad_len = np.sqrt(np.square(xint - wtp_set[0]) + np.square(yint - wtp_set[1]))
-
-    return (rad_slope, rad_offset, rad_len)
 
 
 def apply_invalid_ice_mask(
@@ -782,7 +821,7 @@ def _calc_frac_conc_for_tbset(
     maxic,
 ):
     """Return fractional sea ice concentration for the given parameters."""
-    ic = ret_ic(
+    ic = _get_ic(
         tbx=tbx,
         tby=tby,
         wtp_set=wtp_set,
@@ -791,7 +830,7 @@ def _calc_frac_conc_for_tbset(
         maxic=maxic,
     )
 
-    ic_adjusted = rad_adjust_ic(
+    ic_adjusted = _rad_adjust_ic(
         ic=ic,
         tbx=tbx,
         tby=tby,
@@ -807,7 +846,7 @@ def calc_bootstrap_conc(
     *,
     maxic_frac,
     line_37v37h: Line,
-    adoff,
+    ad_line_offset: float,
     line_37v19v: Line,
     wtp_set_37v37h: TiepointSet,
     wtp_set_37v19v: TiepointSet,
@@ -844,11 +883,15 @@ def calc_bootstrap_conc(
         maxic=maxic_frac,
     )
 
+    # Initialize the ice fraction from the 37v37h tbset. These values will be
+    # preserved for pixels where tb_h37 is above the 37v37h AD line.
     ic_frac = ic_frac_37v37h.copy()
-
-    vh37chk = line_37v37h['offset'] - adoff + line_37v37h['slope'] * tb_v37
-    is_check1 = tb_h37 > vh37chk
-    ic_frac[~is_check1] = ic_frac_37v19v[~is_check1]
+    # Use conc from the 37v19v tbset when tb_h37 is below the 37v37h AD line.
+    ad_line_37v37h_y_vals = (
+        line_37v37h['offset'] - ad_line_offset + line_37v37h['slope'] * tb_v37
+    )
+    h37_below_37v37h_ad_line = tb_h37 <= ad_line_37v37h_y_vals
+    ic_frac[h37_below_37v37h_ad_line] = ic_frac_37v19v[h37_below_37v37h_ad_line]
 
     # convert fractional sea ice concentrations to percentages
     ic_perc = ic_frac.copy()
@@ -894,7 +937,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    line_37v37h = ret_linfit(
+    line_37v37h = get_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -918,9 +961,12 @@ def goddard_bootstrap(
         tby=tb_v19,
     )
 
-    adoff = ret_adj_adoff(wtp_set=wtp_set_37v37h, line_37v37h=line_37v37h)
+    ad_line_offset = get_adj_ad_line_offset(
+        wtp_set=wtp_set_37v37h,
+        line_37v37h=line_37v37h,
+    )
 
-    line_37v19v = ret_linfit(
+    line_37v19v = get_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
@@ -930,13 +976,13 @@ def goddard_bootstrap(
         weather_mask=weather_mask,
         tba=tb_h37,
         iceline=line_37v37h,
-        adoff=adoff,
+        ad_line_offset=ad_line_offset,
     )
 
     conc = calc_bootstrap_conc(
         maxic_frac=params.maxic,
         line_37v37h=line_37v37h,
-        adoff=adoff,
+        ad_line_offset=ad_line_offset,
         line_37v19v=line_37v19v,
         wtp_set_37v37h=wtp_set_37v37h,
         wtp_set_37v19v=wtp_set_37v19v,
