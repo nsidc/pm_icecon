@@ -24,21 +24,20 @@ import xarray as xr
 from loguru import logger
 
 import pm_icecon.bt.compute_bt_ic as bt
+import pm_icecon.bt.masks as bt_masks
+import pm_icecon.bt.params.amsr2 as bt_amsr2_params
 import pm_icecon.nt.compute_nt_ic as nt
+import pm_icecon.nt.params.goddard_rss as nt_goddard_rss_params
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.config.models.bt import BootstrapParams
-from pm_icecon.constants import CDR_DATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
-from pm_icecon.nt._types import (
-    NasateamCoefficients,
-    NasateamGradientRatioThresholds,
-    NasateamRatio,
-)
-from pm_icecon.nt.api import amsr2_goddard_nasateam
-from pm_icecon.nt.tiepoints import NasateamTiePoints
-from pm_icecon.util import date_range, standard_output_filename
+from pm_icecon.constants import CDR_DATA_DIR, CDR_TESTDATA_DIR, DEFAULT_FLAG_VALUES
+from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from pm_icecon.interpolation import spatial_interp_tbs
+from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
+from pm_icecon.nt._types import NasateamGradientRatioThresholds
+from pm_icecon.nt.tiepoints import NasateamTiePoints, get_tiepoints
+from pm_icecon.util import date_range, get_ps_grid_shape, standard_output_filename
 
 
 def cdr(
@@ -56,7 +55,7 @@ def cdr(
     shoremap: npt.NDArray,
     missing_flag_value,
     land_flag_value,
-) -> xr.Dataset:
+) -> npt.NDArray:
     """Run the CDR algorithm."""
     # First, get bootstrap conc.
     bt_tb_mask = bt.tb_data_mask(
@@ -143,29 +142,101 @@ def cdr(
     )
 
     # Apply flag values
-    ...
+    # TODO: extract this func from nt and allow override of flag values
+    cdr_conc = nt._clamp_conc_and_set_flags(
+        shoremap=shoremap,
+        conc=cdr_conc,
+    )
 
     # Return CDR.
-    ...
+    # TODO: return an xr dataset with variables containing the outputs of
+    # intermediate steps above.
+    return cdr_conc
 
 
 def amsr2_cdr(
-    *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: AU_SI_RESOLUTIONS,
 ) -> xr.Dataset:
     """Create a CDR-like concentration field from AMSR2 data."""
-    bt_conc_ds = amsr2_goddard_bootstrap(
-        date=date, hemisphere=hemisphere, resolution=resolution
-    )
-    nt_conc_ds = amsr2_goddard_nasateam(
-        date=date, hemisphere=hemisphere, resolution=resolution
+    # Get AMSR2 TBs
+    xr_tbs = get_au_si_tbs(
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,
     )
 
-    bt_conc = bt_conc_ds.conc.data
-    nt_conc = nt_conc_ds.conc.data
-    is_bt_seaice = (bt_conc > 0) & (bt_conc <= 100)
-    use_nt_values = (nt_conc > bt_conc) & is_bt_seaice
+    invalid_ice_mask = bt_masks.get_ps_invalid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,  # type: ignore[arg-type]
+    )
+    # Create bootstrap params
+    bt_params = BootstrapParams(
+        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+        # There's no pole hole in the southern hemisphere.
+        pole_mask=(
+            get_ps_pole_hole_mask(resolution=resolution)
+            if hemisphere == 'north'
+            else None
+        ),
+        invalid_ice_mask=invalid_ice_mask,
+        **(
+            bt_amsr2_params.AMSR2_NORTH_PARAMS
+            if hemisphere == 'north'
+            else bt_amsr2_params.AMSR2_SOUTH_PARAMS
+        ),
+    )
 
-    cdr_conc_ds = bt_conc_ds.where(~use_nt_values, nt_conc_ds)
+    # Nasateam specific config
+    _nasateam_ancillary_dir = CDR_TESTDATA_DIR / 'nasateam_ancillary'
+    shoremap = np.fromfile(
+        (_nasateam_ancillary_dir / f'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'),
+        dtype=np.uint8,
+    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
+    nt_minic = np.fromfile(
+        (_nasateam_ancillary_dir / f'minic_amsru_{hemisphere[0]}h{resolution}.dat'),
+        dtype=np.int16,
+    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
+    # Scale down by 10. The original alg. dealt w/ concentrations scaled by 10.
+    nt_minic = nt_minic / 10  # type: ignore[assignment]
+
+    # Get tiepoints
+    nt_tiepoints = get_tiepoints(satellite='u2', hemisphere=hemisphere)
+
+    # Gradient thresholds
+    nt_gradient_thresholds = (
+        nt_goddard_rss_params.RSS_F17_NORTH_GRADIENT_THRESHOLDS
+        if hemisphere == 'north'
+        else nt_goddard_rss_params.RSS_F17_SOUTH_GRADIENT_THRESHOLDS
+    )
+    logger.warning(
+        'The graident threshold values were stolen from f17_final!'
+        ' Do we need new ones for AMSR2? How do we get them?'
+    )
+
+    # finally, compute the CDR.
+    conc = cdr(
+        date=date,
+        tb_h19=spatial_interp_tbs(xr_tbs['h18'].data),
+        tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
+        tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
+        tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
+        tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
+        bt_params=bt_params,
+        nt_tiepoints=nt_tiepoints,
+        nt_gradient_thresholds=nt_gradient_thresholds,
+        # TODO: this is the same as the bootstrap mask!
+        nt_invalid_ice_mask=invalid_ice_mask,
+        nt_minic=nt_minic,
+        shoremap=shoremap,
+        missing_flag_value=DEFAULT_FLAG_VALUES.missing,
+        land_flag_value=DEFAULT_FLAG_VALUES.land,
+    )
+
+    cdr_conc_ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
     return cdr_conc_ds
 

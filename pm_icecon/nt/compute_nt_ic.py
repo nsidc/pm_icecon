@@ -223,7 +223,11 @@ def apply_nt_spillover(
     return newice
 
 
-def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
+def _clamp_conc_and_set_flags(
+    *,
+    shoremap: npt.NDArray,
+    conc: npt.NDArray,
+) -> npt.NDArray:
     """Clap concentrations to a max of 100 and apply flag values.
 
     Currently just sets a land value. TODO: add coast flag value.
