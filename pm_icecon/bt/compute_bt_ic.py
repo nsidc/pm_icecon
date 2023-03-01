@@ -540,7 +540,8 @@ def coastal_fix(
     conc: npt.NDArray,
     missing_flag_value,
     land_flag_value,
-    minic,
+    # The minimum ice concentration as a percentage (10 == 10%)
+    minic: float,
 ):
     # Apply coastal_fix() routine per Bootstrap
 
@@ -903,40 +904,25 @@ def calc_bootstrap_conc(
     return ic_perc
 
 
-def goddard_bootstrap(
-    *,
+# TODO: rename func
+def bootstrap_for_cdr(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    tb_v22: npt.NDArray,
     params: BootstrapParams,
-    date: dt.date,
+    # TODO: can we run the algorithm without needing to pass in masks?
+    # Currently used to e.g., calculate water tie points from the
+    # scatterplot of ocean tbs
+    tb_mask: npt.NDArray[np.bool_],
+    weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
-) -> xr.Dataset:
-    """Bootstrap algorithm as organized by the orignal code from GSFC."""
-    tb_mask = tb_data_mask(
-        tbs=(
-            tb_v37,
-            tb_h37,
-            tb_v19,
-            tb_v22,
-        ),
-        min_tb=params.mintb,
-        max_tb=params.maxtb,
-    )
+) -> npt.NDArray:
+    """Bootstrap algorithm without weather filtering.
 
-    weather_mask = get_weather_mask(
-        v37=tb_v37,
-        h37=tb_h37,
-        v22=tb_v22,
-        v19=tb_v19,
-        land_mask=params.land_mask,
-        tb_mask=tb_mask,
-        ln1=params.vh37_params.lnline,
-        date=date,
-        weather_filter_seasons=params.weather_filter_seasons,
-    )
+    Returns an NDArray with a concentration estimate at every cell.
 
+    Flags values are not set and spillover correction is not applied.
+    """
     line_37v37h = get_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
@@ -991,6 +977,53 @@ def goddard_bootstrap(
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
+        missing_flag_value=missing_flag_value,
+    )
+
+    return conc
+
+
+def goddard_bootstrap(
+    *,
+    tb_v37: npt.NDArray,
+    tb_h37: npt.NDArray,
+    tb_v19: npt.NDArray,
+    tb_v22: npt.NDArray,
+    params: BootstrapParams,
+    date: dt.date,
+    missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
+) -> xr.Dataset:
+    """Bootstrap algorithm as organized by the orignal code from GSFC."""
+    tb_mask = tb_data_mask(
+        tbs=(
+            tb_v37,
+            tb_h37,
+            tb_v19,
+            tb_v22,
+        ),
+        min_tb=params.mintb,
+        max_tb=params.maxtb,
+    )
+
+    weather_mask = get_weather_mask(
+        v37=tb_v37,
+        h37=tb_h37,
+        v22=tb_v22,
+        v19=tb_v19,
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        ln1=params.vh37_params.lnline,
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
+    )
+
+    conc = bootstrap_for_cdr(
+        tb_v37=tb_v37,
+        tb_h37=tb_h37,
+        tb_v19=tb_v19,
+        params=params,
+        tb_mask=tb_mask,
+        weather_mask=weather_mask,
         missing_flag_value=missing_flag_value,
     )
 
