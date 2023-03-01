@@ -6,7 +6,7 @@ import click
 from loguru import logger
 
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.api import a2l1c_bootstrap, amsr2_bootstrap
+from pm_icecon.bt.api import a2l1c_goddard_bootstrap, amsr2_goddard_bootstrap
 from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.util import standard_output_filename
@@ -60,7 +60,7 @@ def amsr2(
     The resulting concentration field is saved to a netcdf file in the given
     `output_dir` with the form `{N|S}H_{YYYYMMDD}_py_NRT_amsr2.nc`
     """
-    conc_ds = amsr2_bootstrap(
+    conc_ds = amsr2_goddard_bootstrap(
         date=date,
         hemisphere=hemisphere,
         resolution=resolution,
@@ -115,7 +115,7 @@ def a2l1c(*, date: dt.date, hemisphere: Hemisphere, output_dir: Path):
     The resulting concentration field is saved to a netcdf file in the given
     `output_dir`.
     """
-    conc_ds = a2l1c_bootstrap(
+    conc_ds = a2l1c_goddard_bootstrap(
         date=date,
         hemisphere=hemisphere,
     )

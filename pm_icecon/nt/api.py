@@ -17,10 +17,14 @@ from pm_icecon.nt.tiepoints import get_tiepoints
 from pm_icecon.util import get_ps_grid_shape
 
 
-def amsr2_nasateam(
+def amsr2_goddard_nasateam(
     *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
 ):
-    """Compute sea ice concentration from AU_SI25 TBs."""
+    """Compute sea ice concentration from AU_SI25 TBs.
+
+    Utilizes the bootstrap algorithm as organized by the original code from
+    GSFC.
+    """
     xr_tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,

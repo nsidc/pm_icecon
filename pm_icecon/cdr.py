@@ -22,11 +22,11 @@ import xarray as xr
 from loguru import logger
 
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.api import amsr2_bootstrap
+from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.constants import CDR_DATA_DIR
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
-from pm_icecon.nt.api import amsr2_nasateam
+from pm_icecon.nt.api import amsr2_goddard_nasateam
 from pm_icecon.util import date_range, standard_output_filename
 
 
@@ -34,10 +34,12 @@ def amsr2_cdr(
     *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
 ) -> xr.Dataset:
     """Create a CDR-like concentration field from AMSR2 data."""
-    bt_conc_ds = amsr2_bootstrap(
+    bt_conc_ds = amsr2_goddard_bootstrap(
         date=date, hemisphere=hemisphere, resolution=resolution
     )
-    nt_conc_ds = amsr2_nasateam(date=date, hemisphere=hemisphere, resolution=resolution)
+    nt_conc_ds = amsr2_goddard_nasateam(
+        date=date, hemisphere=hemisphere, resolution=resolution
+    )
 
     bt_conc = bt_conc_ds.conc.data
     nt_conc = nt_conc_ds.conc.data

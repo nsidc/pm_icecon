@@ -21,10 +21,14 @@ from pm_icecon.masks import (
 )
 
 
-def amsr2_bootstrap(
+def amsr2_goddard_bootstrap(
     *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
 ) -> xr.Dataset:
-    """Compute sea ice concentration from AU_SI TBs."""
+    """Compute sea ice concentration from AU_SI TBs.
+
+    Utilizes the bootstrap algorithm as organized by the original code from
+    GSFC.
+    """
     xr_tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
@@ -59,8 +63,12 @@ def amsr2_bootstrap(
     return conc_ds
 
 
-def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
-    """Compute sea ice concentration from L1C 6.25km TBs."""
+def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
+    """Compute sea ice concentration from L1C 6.25km TBs.
+
+    Utilizes the bootstrap algorithm as organized by the original code from
+    GSFC.
+    """
     if hemisphere == 'south':
         raise NotImplementedError('Southern hemisphere is not currently supported.')
 

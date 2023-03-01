@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 
 import pm_icecon.nt.api as nt_api
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.api import amsr2_bootstrap
+from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.cdr import amsr2_cdr
 from pm_icecon.compare.ref_data import get_au_si_bt_conc, get_cdr, get_sea_ice_index
@@ -102,7 +102,7 @@ def get_example_output(
     * Flip the data so that North is 'up'.
     * Scale the data by 10 and round to np.uint8 dtype.
     """
-    example_ds = amsr2_bootstrap(
+    example_ds = amsr2_goddard_bootstrap(
         date=date,
         hemisphere=hemisphere,
         resolution=resolution,  # type: ignore[arg-type]
@@ -385,7 +385,7 @@ def compare_amsr_nt_to_sii(  # noqa
         hemisphere=hemisphere, date=date, resolution=resolution
     )
     our_conc_ds = _fix_nt_outputs(
-        nt_api.amsr2_nasateam(
+        nt_api.amsr2_goddard_nasateam(
             date=date,
             hemisphere=hemisphere,
             resolution=resolution,
