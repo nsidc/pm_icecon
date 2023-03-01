@@ -329,6 +329,23 @@ def _get_len_between_points(
     return length
 
 
+def calc_rad_coeffs(
+    *,
+    itp_set: TiepointSet,
+    wtp_set: TiepointSet,
+    line: Line,
+):
+    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
+    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
+
+    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
+    yint = (line['slope'] * xint) + line['offset']
+
+    rad_len = _get_len_between_points(x1=xint, x2=wtp_set[0], y1=yint, y2=wtp_set[1])
+
+    return (rad_slope, rad_offset, rad_len)
+
+
 def _rad_adjust_ic(
     *,
     ic: npt.NDArray,
@@ -495,23 +512,6 @@ def get_weather_mask(
     is_water = not_land_or_masked & is_cond1 & is_cond2
 
     return is_water
-
-
-def calc_rad_coeffs(
-    *,
-    itp_set: TiepointSet,
-    wtp_set: TiepointSet,
-    line: Line,
-):
-    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
-    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
-
-    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
-    yint = (line['slope'] * xint) + line['offset']
-
-    rad_len = _get_len_between_points(x1=xint, x2=wtp_set[0], y1=yint, y2=wtp_set[1])
-
-    return (rad_slope, rad_offset, rad_len)
 
 
 def apply_invalid_ice_mask(
