@@ -13,6 +13,7 @@ project should be primarily responsible for generating concentration fields from
 input Tbs.
 """
 import datetime as dt
+import sys
 import traceback
 from pathlib import Path
 from typing import get_args
@@ -301,6 +302,7 @@ def create_cdr_for_date_range(
             logger.info(f'Writing error info to {err_filename}')
             with open(output_dir / err_filename, 'w') as f:
                 traceback.print_exc(file=f)
+                traceback.print_exc(file=sys.stdout)
 
 
 @click.command(name='cdr')
