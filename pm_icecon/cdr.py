@@ -126,6 +126,10 @@ def cdr(
     cdr_conc[set_to_zero_sic] = 0
 
     # Apply land spillover corrections
+    # TODO: eventually, we want each of these routines to return a e.g., delta
+    #   that can be applied to the input concentration instead of returning a new
+    #   conc. Then we would have a seprate algorithm for choosing how to apply
+    #   multiple spillover deltas to a given conc field.
     # nasateam first:
     cdr_conc = nt.apply_nt_spillover(conc=cdr_conc, shoremap=shoremap, minic=nt_minic)
     # then bootstrap:
