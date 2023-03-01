@@ -311,6 +311,24 @@ def _get_ic(
     return ic
 
 
+def _get_len_between_points(
+    *,
+    x1: npt.NDArray | float,
+    y1: npt.NDArray | float,
+    x2: npt.NDArray | float,
+    y2: npt.NDArray | float,
+) -> npt.NDArray:
+    """Return the length between (x1, y1) and (x2, y2).
+
+    In practice, this is used for finding the distance between a tiepoint set
+    and a tbset. E.g., the distance between 37v19v and the water tiepoint set
+    for 37v19v.
+    """
+    length = np.sqrt(np.square(x1 - x2) + np.square(y1 - y2))
+
+    return length
+
+
 def _rad_adjust_ic(
     *,
     ic: npt.NDArray,
@@ -329,8 +347,7 @@ def _rad_adjust_ic(
     )
 
     is_tby_lt_rc = tby < (radslp * tbx + rad_line_offset)
-
-    iclen = np.sqrt(np.square(tbx - wtp_set[0]) + np.square(tby - wtp_set[1]))
+    iclen = _get_len_between_points(x1=tbx, x2=wtp_set[0], y1=tby, y2=wtp_set[1])
     is_iclen_gt_radlen = iclen > radlen
     adjusted_ic[is_tby_lt_rc & is_iclen_gt_radlen] = 1.0
     is_condition = is_tby_lt_rc & ~is_iclen_gt_radlen
@@ -492,7 +509,7 @@ def calc_rad_coeffs(
     xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
-    rad_len = np.sqrt(np.square(xint - wtp_set[0]) + np.square(yint - wtp_set[1]))
+    rad_len = _get_len_between_points(x1=xint, x2=wtp_set[0], y1=yint, y2=wtp_set[1])
 
     return (rad_slope, rad_offset, rad_len)
 
