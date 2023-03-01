@@ -232,7 +232,7 @@ def get_tiepoints(
             f'No mapping between {satellite} and tiepoints table' ' currently defined.'
         )
 
-    logger.info('Given {satellite=}, returning tiepoints for {sat}')
+    logger.info(f'Given {satellite=}, returning tiepoints for {sat}')
 
     return TIEPOINTS[sat][hemisphere[0].lower()]
 
