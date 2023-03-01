@@ -118,10 +118,10 @@ def cdr(
     # TODO: can we just use a single invalid ice mask?
     set_to_zero_sic = (
         nt_weather_mask
-        & bt_weather_mask
-        & nt_invalid_ice_mask
-        & bt_params.invalid_ice_mask
-        & bt_tb_mask
+        | bt_weather_mask
+        | nt_invalid_ice_mask
+        | bt_params.invalid_ice_mask
+        | bt_tb_mask
     )
     cdr_conc[set_to_zero_sic] = 0
 
