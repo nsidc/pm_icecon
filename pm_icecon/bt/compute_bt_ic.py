@@ -716,17 +716,23 @@ def coastal_fix(
     is_considered = is_temp0 & is_rolled_land
 
     # args to np.roll are opposite of fortran index offsets
+    # TODO: one less roll operation here than in `_conc_change124`. Should there
+    # be?
     tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
     tip1jp0 = np.roll(temp, (-1, 0), axis=(1, 0))
     tip0jm1 = np.roll(temp, (0, 1), axis=(1, 0))
     tip0jp1 = np.roll(temp, (0, -1), axis=(1, 0))
 
+    # TODO: one less conditional here than in `_conc_change124`. Should there
+    # be?
     is_tip1jp1_le0 = tip1jp1 <= 0
     is_tip1jp0_eq0 = tip1jp0 == 0
     is_tip0jm1_le0 = tip0jm1 <= 0
     is_tip0jp1_le0 = tip0jp1 <= 0
 
     # Changing conc2(i+1,j) to 0
+    # TODO: `is_tip1jp1_le0` variable is used twice here (&-ed
+    # together). Was this a mistake?
     locs_ip1jp0 = np.where(
         is_considered & is_tip1jp1_le0 & is_tip1jp1_le0 & is_tip1jp0_eq0
     )
@@ -734,6 +740,8 @@ def coastal_fix(
     conc2[change_locs_conc2_ip1jp0] = 0
 
     # Changing conc2(i,j) to 0
+    # TODO: `is_tip1jp1_le0` variable is used twice here (&-ed
+    # together). Was this a mistake?
     locs_ip0jp0 = np.where(
         is_considered
         & is_tip1jp1_le0
