@@ -88,7 +88,8 @@ def cdr(
         weather_mask=bt_weather_mask,
     )
 
-    # Next, get nasateam conc.
+    # Next, get nasateam conc. Note that concentrations from nasateam may be
+    # >100%.
     nt_pr_1919 = nt.compute_ratio(tb_v19, tb_h19)
     nt_gr_3719 = nt.compute_ratio(tb_v37, tb_v19)
     nt_conc = nt.calc_nasateam_conc(
