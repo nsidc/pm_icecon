@@ -27,16 +27,16 @@ from loguru import logger
 import pm_icecon.bt.compute_bt_ic as bt
 import pm_icecon.bt.params.amsr2 as bt_amsr2_params
 import pm_icecon.nt.compute_nt_ic as nt
-import pm_icecon.nt.params.goddard_rss as nt_goddard_rss_params
+import pm_icecon.nt.params.amsr2 as nt_amsr2_params
 from pm_icecon._types import Hemisphere
 from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.config.models.bt import BootstrapParams
-from pm_icecon.constants import CDR_DATA_DIR, CDR_TESTDATA_DIR, DEFAULT_FLAG_VALUES
+from pm_icecon.constants import CDR_DATA_DIR, DEFAULT_FLAG_VALUES
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.nt._types import NasateamGradientRatioThresholds
-from pm_icecon.nt.tiepoints import NasateamTiePoints, get_tiepoints
-from pm_icecon.util import date_range, get_ps_grid_shape, standard_output_filename
+from pm_icecon.nt.tiepoints import NasateamTiePoints
+from pm_icecon.util import date_range, standard_output_filename
 
 
 def cdr(
@@ -176,36 +176,9 @@ def amsr2_cdr(
         resolution=resolution,
     )
 
-    # Nasateam specific config
-    _nasateam_ancillary_dir = CDR_TESTDATA_DIR / 'nasateam_ancillary'
-    # TODO: type for shoremap? The shoremap has values 1-5 that indicate land,
-    # coast, and cells away from coast (3-5)
-    nt_shoremap = np.fromfile(
-        (_nasateam_ancillary_dir / f'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'),
-        dtype=np.uint8,
-    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
-    # minic == minimum ice concentration grid. Used in the nasateam land
-    # spillover code.
-    # TODO: better description/type for minic.
-    nt_minic = np.fromfile(
-        (_nasateam_ancillary_dir / f'minic_amsru_{hemisphere[0]}h{resolution}.dat'),
-        dtype=np.int16,
-    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
-    # Scale down by 10. The original alg. dealt w/ concentrations scaled by 10.
-    nt_minic = nt_minic / 10  # type: ignore[assignment]
-
-    # Get tiepoints
-    nt_tiepoints = get_tiepoints(satellite='u2', hemisphere=hemisphere)
-
-    # Gradient thresholds
-    nt_gradient_thresholds = (
-        nt_goddard_rss_params.RSS_F17_NORTH_GRADIENT_THRESHOLDS
-        if hemisphere == 'north'
-        else nt_goddard_rss_params.RSS_F17_SOUTH_GRADIENT_THRESHOLDS
-    )
-    logger.warning(
-        'The graident threshold values were stolen from f17_final!'
-        ' Do we need new ones for AMSR2? How do we get them?'
+    nt_params = nt_amsr2_params.get_amsr2_params(
+        hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     # finally, compute the CDR.
@@ -217,12 +190,12 @@ def amsr2_cdr(
         tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
         tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
         bt_params=bt_params,
-        nt_tiepoints=nt_tiepoints,
-        nt_gradient_thresholds=nt_gradient_thresholds,
+        nt_tiepoints=nt_params.tiepoints,
+        nt_gradient_thresholds=nt_params.gradient_thresholds,
         # TODO: this is the same as the bootstrap mask!
         nt_invalid_ice_mask=bt_params.invalid_ice_mask,
-        nt_minic=nt_minic,
-        nt_shoremap=nt_shoremap,
+        nt_minic=nt_params.minic,
+        nt_shoremap=nt_params.shoremap,
         missing_flag_value=DEFAULT_FLAG_VALUES.missing,
         land_flag_value=DEFAULT_FLAG_VALUES.land,
     )
