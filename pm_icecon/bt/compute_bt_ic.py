@@ -539,7 +539,7 @@ def coastal_fix(
     *,
     conc: npt.NDArray,
     missing_flag_value,
-    land_flag_value,
+    land_mask: npt.NDArray[np.bool_],
     # The minimum ice concentration as a percentage (10 == 10%)
     minic: float,
 ):
@@ -550,7 +550,7 @@ def coastal_fix(
     #    1 is safe from removal
     #    0 is might-be-removed
     temp = np.ones_like(conc, dtype=np.int16)
-    is_land_or_lowice = (conc == land_flag_value) | ((conc >= 0) & (conc < minic))
+    is_land_or_lowice = land_mask | ((conc >= 0) & (conc < minic))
     temp[is_land_or_lowice] = -1
 
     is_seaice = (conc > 0) & (conc <= 100.0)
@@ -567,13 +567,10 @@ def coastal_fix(
         offn2 = -2 * offp1  # offp1 * -2
 
         # Compute shifted grids
-        rolled_offn1 = np.roll(conc, offp1, axis=(1, 0))  # land
-        rolled_off00 = conc.copy()  # .  k1p0 k2p0
+        is_rolled_land = np.roll(land_mask, offp1, axis=(1, 0))  # land
         rolled_offp1 = np.roll(conc, offn1, axis=(1, 0))  # k1 k2p1
+        rolled_offp1_land_mask = np.roll(land_mask, offn1, axis=(1, 0))  # k1 k2p1
         rolled_offp2 = np.roll(conc, offn2, axis=(1, 0))  # k2
-
-        # is_rolled_land = rolled_offn1 == land_flag_value
-        is_rolled_land = rolled_offn1 == land_flag_value
 
         is_k1 = (
             (is_seaice)
@@ -588,23 +585,13 @@ def coastal_fix(
             & (rolled_offp2 < minic)
         )
 
-        is_k1p0 = (
-            (is_k1)
-            & (rolled_off00 > 0)
-            & (rolled_off00 != missing_flag_value)
-            & (rolled_off00 != land_flag_value)
-        )
-        is_k2p0 = (
-            (is_k2)
-            & (rolled_off00 > 0)
-            & (rolled_off00 != missing_flag_value)
-            & (rolled_off00 != land_flag_value)
-        )
+        is_k1p0 = (is_k1) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
+        is_k2p0 = (is_k2) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
         is_k2p1 = (
             (is_k2)
             & (rolled_offp1 > 0)
             & (rolled_offp1 != missing_flag_value)
-            & (rolled_offp1 != land_flag_value)
+            & (~rolled_offp1_land_mask)
         )
 
         temp[is_k1p0] = 0
@@ -650,8 +637,7 @@ def coastal_fix(
     # Note: some of these conditional arrays might be set more than 1x
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (0, 1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (0, 1), axis=(1, 0))  # land check
 
     # For offp1 of [0, 1], the rolls are:
     tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
@@ -692,8 +678,7 @@ def coastal_fix(
     # Second conc2 change section
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (0, -1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (0, -1), axis=(1, 0))  # land check
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -733,8 +718,7 @@ def coastal_fix(
     # Third conc2 change section
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (1, 0), axis=(1, 0))
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (1, 0), axis=(1, 0))
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -771,8 +755,7 @@ def coastal_fix(
     # Fourth section
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (-1, 0), axis=(1, 0))
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (-1, 0), axis=(1, 0))
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -1042,7 +1025,7 @@ def goddard_bootstrap(
     conc = coastal_fix(
         conc=conc,
         missing_flag_value=missing_flag_value,
-        land_flag_value=DEFAULT_FLAG_VALUES.land,
+        land_mask=params.land_mask,
         minic=params.minic,
     )
     conc[conc < params.minic] = 0

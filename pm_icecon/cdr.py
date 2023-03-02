@@ -140,7 +140,7 @@ def cdr(
     cdr_conc = bt.coastal_fix(
         conc=cdr_conc,
         missing_flag_value=missing_flag_value,
-        land_flag_value=land_flag_value,
+        land_mask=bt_params.land_mask,
         minic=bt_params.minic,
     )
 
