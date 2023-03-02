@@ -2,12 +2,19 @@
 
 All parameters pulled from `ret_parameters_amsru2.f`.
 """
+import datetime as dt
+
+from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line
+from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.config.models.bt import (
+    BootstrapParams,
     TbSetParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
+from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 AMSR2_NORTH_PARAMS = dict(
     vh37_params=TbSetParams(
@@ -71,3 +78,30 @@ AMSR2_SOUTH_PARAMS = dict(
         ),
     ],
 )
+
+
+def get_amsr2_params(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: AU_SI_RESOLUTIONS,
+) -> BootstrapParams:
+    invalid_ice_mask = get_ps_invalid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,  # type: ignore[arg-type]
+    )
+
+    bt_params = BootstrapParams(
+        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+        # There's no pole hole in the southern hemisphere.
+        pole_mask=(
+            get_ps_pole_hole_mask(resolution=resolution)
+            if hemisphere == 'north'
+            else None
+        ),
+        invalid_ice_mask=invalid_ice_mask,
+        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+    )
+
+    return bt_params

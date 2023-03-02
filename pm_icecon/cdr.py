@@ -25,7 +25,6 @@ import xarray as xr
 from loguru import logger
 
 import pm_icecon.bt.compute_bt_ic as bt
-import pm_icecon.bt.masks as bt_masks
 import pm_icecon.bt.params.amsr2 as bt_amsr2_params
 import pm_icecon.nt.compute_nt_ic as nt
 import pm_icecon.nt.params.goddard_rss as nt_goddard_rss_params
@@ -35,7 +34,6 @@ from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_DATA_DIR, CDR_TESTDATA_DIR, DEFAULT_FLAG_VALUES
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
-from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.tiepoints import NasateamTiePoints, get_tiepoints
 from pm_icecon.util import date_range, get_ps_grid_shape, standard_output_filename
@@ -172,27 +170,10 @@ def amsr2_cdr(
         hemisphere=hemisphere,
         resolution=resolution,
     )
-
-    invalid_ice_mask = bt_masks.get_ps_invalid_ice_mask(
-        hemisphere=hemisphere,
+    bt_params = bt_amsr2_params.get_amsr2_params(
         date=date,
-        resolution=resolution,  # type: ignore[arg-type]
-    )
-    # Create bootstrap params
-    bt_params = BootstrapParams(
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-        # There's no pole hole in the southern hemisphere.
-        pole_mask=(
-            get_ps_pole_hole_mask(resolution=resolution)
-            if hemisphere == 'north'
-            else None
-        ),
-        invalid_ice_mask=invalid_ice_mask,
-        **(
-            bt_amsr2_params.AMSR2_NORTH_PARAMS
-            if hemisphere == 'north'
-            else bt_amsr2_params.AMSR2_SOUTH_PARAMS
-        ),
+        hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     # Nasateam specific config
@@ -239,7 +220,7 @@ def amsr2_cdr(
         nt_tiepoints=nt_tiepoints,
         nt_gradient_thresholds=nt_gradient_thresholds,
         # TODO: this is the same as the bootstrap mask!
-        nt_invalid_ice_mask=invalid_ice_mask,
+        nt_invalid_ice_mask=bt_params.invalid_ice_mask,
         nt_minic=nt_minic,
         nt_shoremap=nt_shoremap,
         missing_flag_value=DEFAULT_FLAG_VALUES.missing,
