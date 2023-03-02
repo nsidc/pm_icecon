@@ -203,6 +203,9 @@ def amsr2_cdr(
         (_nasateam_ancillary_dir / f'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'),
         dtype=np.uint8,
     ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
+    # minic == minimum ice concentration grid. Used in the nasateam land
+    # spillover code.
+    # TODO: better description/type for minic.
     nt_minic = np.fromfile(
         (_nasateam_ancillary_dir / f'minic_amsru_{hemisphere[0]}h{resolution}.dat'),
         dtype=np.int16,
