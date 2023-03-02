@@ -53,7 +53,7 @@ def cdr(
     nt_gradient_thresholds: NasateamGradientRatioThresholds,
     nt_invalid_ice_mask: npt.NDArray[np.bool_],
     nt_minic: npt.NDArray,
-    shoremap: npt.NDArray,
+    nt_shoremap: npt.NDArray,
     missing_flag_value,
     land_flag_value,
 ) -> npt.NDArray:
@@ -131,7 +131,11 @@ def cdr(
     #   conc. Then we would have a seprate algorithm for choosing how to apply
     #   multiple spillover deltas to a given conc field.
     # nasateam first:
-    cdr_conc = nt.apply_nt_spillover(conc=cdr_conc, shoremap=shoremap, minic=nt_minic)
+    cdr_conc = nt.apply_nt_spillover(
+        conc=cdr_conc,
+        shoremap=nt_shoremap,
+        minic=nt_minic,
+    )
     # then bootstrap:
     # TODO: the bootstrap land spillover routine assumes that flag values are
     # already set.
@@ -142,10 +146,10 @@ def cdr(
         minic=bt_params.minic,
     )
 
-    # Apply flag values
+    # Apply land flag value and clamp max conc to 100.
     # TODO: extract this func from nt and allow override of flag values
     cdr_conc = nt._clamp_conc_and_set_flags(
-        shoremap=shoremap,
+        shoremap=nt_shoremap,
         conc=cdr_conc,
     )
 
@@ -193,7 +197,9 @@ def amsr2_cdr(
 
     # Nasateam specific config
     _nasateam_ancillary_dir = CDR_TESTDATA_DIR / 'nasateam_ancillary'
-    shoremap = np.fromfile(
+    # TODO: type for shoremap? The shoremap has values 1-5 that indicate land,
+    # coast, and cells away from coast (3-5)
+    nt_shoremap = np.fromfile(
         (_nasateam_ancillary_dir / f'shoremap_amsru_{hemisphere[0]}h{resolution}.dat'),
         dtype=np.uint8,
     ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
@@ -232,7 +238,7 @@ def amsr2_cdr(
         # TODO: this is the same as the bootstrap mask!
         nt_invalid_ice_mask=invalid_ice_mask,
         nt_minic=nt_minic,
-        shoremap=shoremap,
+        nt_shoremap=nt_shoremap,
         missing_flag_value=DEFAULT_FLAG_VALUES.missing,
         land_flag_value=DEFAULT_FLAG_VALUES.land,
     )
