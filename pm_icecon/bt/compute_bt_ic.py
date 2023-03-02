@@ -636,84 +636,76 @@ def coastal_fix(
 
     # Note: some of these conditional arrays might be set more than 1x
 
-    # Compute shifted conc grid, for land check
-    is_rolled_land = np.roll(land_mask, (0, 1), axis=(1, 0))  # land check
+    def _conc_change124(*, shifts, land_mask, temp, conc2):
+        # Compute shifted conc grid, for land check
+        is_rolled_land = np.roll(land_mask, shifts[0], axis=(1, 0))
 
-    # For offp1 of [0, 1], the rolls are:
-    tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
-    tim1jp1 = np.roll(temp, (1, -1), axis=(1, 0))
-    tip1jp0 = np.roll(temp, (-1, 0), axis=(1, 0))
-    tim1jp0 = np.roll(temp, (1, 0), axis=(1, 0))
+        is_temp0 = temp == 0
+        is_considered = is_temp0 & is_rolled_land
 
-    tip0jp1 = np.roll(temp, (0, -1), axis=(1, 0))
+        # For offp1 of [0, 1], the rolls are:
+        tip1jp1 = np.roll(temp, shifts[1], axis=(1, 0))
+        tim1jp1 = np.roll(temp, shifts[2], axis=(1, 0))
+        tip1jp0 = np.roll(temp, shifts[3], axis=(1, 0))
+        tim1jp0 = np.roll(temp, shifts[4], axis=(1, 0))
+        tip0jp1 = np.roll(temp, shifts[5], axis=(1, 0))
 
-    is_temp0 = temp == 0
-    is_considered = is_temp0 & is_rolled_land
+        is_tip1jp1_lt0 = tip1jp1 <= 0
+        is_tim1jp1_lt0 = tim1jp1 <= 0
+        is_tip1jp0_lt0 = tip1jp0 <= 0
+        is_tim1jp0_lt0 = tim1jp0 <= 0
+        is_tip0jp1_eq0 = tip0jp1 == 0
 
-    is_tip1jp1_lt0 = tip1jp1 <= 0
-    is_tim1jp1_lt0 = tim1jp1 <= 0
-    is_tip1jp0_lt0 = tip1jp0 <= 0
-    is_tim1jp0_lt0 = tim1jp0 <= 0
+        # Changing conc2(i,j+1) to 0
+        locs_ip0jp1 = np.where(
+            is_considered & is_tip1jp1_lt0 & is_tim1jp1_lt0 & is_tip0jp1_eq0
+        )
+        change_locs_conc2_ip0jp1 = tuple(
+            [locs_ip0jp1[0] + shifts[0][1], locs_ip0jp1[1] + shifts[0][0]]
+        )
+        conc2[change_locs_conc2_ip0jp1] = 0
 
-    is_tip0jp1_eq0 = tip0jp1 == 0
+        # Changing conc2(i,j) to 0
+        locs_ip0jp0 = np.where(
+            is_considered
+            & is_tip1jp1_lt0
+            & is_tim1jp1_lt0
+            & is_tip1jp0_lt0
+            & is_tim1jp0_lt0
+        )
+        change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+        conc2[change_locs_conc2_ip0jp0] = 0
 
-    # Changing conc2(i,j+1) to 0
-    locs_ip0jp1 = np.where(
-        is_considered & is_tip1jp1_lt0 & is_tim1jp1_lt0 & is_tip0jp1_eq0
+        return conc2
+
+    conc2 = _conc_change124(
+        shifts=[
+            (0, 1),
+            (-1, -1),
+            (1, -1),
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+        ],
+        land_mask=land_mask,
+        temp=temp,
+        conc2=conc2,
     )
-    change_locs_conc2_ip0jp1 = tuple([locs_ip0jp1[0] + 1, locs_ip0jp1[1] + 0])
-    conc2[change_locs_conc2_ip0jp1] = 0
-
-    # Changing conc2(i,j) to 0
-    locs_ip0jp0 = np.where(
-        is_considered
-        & is_tip1jp1_lt0
-        & is_tim1jp1_lt0
-        & is_tip1jp0_lt0
-        & is_tim1jp0_lt0
-    )
-    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    conc2[change_locs_conc2_ip0jp0] = 0
 
     # Second conc2 change section
-
-    # Compute shifted conc grid, for land check
-    is_rolled_land = np.roll(land_mask, (0, -1), axis=(1, 0))  # land check
-
-    is_temp0 = temp == 0
-    is_considered = is_temp0 & is_rolled_land
-
-    # For offp1 of [0, 1], the rolls are:
-    # args to np.roll are opposite of fortran index offsets
-    tip1jm1 = np.roll(temp, (-1, 1), axis=(1, 0))
-    tim1jm1 = np.roll(temp, (1, 1), axis=(1, 0))
-    tip0jm1 = np.roll(temp, (0, 1), axis=(1, 0))
-    tip1jp0 = np.roll(temp, (-1, 0), axis=(1, 0))
-    tim1jp0 = np.roll(temp, (1, 0), axis=(1, 0))
-
-    is_tip1jm1_le0 = tip1jm1 <= 0
-    is_tim1jm1_le0 = tim1jm1 <= 0
-    is_tip0jm1_eq0 = tip0jm1 == 0
-    is_tip1jp0_le0 = tip1jp0 <= 0
-    is_tim1jp0_le0 = tim1jp0 <= 0
-
-    # Changing conc2(i,j-1) to 0
-    locs_ip0jm1 = np.where(
-        is_considered & is_tip1jm1_le0 & is_tim1jm1_le0 & is_tip0jm1_eq0
+    conc2 = _conc_change124(
+        shifts=[
+            (0, -1),
+            (-1, 1),
+            (1, 1),
+            (-1, 0),
+            (1, 0),
+            (0, 1),
+        ],
+        land_mask=land_mask,
+        temp=temp,
+        conc2=conc2,
     )
-    change_locs_conc2_ip0jm1 = tuple([locs_ip0jm1[0] - 1, locs_ip0jm1[1] + 0])
-    conc2[change_locs_conc2_ip0jm1] = 0
-
-    # Changing conc2(i,j) to 0
-    locs_ip0jp0 = np.where(
-        is_considered
-        & is_tip1jm1_le0
-        & is_tim1jm1_le0
-        & is_tip1jp0_le0
-        & is_tim1jp0_le0
-    )
-    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    conc2[change_locs_conc2_ip0jp0] = 0
 
     # Third conc2 change section
 
@@ -753,43 +745,19 @@ def coastal_fix(
     conc2[change_locs_conc2_ip0jp0] = 0
 
     # Fourth section
-
-    # Compute shifted conc grid, for land check
-    is_rolled_land = np.roll(land_mask, (-1, 0), axis=(1, 0))
-
-    is_temp0 = temp == 0
-    is_considered = is_temp0 & is_rolled_land
-
-    # args to np.roll are opposite of fortran index offsets
-    tim1jm1 = np.roll(temp, (1, 1), axis=(1, 0))
-    tim1jp1 = np.roll(temp, (1, -1), axis=(1, 0))
-    tim1jp0 = np.roll(temp, (1, 0), axis=(1, 0))
-    tip0jm1 = np.roll(temp, (0, 1), axis=(1, 0))
-    tip0jp1 = np.roll(temp, (0, -1), axis=(1, 0))
-
-    is_tim1jm1_le0 = tim1jm1 <= 0
-    is_tim1jp1_le0 = tim1jp1 <= 0
-    is_tim1jp0_eq0 = tim1jp0 == 0
-    is_tip0jm1_le0 = tip0jm1 <= 0
-    is_tip0jp1_le0 = tip0jp1 <= 0
-
-    # Changing conc2(i-1,j) to 0
-    locs_im1jp0 = np.where(
-        is_considered & is_tim1jm1_le0 & is_tim1jp1_le0 & is_tim1jp0_eq0
+    conc2 = _conc_change124(
+        shifts=[
+            (-1, 0),
+            (1, 1),
+            (1, -1),
+            (0, 1),
+            (0, -1),
+            (1, 0),
+        ],
+        land_mask=land_mask,
+        temp=temp,
+        conc2=conc2,
     )
-    change_locs_conc2_im1jp0 = tuple([locs_im1jp0[0] + 0, locs_im1jp0[1] - 1])
-    conc2[change_locs_conc2_im1jp0] = 0
-
-    # Changing conc2(i,j) to 0
-    locs_ip0jp0 = np.where(
-        is_considered
-        & is_tim1jm1_le0
-        & is_tim1jp1_le0
-        & is_tip0jm1_le0
-        & is_tip0jp1_le0
-    )
-    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    conc2[change_locs_conc2_ip0jp0] = 0
 
     return conc2
 
