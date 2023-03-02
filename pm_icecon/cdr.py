@@ -135,8 +135,6 @@ def cdr(
         minic=nt_minic,
     )
     # then bootstrap:
-    # TODO: the bootstrap land spillover routine assumes that flag values are
-    # already set.
     cdr_conc = bt.coastal_fix(
         conc=cdr_conc,
         missing_flag_value=missing_flag_value,
