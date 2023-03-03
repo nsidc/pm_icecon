@@ -1,7 +1,8 @@
 """Parameters for use with AMSR2 (AU_SI{12|25}) data."""
+from dataclasses import dataclass
+
 import numpy as np
 import numpy.typing as npt
-from dataclass import dataclass
 from loguru import logger
 
 from pm_icecon._types import Hemisphere
@@ -62,10 +63,8 @@ def get_amsr2_params(
     )
 
     return NasateamParams(
-        **dict(
-            shoremap=nt_shoremap,
-            minic=nt_minic,
-            tiepoints=nt_tiepoints,
-            gradient_thresholds=nt_gradient_thresholds,
-        )
+        shoremap=nt_shoremap,
+        minic=nt_minic,
+        tiepoints=nt_tiepoints,
+        gradient_thresholds=nt_gradient_thresholds,
     )
