@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.api import amsr2_bootstrap
+from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.bt.compute_bt_ic import xfer_class_tbs
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params.goddard_class import SSMIS_NORTH_PARAMS
@@ -30,7 +30,7 @@ def test_bt_amsr2_regression():
     algorithm.
     """
     for date in (dt.date(2020, 1, 1), dt.date(2022, 5, 4)):
-        actual_ds = amsr2_bootstrap(
+        actual_ds = amsr2_goddard_bootstrap(
             date=date,
             hemisphere='north',
             resolution='25',

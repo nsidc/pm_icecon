@@ -6,45 +6,34 @@ import xarray as xr
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
-from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS, AMSR2_SOUTH_PARAMS
+from pm_icecon.bt.params.amsr2 import get_amsr2_params
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import BOOTSTRAP_MASKS_DIR
 from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
-from pm_icecon.masks import (
-    get_e2n625_land_mask,
-    get_ps_land_mask,
-    get_ps_pole_hole_mask,
-)
+from pm_icecon.masks import get_e2n625_land_mask
 
 
-def amsr2_bootstrap(
+def amsr2_goddard_bootstrap(
     *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
 ) -> xr.Dataset:
-    """Compute sea ice concentration from AU_SI TBs."""
+    """Compute sea ice concentration from AU_SI TBs.
+
+    Utilizes the bootstrap algorithm as organized by the original code from
+    GSFC.
+    """
     xr_tbs = get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
         resolution=resolution,
     )
 
-    params = BootstrapParams(
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-        # There's no pole hole in the southern hemisphere.
-        pole_mask=(
-            get_ps_pole_hole_mask(resolution=resolution)
-            if hemisphere == 'north'
-            else None
-        ),
-        invalid_ice_mask=get_ps_invalid_ice_mask(
-            hemisphere=hemisphere,
-            date=date,
-            resolution=resolution,  # type: ignore[arg-type]
-        ),
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+    params = get_amsr2_params(
+        date=date,
+        hemisphere=hemisphere,
+        resolution=resolution,
     )
 
     conc_ds = bt.goddard_bootstrap(
@@ -59,8 +48,12 @@ def amsr2_bootstrap(
     return conc_ds
 
 
-def a2l1c_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
-    """Compute sea ice concentration from L1C 6.25km TBs."""
+def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
+    """Compute sea ice concentration from L1C 6.25km TBs.
+
+    Utilizes the bootstrap algorithm as organized by the original code from
+    GSFC.
+    """
     if hemisphere == 'south':
         raise NotImplementedError('Southern hemisphere is not currently supported.')
 

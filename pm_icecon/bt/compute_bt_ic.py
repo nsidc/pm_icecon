@@ -539,8 +539,9 @@ def coastal_fix(
     *,
     conc: npt.NDArray,
     missing_flag_value,
-    land_flag_value,
-    minic,
+    land_mask: npt.NDArray[np.bool_],
+    # The minimum ice concentration as a percentage (10 == 10%)
+    minic: float,
 ):
     # Apply coastal_fix() routine per Bootstrap
 
@@ -549,7 +550,7 @@ def coastal_fix(
     #    1 is safe from removal
     #    0 is might-be-removed
     temp = np.ones_like(conc, dtype=np.int16)
-    is_land_or_lowice = (conc == land_flag_value) | ((conc >= 0) & (conc < minic))
+    is_land_or_lowice = land_mask | ((conc >= 0) & (conc < minic))
     temp[is_land_or_lowice] = -1
 
     is_seaice = (conc > 0) & (conc <= 100.0)
@@ -566,13 +567,10 @@ def coastal_fix(
         offn2 = -2 * offp1  # offp1 * -2
 
         # Compute shifted grids
-        rolled_offn1 = np.roll(conc, offp1, axis=(1, 0))  # land
-        rolled_off00 = conc.copy()  # .  k1p0 k2p0
+        is_rolled_land = np.roll(land_mask, offp1, axis=(1, 0))  # land
         rolled_offp1 = np.roll(conc, offn1, axis=(1, 0))  # k1 k2p1
+        rolled_offp1_land_mask = np.roll(land_mask, offn1, axis=(1, 0))  # k1 k2p1
         rolled_offp2 = np.roll(conc, offn2, axis=(1, 0))  # k2
-
-        # is_rolled_land = rolled_offn1 == land_flag_value
-        is_rolled_land = rolled_offn1 == land_flag_value
 
         is_k1 = (
             (is_seaice)
@@ -587,23 +585,13 @@ def coastal_fix(
             & (rolled_offp2 < minic)
         )
 
-        is_k1p0 = (
-            (is_k1)
-            & (rolled_off00 > 0)
-            & (rolled_off00 != missing_flag_value)
-            & (rolled_off00 != land_flag_value)
-        )
-        is_k2p0 = (
-            (is_k2)
-            & (rolled_off00 > 0)
-            & (rolled_off00 != missing_flag_value)
-            & (rolled_off00 != land_flag_value)
-        )
+        is_k1p0 = (is_k1) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
+        is_k2p0 = (is_k2) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
         is_k2p1 = (
             (is_k2)
             & (rolled_offp1 > 0)
             & (rolled_offp1 != missing_flag_value)
-            & (rolled_offp1 != land_flag_value)
+            & (~rolled_offp1_land_mask)
         )
 
         temp[is_k1p0] = 0
@@ -649,8 +637,7 @@ def coastal_fix(
     # Note: some of these conditional arrays might be set more than 1x
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (0, 1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (0, 1), axis=(1, 0))  # land check
 
     # For offp1 of [0, 1], the rolls are:
     tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
@@ -691,8 +678,7 @@ def coastal_fix(
     # Second conc2 change section
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (0, -1), axis=(1, 0))  # land check
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (0, -1), axis=(1, 0))  # land check
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -732,8 +718,7 @@ def coastal_fix(
     # Third conc2 change section
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (1, 0), axis=(1, 0))
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (1, 0), axis=(1, 0))
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -770,8 +755,7 @@ def coastal_fix(
     # Fourth section
 
     # Compute shifted conc grid, for land check
-    land_check = np.roll(conc, (-1, 0), axis=(1, 0))
-    is_rolled_land = land_check == land_flag_value
+    is_rolled_land = np.roll(land_mask, (-1, 0), axis=(1, 0))
 
     is_temp0 = temp == 0
     is_considered = is_temp0 & is_rolled_land
@@ -903,40 +887,25 @@ def calc_bootstrap_conc(
     return ic_perc
 
 
-def goddard_bootstrap(
-    *,
+# TODO: rename func
+def bootstrap_for_cdr(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    tb_v22: npt.NDArray,
     params: BootstrapParams,
-    date: dt.date,
+    # TODO: can we run the algorithm without needing to pass in masks?
+    # Currently used to e.g., calculate water tie points from the
+    # scatterplot of ocean tbs
+    tb_mask: npt.NDArray[np.bool_],
+    weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
-) -> xr.Dataset:
-    """Bootstrap algorithm as organized by the orignal code from GSFC."""
-    tb_mask = tb_data_mask(
-        tbs=(
-            tb_v37,
-            tb_h37,
-            tb_v19,
-            tb_v22,
-        ),
-        min_tb=params.mintb,
-        max_tb=params.maxtb,
-    )
+) -> npt.NDArray:
+    """Bootstrap algorithm without weather filtering.
 
-    weather_mask = get_weather_mask(
-        v37=tb_v37,
-        h37=tb_h37,
-        v22=tb_v22,
-        v19=tb_v19,
-        land_mask=params.land_mask,
-        tb_mask=tb_mask,
-        ln1=params.vh37_params.lnline,
-        date=date,
-        weather_filter_seasons=params.weather_filter_seasons,
-    )
+    Returns an NDArray with a concentration estimate at every cell.
 
+    Flags values are not set and spillover correction is not applied.
+    """
     line_37v37h = get_linfit(
         land_mask=params.land_mask,
         tb_mask=tb_mask,
@@ -994,6 +963,53 @@ def goddard_bootstrap(
         missing_flag_value=missing_flag_value,
     )
 
+    return conc
+
+
+def goddard_bootstrap(
+    *,
+    tb_v37: npt.NDArray,
+    tb_h37: npt.NDArray,
+    tb_v19: npt.NDArray,
+    tb_v22: npt.NDArray,
+    params: BootstrapParams,
+    date: dt.date,
+    missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
+) -> xr.Dataset:
+    """Bootstrap algorithm as organized by the orignal code from GSFC."""
+    tb_mask = tb_data_mask(
+        tbs=(
+            tb_v37,
+            tb_h37,
+            tb_v19,
+            tb_v22,
+        ),
+        min_tb=params.mintb,
+        max_tb=params.maxtb,
+    )
+
+    weather_mask = get_weather_mask(
+        v37=tb_v37,
+        h37=tb_h37,
+        v22=tb_v22,
+        v19=tb_v19,
+        land_mask=params.land_mask,
+        tb_mask=tb_mask,
+        ln1=params.vh37_params.lnline,
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
+    )
+
+    conc = bootstrap_for_cdr(
+        tb_v37=tb_v37,
+        tb_h37=tb_h37,
+        tb_v19=tb_v19,
+        params=params,
+        tb_mask=tb_mask,
+        weather_mask=weather_mask,
+        missing_flag_value=missing_flag_value,
+    )
+
     # Apply masks and flag values
     conc[weather_mask] = 0.0
     conc[tb_mask] = 0.0
@@ -1009,7 +1025,7 @@ def goddard_bootstrap(
     conc = coastal_fix(
         conc=conc,
         missing_flag_value=missing_flag_value,
-        land_flag_value=DEFAULT_FLAG_VALUES.land,
+        land_mask=params.land_mask,
         minic=params.minic,
     )
     conc[conc < params.minic] = 0

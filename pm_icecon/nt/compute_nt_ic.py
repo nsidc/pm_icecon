@@ -223,7 +223,11 @@ def apply_nt_spillover(
     return newice
 
 
-def _clamp_conc_and_set_flags(*, shoremap: npt.NDArray, conc: npt.NDArray):
+def _clamp_conc_and_set_flags(
+    *,
+    shoremap: npt.NDArray,
+    conc: npt.NDArray,
+) -> npt.NDArray:
     """Clap concentrations to a max of 100 and apply flag values.
 
     Currently just sets a land value. TODO: add coast flag value.
@@ -254,7 +258,12 @@ def calc_nasateam_conc(
     gr_3719: NasateamRatio,
     tiepoints: NasateamTiePoints,
 ) -> npt.NDArray:
-    """Return a sea ice concentration estimate at every grid cell."""
+    """Return a sea ice concentration estimate at every grid cell.
+
+    Concentrations are given as percentage (0-100+%). Concentrations can be >
+    100%. In the Goddard formulation of the nasateam algorithm, concentrations
+    above 100 get set to 100 _after_ spillover correction.
+    """
     # Get gradient ratios and compute their product
     pr_gr_product = pr_1919 * gr_3719
 
