@@ -35,7 +35,8 @@ AMSR2_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=84.73,
                 wslope=0.5352,
-                wxlimt=18.39,
+                # wxlimt=18.39,  # Original value
+                wxlimt=13.7,  # Median of calc'd wx coefs
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -46,7 +47,8 @@ AMSR2_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=82.71,
                 wslope=0.5352,
-                wxlimt=23.34,
+                # wxlimt=23.34,  # Original value
+                wxlimt=21.7,  # Median of calc'd wx coefs
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
@@ -73,7 +75,8 @@ AMSR2_SOUTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=85.13,
                 wslope=0.5379,
-                wxlimt=18.596,
+                # wxlimt=18.596,  # Original value
+                wxlimt=14.3,  # Median of calculated wxcoef vals
             ),
         ),
     ],
