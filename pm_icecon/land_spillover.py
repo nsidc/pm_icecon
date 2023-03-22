@@ -45,7 +45,7 @@ def create_land90_conc_file(
     ones_7x7 = np.ones((7, 7), dtype=np.uint8)
 
     land_count = convolve2d(is_land, ones_7x7, mode='same', boundary='symm')
-    land90 = (land_count * 0.9) / 49
+    land90 = (land_count * 0.9) / 49 * 100.0
     land90 = land90.astype(np.float32)
 
     land90[~is_coast] = 0
@@ -91,17 +91,26 @@ def apply_nt2a_land_spillover(conc, adj123):
     is_adj12 = (adj123 == 1) | (adj123 == 2)
     is_adj3 = adj123 == 3
     is_zero_conc = conc == 0.0
+    # is_verylow_conc = conc <= 10.0
     is_land = conc == 254
+
+    kernel = np.ones((7, 7), dtype=np.uint8)
+
+    ones_adj3 = np.zeros(conc.shape, dtype=np.uint8)
+    ones_adj3[is_adj3] = 1
+    n_near_adj3 = convolve2d(ones_adj3, kernel,  mode='same', boundary='symm')
 
     ones_adj3_zero = np.zeros(conc.shape, dtype=np.uint8)
     ones_adj3_zero[is_adj3 & is_zero_conc] = 1
-    kernel = np.ones((7, 7), dtype=np.uint8)
-
+    # ones_adj3_zero[is_adj3 & is_verylow_conc] = 1
     n_near_adj3_zeros = convolve2d(ones_adj3_zero, kernel, mode='same', boundary='symm')
-    n_near_adj3_zeros.tofile('n_near.dat')
-    print(f'Wrote: n_near.dat  {n_near_adj3_zeros.dtype}  {n_near_adj3_zeros.shape}')
 
-    conc[(n_near_adj3_zeros > 0) & (is_adj12) & (~is_land)] = 0
+    conc[
+        (n_near_adj3_zeros > 0) &
+        (n_near_adj3_zeros == n_near_adj3) &
+        (is_adj12) &
+        (~is_land)
+        ] = 0
 
     return conc
 
@@ -117,10 +126,7 @@ def apply_nt2b_land_spillover(conc, adj123, l90c):
     is_adj3 = adj123 == 3
     is_land = conc == 254
 
-    # Express land90_conc as percentage rather than fraction
-    l90c_perc = l90c * 100.0
-
-    l90c_ge_conc = l90c_perc >= conc
+    l90c_ge_conc = l90c >= conc
     conc[l90c_ge_conc] = 0
 
     return conc
