@@ -43,6 +43,7 @@ from pm_icecon.land_spillover import (
     apply_nt2a_land_spillover,
     apply_nt2b_land_spillover,
 )
+from pm_icecon.fill_polehole import fill_pole_hole
 
 
 def cdr(
@@ -189,6 +190,10 @@ def cdr(
             land_mask=bt_params.land_mask,
             minic=bt_params.minic,
         )
+
+    # Fill the NH pole hole
+    if cdr_conc.shape == (896, 608):
+        cdr_conc = fill_pole_hole(cdr_conc)
 
     # Apply land flag value and clamp max conc to 100.
     # TODO: extract this func from nt and allow override of flag values
