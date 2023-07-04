@@ -39,7 +39,7 @@ if __name__ == '__main__':
         land_mask=land_mask,
         pole_mask=pole_mask,
         invalid_ice_mask=invalid_ice_mask,
-        **A2L1C_NORTH_PARAMS,
+        **A2L1C_NORTH_PARAMS,  # type: ignore
     )
 
     # Run the bootstrap algoirthm and get the result back as an xarray dataset.
