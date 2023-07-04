@@ -101,7 +101,7 @@ def get_amsr2_params(
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),  # type: ignore
+        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),  # type: ignore  # noqa
     )
 
     return bt_params
