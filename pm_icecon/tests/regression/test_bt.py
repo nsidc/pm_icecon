@@ -74,7 +74,7 @@ def _original_f18_example() -> xr.Dataset:
             date=date,
             resolution=resolution,  # type: ignore[arg-type]
         ),
-        **SSMIS_NORTH_PARAMS,
+        **SSMIS_NORTH_PARAMS,  # type: ignore
     )
 
     otbs: dict[str, NDArray[np.float32]] = {}
