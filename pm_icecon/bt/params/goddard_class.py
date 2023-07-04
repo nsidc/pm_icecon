@@ -8,7 +8,7 @@ Remote Sensing Systems (RSS). Data from RSS is used for the 'final' CDR (g02202)
 
 All parameters pulled from `ret_parameters_sb2.f`.
 """
-from pm_icecon.bt._types import Line
+from pm_icecon.bt._types import Line, TiepointSet, Tiepoint
 from pm_icecon.config.models.bt import (
     TbSetParams,
     WeatherFilterParams,
@@ -16,24 +16,25 @@ from pm_icecon.config.models.bt import (
 )
 
 north_vh37_params = TbSetParams(
-    water_tie_point_set=[201.916, 132.815],
-    ice_tie_point_set=[255.670, 241.713],
+    # water_tie_point_set=TiepointSet((Tiepoint(201.916), Tiepoint(132.815))),
+    water_tie_point_set=(Tiepoint(201.916), Tiepoint(132.815)),
+    ice_tie_point_set=(Tiepoint(255.670), Tiepoint(241.713)),
     lnline=Line(offset=-73.5471, slope=1.21104),
 )
 north_v1937_params = TbSetParams(
-    water_tie_point_set=[201.916, 178.771],
-    ice_tie_point_set=[255.670, 258.341],
+    water_tie_point_set=(Tiepoint(201.916), Tiepoint(178.771)),
+    ice_tie_point_set=(Tiepoint(255.670), Tiepoint(258.341)),
     lnline=Line(offset=47.0061, slope=0.809335),
 )
 
 south_vh37_params = TbSetParams(
-    water_tie_point_set=[201.990, 133.943],
-    ice_tie_point_set=[259.122, 248.284],
+    water_tie_point_set=(Tiepoint(201.990), Tiepoint(133.943)),
+    ice_tie_point_set=(Tiepoint(259.122), Tiepoint(248.284)),
     lnline=Line(offset=-90.9384, slope=1.28239),
 )
 south_v1937_params = TbSetParams(
-    water_tie_point_set=[201.990, 178.358],
-    ice_tie_point_set=[259.122, 261.654],
+    water_tie_point_set=(Tiepoint(201.990), Tiepoint(178.358)),
+    ice_tie_point_set=(Tiepoint(259.122), Tiepoint(261.654)),
     lnline=Line(offset=61.7438, slope=0.767205),
 )
 
