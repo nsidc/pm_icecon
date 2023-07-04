@@ -8,7 +8,7 @@ Remote Sensing Systems (RSS). Data from RSS is used for the 'final' CDR (g02202)
 
 All parameters pulled from `ret_parameters_sb2.f`.
 """
-from pm_icecon.bt._types import Line, TiepointSet, Tiepoint
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
     TbSetParams,
     WeatherFilterParams,
