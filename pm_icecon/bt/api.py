@@ -72,7 +72,7 @@ def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Data
         # TODO: For now, let's NOT impose a pole hole on the A2L1C data
         pole_mask=None,
         invalid_ice_mask=is_high_sst,
-        **A2L1C_NORTH_PARAMS,
+        **A2L1C_NORTH_PARAMS,  # type: ignore
     )
 
     conc_ds = bt.goddard_bootstrap(
