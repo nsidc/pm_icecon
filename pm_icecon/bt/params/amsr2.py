@@ -5,7 +5,7 @@ All parameters pulled from `ret_parameters_amsru2.f`.
 import datetime as dt
 
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt._types import Line
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.config.models.bt import (
     BootstrapParams,
@@ -18,13 +18,13 @@ from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 AMSR2_NORTH_PARAMS = dict(
     vh37_params=TbSetParams(
-        water_tie_point_set=[207.2, 131.9],
-        ice_tie_point_set=[256.3, 241.2],
+        water_tie_point_set=(Tiepoint(207.2), Tiepoint(131.9)),
+        ice_tie_point_set=(Tiepoint(256.3), Tiepoint(241.2)),
         lnline=Line(offset=-71.99, slope=1.20),
     ),
     v1937_params=TbSetParams(
-        water_tie_point_set=[207.2, 182.4],
-        ice_tie_point_set=[256.3, 258.9],
+        water_tie_point_set=(Tiepoint(207.2), Tiepoint(182.4)),
+        ice_tie_point_set=(Tiepoint(256.3), Tiepoint(258.9)),
         lnline=Line(offset=48.26, slope=0.8048),
     ),
     weather_filter_seasons=[
@@ -56,13 +56,13 @@ AMSR2_NORTH_PARAMS = dict(
 
 AMSR2_SOUTH_PARAMS = dict(
     vh37_params=TbSetParams(
-        water_tie_point_set=[207.6, 131.9],
-        ice_tie_point_set=[259.4, 247.3],
+        water_tie_point_set=(Tiepoint(207.6), Tiepoint(131.9)),
+        ice_tie_point_set=(Tiepoint(259.4), Tiepoint(247.3)),
         lnline=Line(offset=-90.62, slope=1.2759),
     ),
     v1937_params=TbSetParams(
-        water_tie_point_set=[207.6, 182.7],
-        ice_tie_point_set=[259.4, 261.6],
+        water_tie_point_set=(Tiepoint(207.6), Tiepoint(182.7)),
+        ice_tie_point_set=(Tiepoint(259.4), Tiepoint(261.6)),
         lnline=Line(offset=62.89, slope=0.7618),
     ),
     weather_filter_seasons=[
@@ -101,7 +101,7 @@ def get_amsr2_params(
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),  # type: ignore
     )
 
     return bt_params
