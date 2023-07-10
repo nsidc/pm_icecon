@@ -1,6 +1,8 @@
-# from typing import NewType, TypedDict
-from typing import NewType
-from typing_extensions import TypedDict
+# For Pydantic ~1.9
+from typing import NewType, TypedDict
+# For Pydantic ~2.0
+# from typing import NewType
+# from typing_extensions import TypedDict
 
 import numpy.typing as npt
 

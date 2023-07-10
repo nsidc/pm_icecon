@@ -16,8 +16,10 @@ These values were primarily taken from the 'seaice_goddard.f' code
 of the pmalgos package.  The relevant section of this code is pasted
 at the end of this file.
 """
-# from typing import TypedDict
-from typing_extensions import TypedDict
+# For Pydantic ~1.9
+from typing import TypedDict
+# For Pydantic ~2.0
+# from typing_extensions import TypedDict
 
 from loguru import logger
 
