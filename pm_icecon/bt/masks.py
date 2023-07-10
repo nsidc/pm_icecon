@@ -1,5 +1,6 @@
 import datetime as dt
 from pathlib import Path
+from loguru import logger
 
 import numpy as np
 import numpy.typing as npt
@@ -21,7 +22,7 @@ def get_ps_invalid_ice_mask(
 
     `True` values indicate areas that are masked as invalid.
     """
-    print(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')
+    logger.info(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')  # noqa
     if hemisphere == 'north':
         if resolution == '25':
             sst_fn = (

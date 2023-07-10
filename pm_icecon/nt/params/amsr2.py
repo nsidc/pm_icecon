@@ -58,8 +58,7 @@ def get_amsr2_params(
         else RSS_F17_SOUTH_GRADIENT_THRESHOLDS
     )
     logger.warning(
-        'The graident threshold values were stolen from f17_final!'
-        ' Do we need new ones for AMSR2? How do we get them?'
+        'NT gradient threshold values for AMSR2 are copied from f17_final'
     )
 
     return NasateamParams(
