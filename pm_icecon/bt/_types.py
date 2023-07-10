@@ -1,4 +1,6 @@
-from typing import NewType, TypedDict
+# from typing import NewType, TypedDict
+from typing import NewType
+from typing_extensions import TypedDict
 
 # A tie point is a "canonical" brightness temperature for a given channel and
 # H2O-phase. For bootstrap, the 3 relevant channels -- 19H, 37H, and 37V -- each
