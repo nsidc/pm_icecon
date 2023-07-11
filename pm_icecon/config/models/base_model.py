@@ -17,7 +17,8 @@ class ConfigBaseModel(BaseModel):
 
     class Config:
         # Throw an error if any unexpected attrs are provided. default: 'ignore'
-        extra = Extra.forbid
+        # TODO: Once the parameters are determined, uncomment this line
+        # extra = Extra.forbid
 
         # https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
         allow_mutation = False
