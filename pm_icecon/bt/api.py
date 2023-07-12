@@ -48,7 +48,16 @@ def amsr2_goddard_bootstrap(
     return conc_ds
 
 
-def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
+def a2l1c_goddard_bootstrap(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    tb_dir,
+    anc_dir,
+    ncfn_,
+    timeframe,
+
+) -> xr.Dataset:
     """Compute sea ice concentration from L1C 6.25km TBs.
 
     Utilizes the bootstrap algorithm as organized by the original code from
@@ -58,18 +67,19 @@ def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Data
         raise NotImplementedError('Southern hemisphere is not currently supported.')
 
     xr_tbs = get_a2l1c_625_tbs(
-        base_dir=Path('/data/amsr2_subsets/'),
+        base_dir=tb_dir,
         date=date,
         hemisphere='north',
+        ncfn_=ncfn_,
+        timeframe=timeframe,
     )
 
-    sst_fn = BOOTSTRAP_MASKS_DIR / f'valid_seaice_e2n6.25_{date:%m}.dat'
+    sst_fn = anc_dir / f'valid_seaice_e2n6.25_{date:%m}.dat'
     sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     is_high_sst = sst_mask == 50
 
     params = BootstrapParams(
-        land_mask=get_e2n625_land_mask(),
-        # TODO: For now, let's NOT impose a pole hole on the A2L1C data
+        land_mask=get_e2n625_land_mask(anc_dir),
         pole_mask=None,
         invalid_ice_mask=is_high_sst,
         **A2L1C_NORTH_PARAMS,  # type: ignore
