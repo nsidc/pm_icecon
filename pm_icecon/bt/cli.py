@@ -188,7 +188,6 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
     logger.info(f'Re-encoded {nc_path}')
 
 
-
 def add_info_to_netcdf_file_a2l1c(nc_path):
     # Read in siconc data from a bare-bones netCDF file
     # Create a new netCDF file of the same name with georeference info
@@ -518,17 +517,22 @@ def a2l1c(
     conc_ds = a2l1c_goddard_bootstrap(
         date=date,
         hemisphere=hemisphere,
+        tb_dir=tb_dir,
+        anc_dir=anc_dir,
+        ncfn_=nctbfn_template,
+        timeframe=timeframe,
     )
 
     output_fn = standard_output_filename(
         hemisphere=hemisphere,
         date=date,
         sat='a2l1c',
-        resolution='6.25km',
+        resolution=resolution,
         algorithm='bt',
+        timeframe=timeframe,
     )
     output_path = output_dir / output_fn
-    #c onc_ds.to_netcdf(output_path)
+    # conc_ds.to_netcdf(output_path)
     conc_ds.astype(np.float32).to_netcdf(
         output_path, encoding={'conc': {'zlib': True}})
 

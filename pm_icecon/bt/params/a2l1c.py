@@ -1,3 +1,12 @@
+"""
+Bootstrap parameters for use with AMSR2 from new CETB product,
+  i.e. either NSIDC-0763 or NSIDC-0630 version 2
+
+Parameters were originally provided by 'ret_parameters_amsru2.f', except:
+  - new wxlimt values were calculated by during Spring 2023 NSIDC
+    investigation of weather effects for the NOAA CDR version 5 product
+"""
+
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
     TbSetParams,
@@ -25,7 +34,8 @@ A2L1C_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=82.71,
                 wslope=0.5352,
-                wxlimt=23.34,
+                # wxlimt=23.34,  # Original value
+                wxlimt=21.7,  # Median of calc'd wx coefs
             ),
         ),
         # Oct. 16 through May
@@ -36,7 +46,8 @@ A2L1C_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=84.73,
                 wslope=0.5352,
-                wxlimt=18.39,
+                # wxlimt=18.39,  # Original value
+                wxlimt=13.7,  # Median of calc'd wx coefs
             ),
         ),
     ],
