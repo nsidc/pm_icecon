@@ -1,6 +1,7 @@
-"""Params for AMSR2.
+"""
+Boostrap parameters for use with AMSR2 derived from AU_SI products
 
-All parameters pulled from `ret_parameters_amsru2.f`.
+Parameters were originally pulled from `ret_parameters_amsru2.f`.
 """
 import datetime as dt
 
