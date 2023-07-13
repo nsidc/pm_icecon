@@ -946,7 +946,7 @@ def bootstrap_for_cdr(
 
 
 def fill_pole_hole(conc):
-    """Fill the pole hole with the average of nearby missing values"""
+    """Fill the pole hole with the average of nearby missing values."""
     ydim, xdim = conc.shape
     if xdim == 1680:
         pole_radius = 15
@@ -1033,7 +1033,7 @@ def goddard_bootstrap(
     conc[conc < params.minic] = 0
 
     jdim, idim = conc.shape
-    if not params.land_mask[jdim // 2, idim //2]:
+    if not params.land_mask[jdim // 2, idim // 2]:
         # With no land in middle of mask, this is NH
         # conc = fill_pole_hole(conc)
         fill_pole_hole(conc)

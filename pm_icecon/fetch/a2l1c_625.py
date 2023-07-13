@@ -33,7 +33,7 @@ def _get_a2l1c_625_data_fields_nc(
     date: dt.date,
     hemisphere: Hemisphere,
     verbose=True,
-    tbfn_='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',
+    tbfn_='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
     timeframe: str,
 ) -> xr.Dataset:
     """Find raw binary files used for 6.25km NH from AMSR2 L1C (NSIDC-0763).
@@ -50,7 +50,6 @@ def _get_a2l1c_625_data_fields_nc(
     tbs = {}
     chans = ('18v', '23v', '36h', '36v')
     for chan in chans:
-        capchan = chan.upper()
         if int(chan[:2]) < 30:
             # native SIR grid is 6.25km
             gridres = '6.25'
@@ -75,14 +74,14 @@ def _get_a2l1c_625_data_fields_nc(
         # Convert 3.125km to 6.25 grid if needed
         if int(chan[:2]) > 30:
             dim, _ = tb_data.shape
-            newdim = dim // 2
-            tb_grouped = tb_data.reshape(-1, 2, dim // 2, 2)
+            new_dim = dim // 2
+            tb_grouped = tb_data.reshape(-1, 2, new_dim, 2)
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', category=RuntimeWarning)
                 tb_data = np.nanmean(tb_grouped, (-1, -3))
 
         # Only use a subset of the full hemisphere
-        tbs[chan] = tb_data[600:600+1680, 600:600+1680]
+        tbs[chan] = tb_data[600:600 + 1680, 600:600 + 1680]
 
     ds = xr.Dataset(
         data_vars=dict(
@@ -190,7 +189,7 @@ def get_a2l1c_625_tbs(
         # If no bin files, attempt to load from 0763 netcdf files
         try:
             data_fields = _get_a2l1c_625_data_fields_nc(
-                base_dir=base_dir, date=date, hemisphere=hemisphere, tbfn_=ncfn_, timeframe=timeframe,
+                base_dir=base_dir, date=date, hemisphere=hemisphere, tbfn_=ncfn_, timeframe=timeframe,  # noqa
             )
         except FileNotFoundError:
             raise SystemExit(f'Could not find a2l1c input files in {base_dir}')

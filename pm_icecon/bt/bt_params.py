@@ -1,5 +1,6 @@
-"""
-Routines to yield parameters for Bootstrap
+"""Routines to yield parameters for Bootstrap.
+
+Bootstrap Parameters for AMSR2 were taken from `ret_parameters_amsru2.f`
 """
 
 import datetime as dt
@@ -19,10 +20,6 @@ from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
 
-
-"""
-Bootstrap Parameters for AMSR2 were taken from `ret_parameters_amsru2.f`
-"""
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
     bt_wtp_v37=207.2,
@@ -98,7 +95,33 @@ AMSR2_NORTH_PARAMS = dict(
         ),
         # October (`seas=4`) will get interpolated from the previous and next
         # (first in this list) season.
-    ],
+    ],  # noqa (ignore "not used" flake8 warning)
+)
+
+BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
+    bt_wtp_v37=207.6,
+    bt_wtp_h37=131.9,
+    bt_wtp_v19=182.7,
+
+    bt_itp_v37=259.4,
+    bt_itp_h37=247.3,
+    bt_itp_v19=261.6,
+
+    vh37_lnline=Line(offset=-90.62, slope=1.2759),
+    v1937_lnline=Line(offset=62.89, slope=0.7618),
+
+    weather_filter_seasons=[
+        # Just one season for the S. hemisphere.
+        WeatherFilterParamsForSeason(
+            start_month=1,
+            end_month=12,
+            weather_filter_params=WeatherFilterParams(
+                wintrc=85.13,
+                wslope=0.5379,
+                wxlimt=18.596,
+            ),
+        ),
+    ],  # noqa (ignore "not used" flake8 warning)
 )
 
 AMSR2_SOUTH_PARAMS = dict(
@@ -157,7 +180,7 @@ def get_gridid_resolution(gridid):
 
 
 def convert_to_pmicecon_bt_params(hemisphere, params, fields):
-    """Convert to old-style bt_params"""
+    """Convert to old-style bt_params."""
     # oldstyle_bt_params = {**params, **fields}
     oldstyle_bt_params = BootstrapParams(
         land_mask=np.array(fields['land_mask']).squeeze(),
@@ -205,7 +228,7 @@ def get_bootstrap_params(
 
     # Some definitions include seasonal values for wintrc, wslope, wxlimt
     if 'wintrc' not in bt_params.keys():
-        weather_filter_seasons = bt_params['weather_filter_seasons']
+        weather_filter_seasons = bt_params['weather_filter_seasons']  # noqa
         bt_weather_params_struct = interpolate_bt_wx_params(
             date=date,
             weather_filter_seasons=bt_params['weather_filter_seasons'],
@@ -235,10 +258,10 @@ def get_bootstrap_fields(
         resolution=resolution,  # type: ignore[arg-type]
     )
 
-    land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+    land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
 
     # There's no pole hole in the southern hemisphere.
-    pole_mask=(
+    pole_mask = (
         get_ps_pole_hole_mask(resolution=resolution)
         if hemisphere == 'north'
         else None

@@ -94,16 +94,19 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
         y_bottom_center = y_bottom + res // 2
 
     else:
-        raise ValueError(f'This code only encodes EASE2 NH 6.25km subset')
+        raise ValueError(
+            'This code only encodes EASE2 NH 6.25km subset'
+            f'Unknown file_gridid: {file_gridid}'
+        )
 
     # Begin encoding georeferenced netCDF file
     ds = Dataset(nc_path, 'w')
 
     # Define the dimensions
     ydim, xdim = ubyte_conc.shape
-    x = ds.createDimension('x', xdim)
-    y = ds.createDimension('y', ydim)
-    time = ds.createDimension('time', None)
+    x = ds.createDimension('x', xdim)  # noqa flake8 can't find usage
+    y = ds.createDimension('y', ydim)  # noqa flake8 can't find usage
+    time = ds.createDimension('time', None)  # noqa flake8 can't find usage
 
     # Set global attributes
     ds.comment = f'Northern Hemisphere Bootstrap concentration for {file_date}'
@@ -159,12 +162,12 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
     crs.false_northing = 0.
     crs.semi_major_axis = 6378137.
     crs.inverse_flattening = 298.257223563
-    crs.GeoTransform = "-5250000 6250 0 5250000 0 -6250"
-    crs.long_name = "NSIDC_EASE2_N6.25km_subset"
+    crs.GeoTransform = '-5250000 6250 0 5250000 0 -6250'
+    crs.long_name = 'NSIDC_EASE2_N6.25km_subset'
     crs.latitude_of_projection_origin = 90.
-    crs.proj4text = "+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"  # noqa
-    crs.srid = "urn:ogc:def:crs:EPSG::6931"
-    crs.crs_wkt = "PROJCS[\"unnamed\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Lambert_Azimuthal_Equal_Area\"],PARAMETER[\"latitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AUTHORITY[\"epsg\",\"6931\"]]atitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AUTHORITY[\"epsg\",\"6931\"]]"  # noqa
+    crs.proj4text = '+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'  # noqa
+    crs.srid = 'urn:ogc:def:crs:EPSG::6931'
+    crs.crs_wkt = 'PROJCS[\"unnamed\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Lambert_Azimuthal_Equal_Area\"],PARAMETER[\"latitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AUTHORITY[\"epsg\",\"6931\"]]atitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AUTHORITY[\"epsg\",\"6931\"]]'  # noqa
 
     conc = ds.createVariable('conc', np.uint8, ('time', 'y', 'x'), zlib=True)  # noqa
     conc[0, :, :] = ubyte_conc[:, :]
@@ -180,7 +183,7 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
     conc.flag_values = np.array((0,))
     conc.flag_meanings = 'non_ocean_pixel'
     conc.packing_convention = 'netCDF'
-    conc.packing_convention_description = 'unpacked = scale_factor * packed + add_offset'
+    conc.packing_convention_description = 'unpacked = scale_factor * packed + add_offset'  # noqa
     conc.scale_factor = 0.01
     conc.add_offset = 0.
 
@@ -486,13 +489,13 @@ def amsr2(
     '-p',
     '--nctbfn_template',
     required=False,
-    default="NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc",
+    default='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
 )
 @click.option(
     '-f',
     '--timeframe',
     required=False,
-    default="M",
+    default='M',
 )
 def a2l1c(
     *,
@@ -504,7 +507,6 @@ def a2l1c(
     nctbfn_template: str,
     timeframe: str,
 ):
-
     """Run the bootstrap algorithm with 'a2l1c' data.
 
     AMSR brightness temperatures are fetched from 6.25km raw data fields

@@ -1,4 +1,5 @@
-"""
+"""a2l1c.py: bootstrap parameters file.
+
 Bootstrap parameters for use with AMSR2 from new CETB product,
   i.e. either NSIDC-0763 or NSIDC-0630 version 2
 

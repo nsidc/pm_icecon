@@ -1,5 +1,6 @@
-"""
-Boostrap parameters for use with AMSR2 derived from AU_SI products
+"""amsr2.py: bootstrap parameters file.
+
+Bootstrap parameters for use with AMSR2 derived from AU_SI products
 
 Parameters were originally pulled from `ret_parameters_amsru2.f`.
 """

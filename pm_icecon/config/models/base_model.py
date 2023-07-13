@@ -1,7 +1,9 @@
 from functools import cached_property
 
 # For Pydantic ~1.9
-from pydantic import BaseModel, Extra
+# from pydantic import BaseModel, Extra
+from pydantic import BaseModel
+
 # For Pydantic 2.0
 # from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -28,6 +30,7 @@ class ConfigBaseModel(BaseModel):
         keep_untouched = (cached_property,)
 
         arbitrary_types_allowed = True
+
 
 '''
 class ConfigBaseModel(BaseModel):
