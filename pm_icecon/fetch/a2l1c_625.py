@@ -17,12 +17,12 @@ Adapted from au_si25.py
 """
 import datetime as dt
 import re
+import warnings
 from pathlib import Path
 
 import numpy as np
 import xarray as xr
 from netCDF4 import Dataset
-import warnings
 
 from pm_icecon._types import Hemisphere
 

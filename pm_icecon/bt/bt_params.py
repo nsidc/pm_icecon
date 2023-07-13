@@ -4,10 +4,14 @@ Bootstrap Parameters for AMSR2 were taken from `ret_parameters_amsru2.f`
 """
 
 import datetime as dt
+
 import numpy as np
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line
+from pm_icecon.bt.compute_bt_ic import (  # noqa
+    _get_wx_params as interpolate_bt_wx_params,
+)
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.config.models.bt import (
     BootstrapParams,
@@ -18,10 +22,6 @@ from pm_icecon.config.models.bt import (
 )
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
-
-from pm_icecon.bt.compute_bt_ic \
-    import _get_wx_params as interpolate_bt_wx_params  # noqa
-
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
     bt_wtp_v37=207.2,

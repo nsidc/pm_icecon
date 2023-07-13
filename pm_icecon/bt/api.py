@@ -1,5 +1,6 @@
-import datetime as dt
 # from pathlib import Path
+
+import datetime as dt
 
 import numpy as np
 import xarray as xr
@@ -9,6 +10,7 @@ from pm_icecon._types import Hemisphere
 from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from pm_icecon.bt.params.amsr2 import get_amsr2_params
 from pm_icecon.config.models.bt import BootstrapParams
+
 # from pm_icecon.constants import BOOTSTRAP_MASKS_DIR
 from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs

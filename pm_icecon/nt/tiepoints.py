@@ -18,12 +18,15 @@ at the end of this file.
 """
 # For Pydantic ~1.9
 from typing import TypedDict
-# For Pydantic ~2.0
-# from typing_extensions import TypedDict
 
 from loguru import logger
 
 from pm_icecon._types import Hemisphere, ValidSatellites
+
+# For Pydantic ~2.0
+# from typing_extensions import TypedDict
+
+
 
 
 class TiePoints(TypedDict):

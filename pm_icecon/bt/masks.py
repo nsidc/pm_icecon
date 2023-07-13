@@ -1,9 +1,9 @@
 import datetime as dt
 from pathlib import Path
-from loguru import logger
 
 import numpy as np
 import numpy.typing as npt
+from loguru import logger
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import BT_GODDARD_ANCILLARY_DIR, CDR_TESTDATA_DIR
