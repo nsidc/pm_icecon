@@ -44,13 +44,13 @@ def standard_output_filename(
     resolution: str,
     algorithm: str,
     extension: str = '.nc',
-    timeframe: str = None,
+    timeframe: str = 'day',
 ) -> str:
     """Return a string representing the standard filename for bootstrap."""
     assert (
         extension[0] == '.'
     ), f'extension must contain `.`. Did you mean ".{extension}"?'
-    if timeframe is None:
+    if timeframe == 'day':
         output_filename = (
             f'{algorithm}_{hemisphere[0].upper()}H'
             f'_{date:%Y%m%d}_{sat}_{resolution}{extension}'
