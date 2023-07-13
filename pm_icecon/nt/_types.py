@@ -8,7 +8,6 @@ import numpy.typing as npt
 # from typing_extensions import TypedDict
 
 
-
 class NasateamCoefficients(TypedDict):
     A: float
     B: float

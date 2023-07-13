@@ -27,8 +27,6 @@ from pm_icecon._types import Hemisphere, ValidSatellites
 # from typing_extensions import TypedDict
 
 
-
-
 class TiePoints(TypedDict):
     # Open water
     ow: float  # noqa
