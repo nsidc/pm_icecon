@@ -52,6 +52,7 @@ def test_convert_to_pmicecon_bt_params():
         gridid=gridid,
     )
     oldstyle_params = convert_to_pmicecon_bt_params(
-        hemisphere, bt_parameters, bt_field_dict)
+        hemisphere, bt_parameters, bt_field_dict
+    )
 
     assert oldstyle_params is not None
