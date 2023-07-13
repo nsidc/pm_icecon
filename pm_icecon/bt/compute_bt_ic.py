@@ -526,11 +526,14 @@ def apply_invalid_ice_mask(
     Implementation of GSFC fortran `sst_clean_sb2()` routine.
     """
     is_not_land = conc != land_flag_value
-    is_not_miss = conc != missing_flag_value
-    is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
+    # is_not_miss = conc != missing_flag_value
+    # is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
+
+    is_not_land_sst = is_not_land & invalid_ice_mask
 
     ice_sst = conc.copy()
-    ice_sst[is_not_land_miss_sst] = 0.0
+    # ice_sst[is_not_land_miss_sst] = 0.0
+    ice_sst[is_not_land_sst] = 0.0
 
     return ice_sst
 
@@ -1011,7 +1014,7 @@ def goddard_bootstrap(
 
     # Apply masks and flag values
     conc[weather_mask] = 0.0
-    conc[tb_mask] = 0.0
+    conc[tb_mask] = DEFAULT_FLAG_VALUES.missing
     conc[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
     conc = apply_invalid_ice_mask(
