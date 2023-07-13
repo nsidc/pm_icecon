@@ -18,6 +18,7 @@ Tiepoint = NewType('Tiepoint', float)
 TiepointSet = tuple[Tiepoint, Tiepoint]
 
 
+''' Removed because of vulture
 class RawFns(TypedDict):
     # maps strings to strings representing filepaths.
     h37: str
@@ -26,8 +27,10 @@ class RawFns(TypedDict):
     v19: str
     v22: str
     v37: str
+'''
 
 
+''' Removed because of vulture
 # Dict returned by `ret_para_nsb2`
 class ParaVals(TypedDict):
     iceline: list[float]  # len 2
@@ -38,6 +41,7 @@ class ParaVals(TypedDict):
     wslope: float
     wtp: list[float]  # len 2
     wxlimt: float
+'''
 
 
 class Line(TypedDict):

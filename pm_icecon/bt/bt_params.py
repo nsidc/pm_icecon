@@ -19,7 +19,8 @@ from pm_icecon.config.models.bt import (
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
-from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
+from pm_icecon.bt.compute_bt_ic \
+    import _get_wx_params as interpolate_bt_wx_params  # noqa
 
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
@@ -218,9 +219,9 @@ def get_bootstrap_params(
 ):
     hemisphere = get_gridid_hemisphere(gridid)
     if satellite == 'amsr2':
-        if 'north':
+        if hemisphere == 'north':
             bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH
-        elif 'south':
+        elif hemisphere == 'south':
             bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH
         else:
             raise ValueError(f'Could not initialize Bootstrap params for:\n  satellite: {satellite}\n  hemisphere: {hemisphere}')  # noqa
