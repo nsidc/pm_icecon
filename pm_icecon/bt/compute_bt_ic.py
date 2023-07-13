@@ -948,12 +948,17 @@ def bootstrap_for_cdr(
 def fill_pole_hole(conc):
     """Fill the pole hole with the average of nearby missing values."""
     ydim, xdim = conc.shape
+    pole_radius = 50
     if xdim == 1680:
         pole_radius = 15
     elif xdim == 840:
         pole_radius = 8
     elif xdim == 3360:
         pole_radius = 30
+    elif xdim == 304:
+        pole_radius = 30
+    else:
+        raise ValueError(f'Could not determine pole_radius for xdim {xdim}')
 
     half_ydim = ydim // 2
     half_xdim = xdim // 2
