@@ -21,7 +21,6 @@ def test_get_bootstrap_params():
     assert 'wintrc' in bt_parameters.keys()
 
 
-
 def test_get_bootstrap_fields():
     date = dt.date(2020, 1, 1)
     satellite = 'amsr2'

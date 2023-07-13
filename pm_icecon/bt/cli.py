@@ -212,7 +212,6 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
     logger.info(f'Re-encoded {nc_path}')
 
 
-
 def add_info_to_netcdf_file_a2l1c(nc_path):
     # Read in siconc data from a bare-bones netCDF file
     # Create a new netCDF file of the same name with georeference info
