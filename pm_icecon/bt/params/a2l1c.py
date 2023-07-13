@@ -6,6 +6,7 @@ Bootstrap parameters for use with AMSR2 from new CETB product,
 Parameters were originally provided by 'ret_parameters_amsru2.f', except:
   - new wxlimt values were calculated by during Spring 2023 NSIDC
     investigation of weather effects for the NOAA CDR version 5 product
+  - Note: Southern hemisphere wxlimt goes from 18.596 to 14.3
 """
 
 from pm_icecon.bt._types import Line, Tiepoint

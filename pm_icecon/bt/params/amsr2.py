@@ -38,6 +38,7 @@ AMSR2_NORTH_PARAMS = dict(
                 wintrc=84.73,
                 wslope=0.5352,
                 wxlimt=18.39,
+                # wxlimt=13.7  for CDR-derived wx values
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -49,6 +50,7 @@ AMSR2_NORTH_PARAMS = dict(
                 wintrc=82.71,
                 wslope=0.5352,
                 wxlimt=23.34,
+                # wxlimt=21.7  for CDR-derived wx values
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
@@ -76,6 +78,7 @@ AMSR2_SOUTH_PARAMS = dict(
                 wintrc=85.13,
                 wslope=0.5379,
                 wxlimt=18.596,
+                # wxlimt=14.3  for CDR-derived wx values
             ),
         ),
     ],
