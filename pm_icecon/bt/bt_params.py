@@ -14,6 +14,7 @@ from pm_icecon.config.models.bt import (
     TbSetParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
+    cast_as_TiepointSet,
 )
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
@@ -62,13 +63,13 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
 
 AMSR2_NORTH_PARAMS = dict(
     vh37_params=TbSetParams(
-        water_tie_point_set=[207.2, 131.9],
-        ice_tie_point_set=[256.3, 241.2],
+        water_tie_point_set=cast_as_TiepointSet(207.2, 131.9),
+        ice_tie_point_set=cast_as_TiepointSet(256.3, 241.2),
         lnline=Line(offset=-71.99, slope=1.20),
     ),
     v1937_params=TbSetParams(
-        water_tie_point_set=[207.2, 182.4],
-        ice_tie_point_set=[256.3, 258.9],
+        water_tie_point_set=cast_as_TiepointSet(207.2, 182.4),
+        ice_tie_point_set=cast_as_TiepointSet(256.3, 258.9),
         lnline=Line(offset=48.26, slope=0.8048),
     ),
     weather_filter_seasons=[
@@ -126,13 +127,13 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
 
 AMSR2_SOUTH_PARAMS = dict(
     vh37_params=TbSetParams(
-        water_tie_point_set=[207.6, 131.9],
-        ice_tie_point_set=[259.4, 247.3],
+        water_tie_point_set=cast_as_TiepointSet(207.6, 131.9),
+        ice_tie_point_set=cast_as_TiepointSet(259.4, 247.3),
         lnline=Line(offset=-90.62, slope=1.2759),
     ),
     v1937_params=TbSetParams(
-        water_tie_point_set=[207.6, 182.7],
-        ice_tie_point_set=[259.4, 261.6],
+        water_tie_point_set=cast_as_TiepointSet(207.6, 182.7),
+        ice_tie_point_set=cast_as_TiepointSet(259.4, 261.6),
         lnline=Line(offset=62.89, slope=0.7618),
     ),
     weather_filter_seasons=[
@@ -193,14 +194,14 @@ def convert_to_pmicecon_bt_params(hemisphere, params, fields):
         invalid_ice_mask=np.array(fields['invalid_ice_mask']),
 
         vh37_params=TbSetParams(
-            water_tie_point_set=[params['bt_wtp_v37'], params['bt_wtp_h37']],
-            ice_tie_point_set=[params['bt_itp_v37'], params['bt_itp_h37']],
+            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_h37']),
+            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_h37']),
             lnline=params['vh37_lnline'],
         ),
 
         v1937_params=TbSetParams(
-            water_tie_point_set=[params['bt_wtp_v37'], params['bt_wtp_v19']],
-            ice_tie_point_set=[params['bt_itp_v37'], params['bt_itp_v19']],
+            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_v19']),
+            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_v19']),
             lnline=params['v1937_lnline'],
         ),
 
@@ -231,7 +232,7 @@ def get_bootstrap_params(
         weather_filter_seasons = bt_params['weather_filter_seasons']  # noqa
         bt_weather_params_struct = interpolate_bt_wx_params(
             date=date,
-            weather_filter_seasons=bt_params['weather_filter_seasons'],
+            weather_filter_seasons=bt_params['weather_filter_seasons'],  # type: ignore
         )
         bt_params['wintrc'] = bt_weather_params_struct.wintrc
         bt_params['wslope'] = bt_weather_params_struct.wslope
@@ -295,7 +296,7 @@ def get_amsr2_params(
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),  # type: ignore
     )
 
     return bt_params

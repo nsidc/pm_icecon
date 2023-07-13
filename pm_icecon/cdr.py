@@ -267,7 +267,7 @@ def create_cdr_for_date_range(
                 traceback.print_exc(file=sys.stdout)
 
 
-@click.command(name='cdr')
+@click.command(name='cdr')  # type: ignore
 @click.option(
     '-d',
     '--date',

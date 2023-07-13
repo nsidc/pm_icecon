@@ -368,7 +368,7 @@ def create_equivalent_geotiff_a2l1c(nc_path, geotiff_path):
 
 
 # Click definitions for "amsr2" which uses AU25
-@click.command()
+@click.command()  # type: ignore
 @click.option(
     '-d',
     '--date',
@@ -434,7 +434,7 @@ def amsr2(
 
 
 # Click definitions for 'a2l1c' which uses 6.25km fields derived from 0763
-@click.command()
+@click.command()  # type: ignore
 @click.option(
     '-d',
     '--date',
