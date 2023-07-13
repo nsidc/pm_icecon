@@ -942,6 +942,29 @@ def bootstrap_for_cdr(
     return conc
 
 
+def fill_pole_hole(conc):
+    """Fill the pole hole with the average of nearby missing values"""
+    ydim, xdim = conc.shape
+    if xdim == 1680:
+        pole_radius = 15
+    elif xdim == 840:
+        pole_radius = 8
+    elif xdim == 3360:
+        pole_radius = 30
+
+    half_ydim = ydim // 2
+    half_xdim = xdim // 2
+    near_pole_conc = conc[
+        half_ydim - pole_radius:half_ydim + pole_radius,
+        half_xdim - pole_radius:half_xdim + pole_radius,
+    ]
+
+    is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
+
+    near_pole_mean = np.mean(near_pole_conc[~is_pole_hole])
+    near_pole_conc[is_pole_hole] = near_pole_mean
+
+
 def goddard_bootstrap(
     *,
     tb_v37: npt.NDArray,
@@ -1005,6 +1028,12 @@ def goddard_bootstrap(
         minic=params.minic,
     )
     conc[conc < params.minic] = 0
+
+    jdim, idim = conc.shape
+    if not params.land_mask[jdim // 2, idim //2]:
+        # With no land in middle of mask, this is NH
+        # conc = fill_pole_hole(conc)
+        fill_pole_hole(conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
