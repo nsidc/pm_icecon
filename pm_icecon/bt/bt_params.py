@@ -194,14 +194,14 @@ def convert_to_pmicecon_bt_params(hemisphere, params, fields):
         invalid_ice_mask=np.array(fields['invalid_ice_mask']),
 
         vh37_params=TbSetParams(
-            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_h37']),
-            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_h37']),
+            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_h37']),  # noqa
+            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_h37']),  # noqa
             lnline=params['vh37_lnline'],
         ),
 
         v1937_params=TbSetParams(
-            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_v19']),
-            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_v19']),
+            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_v19']),  # noqa
+            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_v19']),  # noqa
             lnline=params['v1937_lnline'],
         ),
 
@@ -296,7 +296,9 @@ def get_amsr2_params(
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),  # type: ignore
+        **(AMSR2_NORTH_PARAMS \
+            if hemisphere == 'north' \
+            else AMSR2_SOUTH_PARAMS),  # type: ignore
     )
 
     return bt_params
