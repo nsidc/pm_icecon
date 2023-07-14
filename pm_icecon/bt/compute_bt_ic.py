@@ -965,6 +965,8 @@ def fill_pole_hole(conc):
         pole_radius = 30
     elif xdim == 304:
         pole_radius = 30
+    elif xdim == 720:
+        pole_radius = 10
     else:
         raise ValueError(f'Could not determine pole_radius for xdim {xdim}')
 
