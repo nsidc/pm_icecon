@@ -8,6 +8,7 @@ and computes:
 import calendar
 import copy
 import datetime as dt
+import warnings
 from functools import reduce
 from typing import Literal, Sequence
 
@@ -289,13 +290,21 @@ def _get_ic(
 
     # block2
     delta_y = tby - wtp_y
-    slope = delta_y / delta_x
+    with warnings.catch_warnings():
+        # This causes a divide-by-zero warning because
+        # locations that are later ignored have zero in denominator
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        slope = delta_y / delta_x
     offset = tby - (slope * tbx)
     slp_diff = iline_slp - slope
 
     is_slp_diff_ne_0 = slp_diff != 0
 
-    x_intercept = (offset - iline_off) / slp_diff
+    with warnings.catch_warnings():
+        # This causes a divide-by-zero warning because
+        # locations that are later ignored have zero in denominator
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        x_intercept = (offset - iline_off) / slp_diff
     y_intercept = offset + (slope * x_intercept)
     length1 = np.sqrt(np.square(tbx - wtp_x) + np.square(tby - wtp_y))
     length2 = np.sqrt(np.square(x_intercept - wtp_x) + np.square(y_intercept - wtp_y))
