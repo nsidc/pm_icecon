@@ -37,6 +37,8 @@ jobs:
             source activate pm_icecon
 
             conda-build --numpy 1.22 recipe/
+          no_output_timeout: 60m
+
       - store_artifacts:  # Only needed if you want to get them from the circleci interface
           path: /opt/conda/envs/build/conda-bld/noarch/
           destination: ~/pm_icecon/artifacts
