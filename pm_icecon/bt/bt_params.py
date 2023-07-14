@@ -9,9 +9,7 @@ import numpy as np
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line
-from pm_icecon.bt.compute_bt_ic import (
-    _get_wx_params as interpolate_bt_wx_params,
-)
+from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.config.models.bt import (
     BootstrapParams,
