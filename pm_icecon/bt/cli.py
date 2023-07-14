@@ -55,7 +55,9 @@ def get_filename_attrs_a2l1c(fn):
     elif hem == 'SH' and res == '6.25km':
         gridid = 'e2s6.25'
     else:
-        raise ValueError(f'Could not determine gridid for hem {hem} and resolution {res}')  # noqa
+        raise ValueError(
+            f'Could not determine gridid for hem {hem} and resolution {res}'
+        )  # noqa
 
     return date, gridid
 
@@ -158,14 +160,14 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
 
     crs = ds.createVariable('crs', 'i4')
     crs.grid_mapping_name = 'lambert_azimuthal_equal_area'
-    crs.longitude_of_projection = 0.
-    crs.false_easting = 0.
-    crs.false_northing = 0.
-    crs.semi_major_axis = 6378137.
+    crs.longitude_of_projection = 0.0
+    crs.false_easting = 0.0
+    crs.false_northing = 0.0
+    crs.semi_major_axis = 6378137.0
     crs.inverse_flattening = 298.257223563
     crs.GeoTransform = '-5250000 6250 0 5250000 0 -6250'
     crs.long_name = 'NSIDC_EASE2_N6.25km_subset'
-    crs.latitude_of_projection_origin = 90.
+    crs.latitude_of_projection_origin = 90.0
     crs.proj4text = '+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'  # noqa
     crs.srid = 'urn:ogc:def:crs:EPSG::6931'
     crs.crs_wkt = 'PROJCS[\"unnamed\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Lambert_Azimuthal_Equal_Area\"],PARAMETER[\"latitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AUTHORITY[\"epsg\",\"6931\"]]atitude_of_center\",90],PARAMETER[\"longitude_of_center\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],AUTHORITY[\"epsg\",\"6931\"]]'  # noqa
@@ -184,27 +186,61 @@ def update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc):
     conc.flag_values = np.array((0,))
     conc.flag_meanings = 'non_ocean_pixel'
     conc.packing_convention = 'netCDF'
-    conc.packing_convention_description = 'unpacked = scale_factor * packed + add_offset'  # noqa
+    conc.packing_convention_description = (
+        'unpacked = scale_factor * packed + add_offset'  # noqa
+    )
     conc.scale_factor = 0.01
-    conc.add_offset = 0.
+    conc.add_offset = 0.0
 
     # All of the following simply asserts non-empty attributes
     # so that the code passes the CircleCi vulture tests  :-/
     for attr in (
-        ds.comment, ds.Conventions, xs.standard_name, xs.long_name,
-        xs.axis, xs.units, xs.coverage_content_type, xs.valid_range,
-        ys.standard_name, ys.long_name, ys.axis, ys.units,
-        ys.coverage_content_type, ys.valid_range, times.standard_name,
-        times.long_name, times.calendar, times.axis, times.units,
-        times.coverage_content_type, times.valid_range, crs.grid_mapping_name,
-        crs.longitude_of_projection, crs.false_easting, crs.false_northing,
-        crs.semi_major_axis, crs.inverse_flattening, crs.GeoTransform,
-        crs.long_name, crs.latitude_of_projection_origin, crs.proj4text,
-        crs.srid, crs.crs_wkt, conc.coverage_content_type, conc.coordinates,
-        conc.grid_mapping, conc.units, conc.long_name, conc.standard_name,
-        conc.valid_range, conc.flag_values, conc.flag_meanings,
-        conc.packing_convention, conc.packing_convention_description,
-        conc.scale_factor, conc.add_offset,
+        ds.comment,
+        ds.Conventions,
+        xs.standard_name,
+        xs.long_name,
+        xs.axis,
+        xs.units,
+        xs.coverage_content_type,
+        xs.valid_range,
+        ys.standard_name,
+        ys.long_name,
+        ys.axis,
+        ys.units,
+        ys.coverage_content_type,
+        ys.valid_range,
+        times.standard_name,
+        times.long_name,
+        times.calendar,
+        times.axis,
+        times.units,
+        times.coverage_content_type,
+        times.valid_range,
+        crs.grid_mapping_name,
+        crs.longitude_of_projection,
+        crs.false_easting,
+        crs.false_northing,
+        crs.semi_major_axis,
+        crs.inverse_flattening,
+        crs.GeoTransform,
+        crs.long_name,
+        crs.latitude_of_projection_origin,
+        crs.proj4text,
+        crs.srid,
+        crs.crs_wkt,
+        conc.coverage_content_type,
+        conc.coordinates,
+        conc.grid_mapping,
+        conc.units,
+        conc.long_name,
+        conc.standard_name,
+        conc.valid_range,
+        conc.flag_values,
+        conc.flag_meanings,
+        conc.packing_convention,
+        conc.packing_convention_description,
+        conc.scale_factor,
+        conc.add_offset,
     ):
         assert attr is not None
 
@@ -227,7 +263,10 @@ def add_info_to_netcdf_file_a2l1c(nc_path):
         assert rounded_conc.min() >= 0
         assert rounded_conc.max() <= 255
     except AssertionError:
-        raise ValueError(f'Concentration outside expect bounds of 0 ({rounded_conc.min()}) and 255 ({rounded_conc.max()})')  # noqa
+        raise ValueError(
+            'Concentration outside expect bounds of 0 '
+            f'({rounded_conc.min()}) and 255 ({rounded_conc.max()})'
+        )
     ubyte_conc = rounded_conc.astype(np.uint8)
 
     update_netcdf_file(nc_path, file_date, file_gridid, ubyte_conc)
@@ -238,7 +277,6 @@ def get_geotiff_colormap():
 
     colormap_dict = {
         0: (0, 0, 100),  # Blue for no-ice ocean
-
         1: (2, 2, 2),  # Gray value for concentration is double the conc
         2: (4, 4, 4),
         3: (6, 6, 6),
@@ -339,10 +377,8 @@ def get_geotiff_colormap():
         98: (196, 196, 196),
         99: (198, 198, 198),
         100: (200, 200, 200),
-
         254: (10, 120, 10),  # Green for land
-
-        255: (250, 0, 0),    # Red for missing
+        255: (250, 0, 0),  # Red for missing
     }
 
     return colormap_dict
@@ -365,7 +401,8 @@ def create_equivalent_geotiff_a2l1c(nc_path, geotiff_path):
         'width': 1680,
         'height': 1680,
         'transform': rasterio.transform.Affine.from_gdal(
-            -5250000, 6250, 0, 5250000, 0, -6250)
+            -5250000, 6250, 0, 5250000, 0, -6250
+        ),
     }
 
     if 'EASE2_N' in nc_ds['crs'].long_name:
@@ -373,15 +410,16 @@ def create_equivalent_geotiff_a2l1c(nc_path, geotiff_path):
     elif 'EASE2_S' in nc_ds['crs'].long_name:
         geotiff_metadata['crs'] = rasterio.crs.CRS.from_epsg(6932)
     else:
-        raise ValueError(f'Could not determine epsg code from crs.long_name: {nc_ds["crs"].long_name}')  # noqa
+        raise ValueError(
+            'Could not determine epsg code from crs.long_name: '
+            f'{nc_ds["crs"].long_name}'
+        )
 
     geotiff_colormap = get_geotiff_colormap()
 
     with rasterio.open(
-            geotiff_path,
-            'w',
-            **geotiff_metadata,
-            COMPRESS='DEFLATE') as dst:
+        geotiff_path, 'w', **geotiff_metadata, COMPRESS='DEFLATE'
+    ) as dst:
         dst.write(conc_data[:, :], indexes=1)
         dst.write_colormap(1, geotiff_colormap)
 
@@ -556,8 +594,7 @@ def a2l1c(
     )
     output_path = output_dir / output_fn
     # conc_ds.to_netcdf(output_path)
-    conc_ds.astype(np.float32).to_netcdf(
-        output_path, encoding={'conc': {'zlib': True}})
+    conc_ds.astype(np.float32).to_netcdf(output_path, encoding={'conc': {'zlib': True}})
 
     logger.info(f'Wrote a2l1c concentration field: {output_path}')
 

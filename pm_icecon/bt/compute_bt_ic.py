@@ -398,7 +398,6 @@ def _get_wx_params(
     """
     monthly_dfs = []
     for season in weather_filter_seasons:
-
         if season.start_month > season.end_month:
             # E.g., start_month=11 and end_month=4:
             # season_months=[11, 12, 1, 2, 3, 4].
@@ -963,8 +962,8 @@ def fill_pole_hole(conc):
     half_ydim = ydim // 2
     half_xdim = xdim // 2
     near_pole_conc = conc[
-        half_ydim - pole_radius:half_ydim + pole_radius,
-        half_xdim - pole_radius:half_xdim + pole_radius,
+        half_ydim - pole_radius : half_ydim + pole_radius,
+        half_xdim - pole_radius : half_xdim + pole_radius,
     ]
 
     is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)

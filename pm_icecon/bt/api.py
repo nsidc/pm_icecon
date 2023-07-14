@@ -58,7 +58,6 @@ def a2l1c_goddard_bootstrap(
     anc_dir,
     ncfn_,
     timeframe,
-
 ) -> xr.Dataset:
     """Compute sea ice concentration from L1C 6.25km TBs.
 

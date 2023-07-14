@@ -22,7 +22,9 @@ def get_ps_invalid_ice_mask(
 
     `True` values indicate areas that are masked as invalid.
     """
-    logger.info(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')  # noqa
+    logger.info(
+        f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid'
+    )  # noqa
     if hemisphere == 'north':
         if resolution == '25':
             sst_fn = (

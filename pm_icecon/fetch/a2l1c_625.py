@@ -81,7 +81,7 @@ def _get_a2l1c_625_data_fields_nc(
                 tb_data = np.nanmean(tb_grouped, (-1, -3))
 
         # Only use a subset of the full hemisphere
-        tbs[chan] = tb_data[600:600 + 1680, 600:600 + 1680]
+        tbs[chan] = tb_data[600 : 600 + 1680, 600 : 600 + 1680]
 
     ds = xr.Dataset(
         data_vars=dict(
@@ -177,19 +177,31 @@ def _normalize_a2l1c_625_tbs(
 
 
 def get_a2l1c_625_tbs(
-    *, base_dir: Path, date: dt.date, hemisphere: Hemisphere, ncfn_, timeframe,
+    *,
+    base_dir: Path,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    ncfn_,
+    timeframe,
 ) -> xr.Dataset:
     """Return CETB Tbs for the given date and hemisphere as an xr dataset."""
     try:
         # First, try to load pre-extracted raw binary files
         data_fields = _get_a2l1c_625_data_fields(
-            base_dir=base_dir, date=date, hemisphere=hemisphere, timeframe=timeframe,
+            base_dir=base_dir,
+            date=date,
+            hemisphere=hemisphere,
+            timeframe=timeframe,
         )
     except FileNotFoundError:
         # If no bin files, attempt to load from 0763 netcdf files
         try:
             data_fields = _get_a2l1c_625_data_fields_nc(
-                base_dir=base_dir, date=date, hemisphere=hemisphere, tbfn_=ncfn_, timeframe=timeframe,  # noqa
+                base_dir=base_dir,
+                date=date,
+                hemisphere=hemisphere,
+                tbfn_=ncfn_,
+                timeframe=timeframe,  # noqa
             )
         except FileNotFoundError:
             raise SystemExit(f'Could not find a2l1c input files in {base_dir}')

@@ -120,7 +120,6 @@ def compare_timeseries(
     end_date: dt.date,
     resolution: AU_SI_RESOLUTIONS,
 ):
-
     amsr2_cdr = amsr2_cdr_for_date_range(
         start_date=start_date,
         end_date=end_date,

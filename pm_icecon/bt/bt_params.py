@@ -9,7 +9,7 @@ import numpy as np
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line
-from pm_icecon.bt.compute_bt_ic import (  # noqa
+from pm_icecon.bt.compute_bt_ic import (
     _get_wx_params as interpolate_bt_wx_params,
 )
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
@@ -27,14 +27,11 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
     bt_wtp_v37=207.2,
     bt_wtp_h37=131.9,
     bt_wtp_v19=182.4,
-
     bt_itp_v37=256.3,
     bt_itp_h37=241.2,
     bt_itp_v19=258.9,
-
     vh37_lnline=Line(offset=-71.99, slope=1.20),
     v1937_lnline=Line(offset=48.26, slope=0.8048),
-
     weather_filter_seasons=[
         # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
         WeatherFilterParamsForSeason(
@@ -104,14 +101,11 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
     bt_wtp_v37=207.6,
     bt_wtp_h37=131.9,
     bt_wtp_v19=182.7,
-
     bt_itp_v37=259.4,
     bt_itp_h37=247.3,
     bt_itp_v19=261.6,
-
     vh37_lnline=Line(offset=-90.62, slope=1.2759),
     v1937_lnline=Line(offset=62.89, slope=0.7618),
-
     weather_filter_seasons=[
         # Just one season for the S. hemisphere.
         WeatherFilterParamsForSeason(
@@ -187,25 +181,26 @@ def convert_to_pmicecon_bt_params(hemisphere, params, fields):
     oldstyle_bt_params = BootstrapParams(
         land_mask=np.array(fields['land_mask']).squeeze(),
         # There's no pole hole in the southern hemisphere.
-        pole_mask=(
-            np.array(fields['pole_mask'])
-            if hemisphere == 'north'
-            else None
-        ),
+        pole_mask=(np.array(fields['pole_mask']) if hemisphere == 'north' else None),
         invalid_ice_mask=np.array(fields['invalid_ice_mask']),
-
         vh37_params=TbSetParams(
-            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_h37']),  # noqa
-            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_h37']),  # noqa
+            water_tie_point_set=cast_as_TiepointSet(
+                params['bt_wtp_v37'], params['bt_wtp_h37']
+            ),
+            ice_tie_point_set=cast_as_TiepointSet(
+                params['bt_itp_v37'], params['bt_itp_h37']
+            ),
             lnline=params['vh37_lnline'],
         ),
-
         v1937_params=TbSetParams(
-            water_tie_point_set=cast_as_TiepointSet(params['bt_wtp_v37'], params['bt_wtp_v19']),  # noqa
-            ice_tie_point_set=cast_as_TiepointSet(params['bt_itp_v37'], params['bt_itp_v19']),  # noqa
+            water_tie_point_set=cast_as_TiepointSet(
+                params['bt_wtp_v37'], params['bt_wtp_v19']
+            ),
+            ice_tie_point_set=cast_as_TiepointSet(
+                params['bt_itp_v37'], params['bt_itp_v19']
+            ),
             lnline=params['v1937_lnline'],
         ),
-
         **params,
     )
     return oldstyle_bt_params
@@ -224,16 +219,22 @@ def get_bootstrap_params(
         elif hemisphere == 'south':
             bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH
         else:
-            raise ValueError(f'Could not initialize Bootstrap params for:\n  satellite: {satellite}\n  hemisphere: {hemisphere}')  # noqa
+            raise ValueError(
+                'Could not initialize Bootstrap params for:\n'
+                f'satellite: {satellite}\n  hemisphere: {hemisphere}'
+            )
     else:
-        raise ValueError(f'Bootstrap params not yet definted for:\n  satellite: {satellite}')  # noqa
+        raise ValueError(
+            f'Bootstrap params not yet definted for:\n  satellite: {satellite}'
+        )
 
     # Some definitions include seasonal values for wintrc, wslope, wxlimt
     if 'wintrc' not in bt_params.keys():
-        weather_filter_seasons = bt_params['weather_filter_seasons']  # noqa
+        # weather_filter_seasons = bt_params['weather_filter_seasons']
+        wfs = bt_params['weather_filter_seasons']
         bt_weather_params_struct = interpolate_bt_wx_params(
             date=date,
-            weather_filter_seasons=bt_params['weather_filter_seasons'],  # type: ignore
+            weather_filter_seasons=wfs,  # type: ignore
         )
         bt_params['wintrc'] = bt_weather_params_struct.wintrc
         bt_params['wslope'] = bt_weather_params_struct.wslope
@@ -260,14 +261,16 @@ def get_bootstrap_fields(
         resolution=resolution,  # type: ignore[arg-type]
     )
 
-    land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+    land_mask = (get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),)
 
     # There's no pole hole in the southern hemisphere.
     pole_mask = (
-        get_ps_pole_hole_mask(resolution=resolution)
-        if hemisphere == 'north'
-        else None
-    ),
+        (
+            get_ps_pole_hole_mask(resolution=resolution)
+            if hemisphere == 'north'
+            else None
+        ),
+    )
 
     return dict(
         invalid_ice_mask=invalid_ice_mask,
@@ -288,18 +291,21 @@ def get_amsr2_params(
         resolution=resolution,  # type: ignore[arg-type]
     )
 
-    bt_params = BootstrapParams(
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-        # There's no pole hole in the southern hemisphere.
-        pole_mask=(
-            get_ps_pole_hole_mask(resolution=resolution)
-            if hemisphere == 'north'
-            else None
-        ),
-        invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS \
-            if hemisphere == 'north' \
-            else AMSR2_SOUTH_PARAMS),  # type: ignore
-    )
+    if hemisphere == 'north':
+        bt_params = BootstrapParams(
+            land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+            # There's no pole hole in the southern hemisphere.
+            pole_mask=get_ps_pole_hole_mask(resolution=resolution),
+            invalid_ice_mask=invalid_ice_mask,
+            **(AMSR2_NORTH_PARAMS),  # type: ignore
+        )
+    else:  # this is: hemisphere == 'south'
+        bt_params = BootstrapParams(
+            land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
+            # There's no pole hole in the southern hemisphere.
+            pole_mask=None,
+            invalid_ice_mask=invalid_ice_mask,
+            **(AMSR2_SOUTH_PARAMS),  # type: ignore
+        )
 
     return bt_params
