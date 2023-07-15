@@ -21,3 +21,7 @@ echo " "
 echo "Run black..."
 black --exclude nt_tiepoint_generation/ --check .
 echo " "
+
+echo "Run unit tests..."
+pytest -s pm_icecon/tests/unit
+echo " "
