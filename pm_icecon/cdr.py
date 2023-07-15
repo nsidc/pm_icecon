@@ -33,7 +33,14 @@ from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_DATA_DIR, DEFAULT_FLAG_VALUES
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from pm_icecon.fill_polehole import fill_pole_hole
 from pm_icecon.interpolation import spatial_interp_tbs
+from pm_icecon.land_spillover import (
+    apply_nt2a_land_spillover,
+    apply_nt2b_land_spillover,
+    load_or_create_land90_conc,
+    read_adj123_file,
+)
 from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.tiepoints import NasateamTiePoints
 from pm_icecon.util import date_range, standard_output_filename
@@ -129,19 +136,66 @@ def cdr(
     #   that can be applied to the input concentration instead of returning a new
     #   conc. Then we would have a seprate algorithm for choosing how to apply
     #   multiple spillover deltas to a given conc field.
-    # nasateam first:
-    cdr_conc = nt.apply_nt_spillover(
-        conc=cdr_conc,
-        shoremap=nt_shoremap,
-        minic=nt_minic,
-    )
-    # then bootstrap:
-    cdr_conc = bt.coastal_fix(
-        conc=cdr_conc,
-        missing_flag_value=missing_flag_value,
-        land_mask=bt_params.land_mask,
-        minic=bt_params.minic,
-    )
+    use_only_nt2_spillover = True
+    # use_only_nt2_spillover = False
+    if use_only_nt2_spillover:
+        logger.info('Applying NT2 land spillover technique...')
+        if tb_h19.shape == (896, 608):
+            # NH
+            l90c = load_or_create_land90_conc(
+                gridid='psn12.5',
+                xdim=608,
+                ydim=896,
+                overwrite=False,
+            )
+            adj123 = read_adj123_file(
+                gridid='psn12.5',
+                xdim=608,
+                ydim=896,
+            )
+            cdr_conc = apply_nt2a_land_spillover(cdr_conc, adj123)
+            cdr_conc = apply_nt2b_land_spillover(cdr_conc, adj123, l90c)
+        elif tb_h19.shape == (664, 632):
+            # SH
+            l90c = load_or_create_land90_conc(
+                gridid='pss12.5',
+                xdim=632,
+                ydim=664,
+                overwrite=False,
+            )
+            adj123 = read_adj123_file(
+                gridid='pss12.5',
+                xdim=632,
+                ydim=664,
+            )
+            cdr_conc = apply_nt2a_land_spillover(cdr_conc, adj123)
+            cdr_conc = apply_nt2b_land_spillover(cdr_conc, adj123, l90c)
+
+        else:
+            raise SystemExit(
+                'Could not determine hemisphere from tb shape: {tb_h19.shape}'
+            )
+    else:
+        # nasateam first:
+        logger.info('Applying NASA TEAM land spillover technique...')
+        cdr_conc = nt.apply_nt_spillover(
+            conc=cdr_conc,
+            shoremap=nt_shoremap,
+            minic=nt_minic,
+        )
+
+        # then bootstrap:
+        logger.info('Applying Bootstrap land spillover technique...')
+        cdr_conc = bt.coastal_fix(
+            conc=cdr_conc,
+            missing_flag_value=missing_flag_value,
+            land_mask=bt_params.land_mask,
+            minic=bt_params.minic,
+        )
+
+    # Fill the NH pole hole
+    if cdr_conc.shape == (896, 608):
+        cdr_conc = fill_pole_hole(cdr_conc)
 
     # Apply land flag value and clamp max conc to 100.
     # TODO: extract this func from nt and allow override of flag values
