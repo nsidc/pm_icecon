@@ -57,7 +57,7 @@ def get_amsr2_params(
         if hemisphere == 'north'
         else RSS_F17_SOUTH_GRADIENT_THRESHOLDS
     )
-    logger.warning('NT gradient threshold values for AMSR2 are copied from f17_final')
+    logger.info('NT gradient threshold values for AMSR2 are copied from f17_final')
 
     return NasateamParams(
         shoremap=nt_shoremap,
