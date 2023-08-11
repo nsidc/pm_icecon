@@ -127,7 +127,6 @@ def cdr(
         | bt_weather_mask
         | nt_invalid_ice_mask
         | bt_params.invalid_ice_mask
-        | bt_tb_mask
     )
     cdr_conc[set_to_zero_sic] = 0
 
@@ -223,6 +222,7 @@ def amsr2_cdr(
         hemisphere=hemisphere,
         resolution=resolution,
     )
+
     bt_params = bt_amsr2_params.get_amsr2_params(
         date=date,
         hemisphere=hemisphere,
