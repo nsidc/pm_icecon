@@ -6,6 +6,7 @@ land_spillover.py
 import os
 
 import numpy as np
+from loguru import logger
 from scipy.signal import convolve2d
 
 
@@ -70,8 +71,7 @@ def load_or_create_land90_conc(
         )
     else:
         data = np.fromfile(l90c_fn, dtype=np.float32).reshape(ydim, xdim)
-        print(f'Read land90 mask from:\n  {l90c_fn}')
-        print(f'  land90: {data.dtype}  {data.shape}')
+        logger.info(f'Read NT2 land90 mask from:\n  {l90c_fn}')
 
     return data
 
