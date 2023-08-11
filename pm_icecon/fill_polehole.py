@@ -27,8 +27,9 @@ def fill_pole_hole(conc):
     pole_pixels[473, 303 : 312 + 1] = 1
     pole_pixels[474, 304 : 311 + 1] = 1
 
+    # Fill zeros or NaNs near the pole
     is_vals_near_pole = (pole_pixels == 1) & (conc > 0)
-    is_missing_near_pole = (pole_pixels == 1) & (conc == 0)
+    is_missing_near_pole = (pole_pixels == 1) & ((conc == 0) | np.isnan(conc))
     mean_near_pole = np.mean(conc[is_vals_near_pole])
     conc[is_missing_near_pole] = mean_near_pole
 
