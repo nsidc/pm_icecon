@@ -179,7 +179,7 @@ def convert_to_pmicecon_bt_params(hemisphere, params, fields):
     oldstyle_bt_params = BootstrapParams(
         land_mask=np.array(fields['land_mask']).squeeze(),
         # There's no pole hole in the southern hemisphere.
-        pole_mask=(np.array(fields['pole_mask']) if hemisphere == 'north' else None),
+        pole_mask=np.array(fields['pole_mask']) if hemisphere == 'north' else None,
         invalid_ice_mask=np.array(fields['invalid_ice_mask']),
         vh37_params=TbSetParams(
             water_tie_point_set=cast_as_TiepointSet(
@@ -259,15 +259,13 @@ def get_bootstrap_fields(
         resolution=resolution,  # type: ignore[arg-type]
     )
 
-    land_mask = (get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),)
+    land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution)
 
     # There's no pole hole in the southern hemisphere.
     pole_mask = (
-        (
-            get_ps_pole_hole_mask(resolution=resolution)
+        get_ps_pole_hole_mask(resolution=resolution)
             if hemisphere == 'north'
             else None
-        ),
     )
 
     return dict(
