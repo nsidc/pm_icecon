@@ -133,6 +133,44 @@ def get_adj_ad_line_offset(
     return ad_line_offset
 
 
+def get_adj_ad_line_offset_v2(
+    *,
+    wtp_x: float,
+    wtp_y: float,
+    line_37v37h: Line,
+    perc=0.92,
+) -> float:
+    """Return the AD line offset.
+    This version uses individual tie points, not a TiepointSet
+
+    The AD line offset is used to determine between which tb set should be used
+    to calculate a pixel's ice concentration. For the Goddard bootstrap
+    algorithm, data points above the offset AD line (appox. AD - 5K) use
+    HV37. For data points below the offset AD line, the V1937 tbs et is used
+    instead.
+    """
+    #wtp_x, wtp_y = wtp_set[0], wtp_set[1]
+    off = line_37v37h['offset']
+    slp = line_37v37h['slope']
+
+    x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
+    y = slp * x + off
+
+    dx = wtp_x - x
+    dx2 = perc * dx
+    x2 = wtp_x - dx2
+
+    dy = y - wtp_y
+    dy2 = perc * dy
+    y2 = wtp_y + dy2
+
+    new_off = y2 - slp * x2
+
+    ad_line_offset = off - new_off
+
+    return ad_line_offset
+
+
 def _get_wtp(
     weather_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
@@ -186,8 +224,8 @@ def get_water_tiepoint_set(
 
     # If the calculated wtps are within the bounds of the default (+/- 10), use
     # the calculated value.
-    def _within_plusminus_10(target_value, value) -> bool:
-        return (target_value - 10) < value < (target_value + 10)
+    def _within_plusminus_10(initial_value, value) -> bool:
+        return (initial_value - 10) < value < (initial_value + 10)
 
     if _within_plusminus_10(wtp_set_default[0], wtpx):
         new_wtp_set[0] = wtpx
@@ -197,6 +235,28 @@ def get_water_tiepoint_set(
     wtp_set_tuple = (new_wtp_set[0], new_wtp_set[1])
 
     return wtp_set_tuple
+
+
+def calculate_water_tiepoint(
+    *,
+    wtp_init: float,
+    weather_mask: npt.NDArray[np.bool_],
+    tb,
+) -> float:
+    """Return the default or calculate new water tiepoint.
+
+    If the calculated water tiepoints are within +/- 10 of the
+    `wtp_set_default`, use the newly calculated values.
+    """
+    calculated_wtp = _get_wtp(weather_mask, tb)
+
+    def _within_plusminus_10(initial_value, value) -> bool:
+        return (initial_value - 10) < value < (initial_value + 10)
+
+    if not _within_plusminus_10(wtp_init, calculated_wtp):
+        calculated_wtp = wtp_init
+
+    return calculated_wtp
 
 
 def get_linfit(
@@ -502,6 +562,41 @@ def _get_wx_params(
             for key in ('wintrc', 'wslope', 'wxlimt')
         }
     )
+
+
+def get_weather_mask_v2(
+    *,
+    v37,
+    h37,
+    v22,
+    v19,
+    land_mask: npt.NDArray[np.bool_],
+    tb_mask: npt.NDArray[np.bool_],
+    ln1: Line,
+    date: dt.date,
+    #weather_filter_seasons: list[WeatherFilterParamsForSeason],
+    wintrc,
+    wslope,
+    wxlimt,
+) -> npt.NDArray[np.bool_]:
+    """Return a water mask that has been weather filtered.
+
+    `True` indicates areas that are water and are weather masked. I.e., `True`
+    values should be treated as open ocean.
+    """
+    # Determine where there is definitely water
+    not_land_or_masked = ~land_mask & ~tb_mask
+    watchk1 = (wslope * v22) + wintrc
+    watchk2 = v22 - v19
+    watchk4 = (ln1['slope'] * v37) + ln1['offset']
+
+    is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
+    # TODO: where does this 230.0 value come from? Should it be configuratble?
+    is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
+
+    is_water = not_land_or_masked & is_cond1 & is_cond2
+
+    return is_water
 
 
 def get_weather_mask(

@@ -210,6 +210,7 @@ def get_bootstrap_params(
     satellite: str,
     gridid: str,
 ):
+    """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
     if satellite == 'amsr2':
         if hemisphere == 'north':
@@ -225,6 +226,14 @@ def get_bootstrap_params(
         raise ValueError(
             f'Bootstrap params not yet definted for:\n  satellite: {satellite}'
         )
+
+    # Set standard bootstrap values
+    bt_params['add1'] = 0.0
+    bt_params['add2'] = -2.0
+    bt_params['minic'] = 10.0
+    bt_params['maxic'] = 1.0
+    bt_params['mintb'] = 10.0
+    bt_params['maxtb'] = 320.0
 
     # Some definitions include seasonal values for wintrc, wslope, wxlimt
     if 'wintrc' not in bt_params.keys():
