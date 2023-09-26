@@ -651,13 +651,9 @@ def apply_invalid_ice_mask(
     Implementation of GSFC fortran `sst_clean_sb2()` routine.
     """
     is_not_land = conc != land_flag_value
-    # is_not_miss = conc != missing_flag_value
-    # is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
-
     is_not_land_sst = is_not_land & invalid_ice_mask
 
     ice_sst = conc.copy()
-    # ice_sst[is_not_land_miss_sst] = 0.0
     ice_sst[is_not_land_sst] = 0.0
 
     return ice_sst
@@ -671,7 +667,7 @@ def coastal_fix(
     # The minimum ice concentration as a percentage (10 == 10%)
     minic: float,
 ):
-    # Apply coastal_fix() routine per Bootstrap
+    # Apply coastal_fix() routine per Bootstrap.
 
     # Calculate 'temp' array
     #   -1 is no ice
@@ -1198,7 +1194,11 @@ def bootstrap_for_cdr(
 
 
 def fill_pole_hole(conc):
-    """Fill the pole hole with the average of nearby missing values."""
+    """Fill the pole hole with the average of nearby missing values.
+
+    TODO: This routine needs a better way of determining how big the pole
+    hole region should be rather than assumptions based on grid size.
+    """
     ydim, xdim = conc.shape
     pole_radius = 50
     if xdim == 1680:
@@ -1216,6 +1216,8 @@ def fill_pole_hole(conc):
 
     half_ydim = ydim // 2
     half_xdim = xdim // 2
+
+    # Note: near_pole_conc is a view into the pole-hole region of conc
     near_pole_conc = conc[
         half_ydim - pole_radius : half_ydim + pole_radius,
         half_xdim - pole_radius : half_xdim + pole_radius,
@@ -1225,6 +1227,8 @@ def fill_pole_hole(conc):
 
     near_pole_mean = np.mean(near_pole_conc[~is_pole_hole])
     near_pole_conc[is_pole_hole] = near_pole_mean
+
+    return conc
 
 
 def goddard_bootstrap(
@@ -1292,10 +1296,9 @@ def goddard_bootstrap(
     conc[conc < params.minic] = 0
 
     jdim, idim = conc.shape
+    # If middle of land_mask is land, this is SH and needs no pole hole fill
     if not params.land_mask[jdim // 2, idim // 2]:
-        # With no land in middle of mask, this is NH
-        # conc = fill_pole_hole(conc)
-        fill_pole_hole(conc)
+        conc = fill_pole_hole(conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
