@@ -33,7 +33,7 @@ def _get_a2l1c_625_data_fields_nc(
     date: dt.date,
     hemisphere: Hemisphere,
     verbose=True,
-    tbfn_='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
+    tbfn_template='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc': str,  # noqa
     timeframe: str,
 ) -> xr.Dataset:
     """Find raw binary files used for 6.25km NH from AMSR2 L1C (NSIDC-0763).
@@ -181,7 +181,7 @@ def get_a2l1c_625_tbs(
     base_dir: Path,
     date: dt.date,
     hemisphere: Hemisphere,
-    ncfn_,
+    ncfn_template,
     timeframe,
 ) -> xr.Dataset:
     """Return CETB Tbs for the given date and hemisphere as an xr dataset."""
@@ -200,7 +200,7 @@ def get_a2l1c_625_tbs(
                 base_dir=base_dir,
                 date=date,
                 hemisphere=hemisphere,
-                tbfn_=ncfn_,
+                tbfn_template=ncfn_template,
                 timeframe=timeframe,  # noqa
             )
         except FileNotFoundError:

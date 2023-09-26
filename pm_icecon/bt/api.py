@@ -1,4 +1,4 @@
-# from pathlib import Path
+from pathlib import Path
 
 import datetime as dt
 
@@ -11,7 +11,6 @@ from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
 from pm_icecon.bt.params.amsr2 import get_amsr2_params
 from pm_icecon.config.models.bt import BootstrapParams
 
-# from pm_icecon.constants import BOOTSTRAP_MASKS_DIR
 from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
@@ -54,10 +53,10 @@ def a2l1c_goddard_bootstrap(
     *,
     date: dt.date,
     hemisphere: Hemisphere,
-    tb_dir,
-    anc_dir,
-    ncfn_,
-    timeframe,
+    tb_dir: Path,
+    anc_dir: Path,
+    ncfn_template: str,
+    timeframe: str,
 ) -> xr.Dataset:
     """Compute sea ice concentration from L1C 6.25km TBs.
 
@@ -71,7 +70,7 @@ def a2l1c_goddard_bootstrap(
         base_dir=tb_dir,
         date=date,
         hemisphere='north',
-        ncfn_=ncfn_,
+        ncfn_template=ncfn_template,
         timeframe=timeframe,
     )
 
