@@ -1,6 +1,6 @@
-"""amsr2.py: bootstrap parameters file.
+"""amsr2_goddard.py: bootstrap parameters file.
 
-Bootstrap parameters for use with AMSR2 derived from AU_SI products
+Bootstrap parameters derived by Goddard for use with AMSR2 from AU_SI products
 
 Parameters were originally pulled from `ret_parameters_amsru2.f`.
 """
@@ -37,7 +37,7 @@ AMSR2_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=84.73,
                 wslope=0.5352,
-                wxlimt=13.7
+                wxlimt=18.39,
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -48,7 +48,7 @@ AMSR2_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=82.71,
                 wslope=0.5352,
-                wxlimt=21.7
+                wxlimt=23.34,
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
@@ -75,7 +75,7 @@ AMSR2_SOUTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=85.13,
                 wslope=0.5379,
-                wxlimt=14.3
+                wxlimt=18.596,
             ),
         ),
     ],
