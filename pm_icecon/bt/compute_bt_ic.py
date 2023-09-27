@@ -149,7 +149,6 @@ def get_adj_ad_line_offset_v2(
     HV37. For data points below the offset AD line, the V1937 tbs et is used
     instead.
     """
-    #wtp_x, wtp_y = wtp_set[0], wtp_set[1]
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
 
@@ -326,7 +325,6 @@ def _get_ic(
     *,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    #wtp_set: TiepointSet,
     wtp_xaxis: float,
     wtp_yaxis: float,
     iline: Line,
@@ -334,8 +332,6 @@ def _get_ic(
     maxic: float,
 ):
     """Get fractional ice concentration without rad adjustment."""
-    #wtp_x = wtp_set[0]
-    #wtp_y = wtp_set[1]
     wtp_x = wtp_xaxis
     wtp_y = wtp_yaxis
     iline_off = iline['offset']
@@ -404,25 +400,18 @@ def _get_len_between_points(
 
 def calc_rad_coeffs(
     *,
-    #itp_set: TiepointSet,
-    #wtp_set: TiepointSet,
     wtp_xaxis: float,
     wtp_yaxis: float,
     itp_xaxis: float,
     itp_yaxis: float,
     line: Line,
 ):
-    #rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
-    #rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
     rad_slope = (itp_yaxis - wtp_yaxis) / (itp_xaxis - wtp_xaxis)
     rad_offset = wtp_yaxis - (wtp_xaxis * rad_slope)
 
-    #xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
-    #yint = (line['slope'] * xint) + line['offset']
     xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
-    #rad_len = _get_len_between_points(x1=xint, x2=wtp_set[0], y1=yint, y2=wtp_set[1])
     rad_len = _get_len_between_points(x1=xint, x2=wtp_xaxis, y1=yint, y2=wtp_yaxis)
 
     return (rad_slope, rad_offset, rad_len)
@@ -433,8 +422,6 @@ def _rad_adjust_ic(
     ic: npt.NDArray,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    #itp_set: TiepointSet,
-    #wtp_set: TiepointSet,
     wtp_xaxis: float,
     wtp_yaxis: float,
     itp_xaxis: float,
@@ -444,8 +431,6 @@ def _rad_adjust_ic(
     adjusted_ic = ic.copy()
 
     radslp, rad_line_offset, radlen = calc_rad_coeffs(
-        #itp_set=itp_set,
-        #wtp_set=wtp_set,
         wtp_xaxis=wtp_xaxis,
         wtp_yaxis=wtp_yaxis,
         itp_xaxis=itp_xaxis,
@@ -454,7 +439,6 @@ def _rad_adjust_ic(
     )
 
     is_tby_lt_rc = tby < (radslp * tbx + rad_line_offset)
-    #iclen = _get_len_between_points(x1=tbx, x2=wtp_set[0], y1=tby, y2=wtp_set[1])
     iclen = _get_len_between_points(x1=tbx, x2=wtp_xaxis, y1=tby, y2=wtp_yaxis)
     is_iclen_gt_radlen = iclen > radlen
     adjusted_ic[is_tby_lt_rc & is_iclen_gt_radlen] = 1.0
@@ -574,7 +558,6 @@ def get_weather_mask_v2(
     tb_mask: npt.NDArray[np.bool_],
     ln1: Line,
     date: dt.date,
-    #weather_filter_seasons: list[WeatherFilterParamsForSeason],
     wintrc,
     wslope,
     wxlimt,
@@ -898,8 +881,6 @@ def _calc_frac_conc_for_tbset(
     *,
     tbx,
     tby,
-    #wtp_set: TiepointSet,
-    #itp_set: TiepointSet,
     wtp_xaxis: float,
     wtp_yaxis: float,
     itp_xaxis: float,
@@ -912,7 +893,6 @@ def _calc_frac_conc_for_tbset(
     ic = _get_ic(
         tbx=tbx,
         tby=tby,
-        #wtp_set=wtp_set,
         wtp_xaxis=wtp_xaxis,
         wtp_yaxis=wtp_yaxis,
         iline=line,
@@ -924,8 +904,6 @@ def _calc_frac_conc_for_tbset(
         ic=ic,
         tbx=tbx,
         tby=tby,
-        #itp_set=itp_set,
-        #wtp_set=wtp_set,
         wtp_xaxis=wtp_xaxis,
         wtp_yaxis=wtp_yaxis,
         itp_xaxis=itp_xaxis,
@@ -941,10 +919,6 @@ def calc_bootstrap_conc(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    #wtp_set_37v37h: TiepointSet,
-    #wtp_set_37v19v: TiepointSet,
-    #itp_set_37v37h: TiepointSet,
-    #itp_set_37v19v: TiepointSet,
     wtp_37v: float,
     wtp_37h: float,
     wtp_19v: float,
@@ -961,16 +935,9 @@ def calc_bootstrap_conc(
 
     Concentrations are given as percentage (0-100%).
     """
-    #wtp_37v, wtp_37h = wtp_set_37v37h
-    #itp_37v, itp_37h = itp_set_37v37h
-    #wtp_19h = wtp_set_37v19v[1]
-    #itp_19h = itp_set_37v19v[1]
-    # ic_frac == 'ice concentration fraction'
     ic_frac_37v37h = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_h37,
-        #wtp_set=wtp_set_37v37h,
-        #itp_set=itp_set_37v37h,
         wtp_xaxis=wtp_37v,
         wtp_yaxis=wtp_37h,
         itp_xaxis=itp_37v,
@@ -983,8 +950,6 @@ def calc_bootstrap_conc(
     ic_frac_37v19v = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_v19,
-        #wtp_set=wtp_set_37v19v,
-        #itp_set=itp_set_37v19v,
         wtp_xaxis=wtp_37v,
         wtp_yaxis=wtp_19v,
         itp_xaxis=itp_37v,
@@ -1156,10 +1121,6 @@ def bootstrap_for_cdr(
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
-        #wtp_set_37v37h=wtp_set_37v37h,
-        #wtp_set_37v19v=wtp_set_37v19v,
-        #itp_set_37v37h=params.vh37_params.ice_tie_point_set,
-        #itp_set_37v19v=params.v1937_params.ice_tie_point_set,
         wtp_37v=wtp_set_37v37h[0],
         wtp_37h=wtp_set_37v37h[1],
         wtp_19v=wtp_set_37v19v[1],
