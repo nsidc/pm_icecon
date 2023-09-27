@@ -61,6 +61,7 @@ def cdr(
     nt_shoremap: npt.NDArray,
     missing_flag_value,
     land_flag_value,
+    use_only_nt2_spillover=True,
 ) -> npt.NDArray:
     """Run the CDR algorithm."""
     # First, get bootstrap conc.
@@ -135,10 +136,12 @@ def cdr(
     #   that can be applied to the input concentration instead of returning a new
     #   conc. Then we would have a seprate algorithm for choosing how to apply
     #   multiple spillover deltas to a given conc field.
-    use_only_nt2_spillover = True
-    # use_only_nt2_spillover = False
+    # TODO: The land spillover routines should be moved out of this code and
+    #   into their own methods.  Then, they can be called as the recipe requires
     if use_only_nt2_spillover:
         logger.info('Applying NT2 land spillover technique...')
+        # TODO: Use gridid to indicate the necessary information for
+        #   the spillover algorithm.  Array shape is too fragile.
         if tb_h19.shape == (896, 608):
             # NH
             l90c = load_or_create_land90_conc(
@@ -171,8 +174,9 @@ def cdr(
             cdr_conc = apply_nt2b_land_spillover(cdr_conc, adj123, l90c)
 
         else:
-            raise SystemExit(
-                'Could not determine hemisphere from tb shape: {tb_h19.shape}'
+            raise RuntimeError(
+                f'Could not determine hemisphere from tb shape: {tb_h19.shape}'
+                ' while attempting to apply NT2 land spillover algorithm'
             )
     else:
         # nasateam first:

@@ -1,11 +1,6 @@
 from functools import cached_property
 
-# For Pydantic ~1.9
-# from pydantic import BaseModel, Extra
 from pydantic import BaseModel
-
-# For Pydantic 2.0
-# from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 class ConfigBaseModel(BaseModel):
@@ -30,14 +25,3 @@ class ConfigBaseModel(BaseModel):
         keep_untouched = (cached_property,)
 
         arbitrary_types_allowed = True
-
-
-'''
-class ConfigBaseModel(BaseModel):
-    """Implements 'faux' immutability and allows usage of `functools.cached_property`.
-    This version is for Pydantic 2.0
-    See https://docs.pydantic.dev/dev-v2/usage/model_config/
-    """
-    model_config = ConfigDict(str_max_length=10)
-    model_config['arbitrary_types_allowed'] = True
-'''

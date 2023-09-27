@@ -7,9 +7,9 @@ from pm_icecon.bt._types import Line, Tiepoint, TiepointSet
 from pm_icecon.config.models.base_model import ConfigBaseModel
 
 
-def cast_as_TiepointSet(tp1, tp2):
+def cast_as_TiepointSet(tp1, tp2) -> TiepointSet:
     # Cast a pair of floats as a TiepointSet
-    return (Tiepoint(tp1), Tiepoint(tp2))
+    return TiepointSet(Tiepoint(tp1), Tiepoint(tp2))
 
 
 class WeatherFilterParams(ConfigBaseModel):
