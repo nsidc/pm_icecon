@@ -18,7 +18,10 @@ def test__get_wx_params_in_between_seasons():
     expected = WeatherFilterParams(
         wintrc=((date.day / 32.0) * (82.71 - 84.73)) + 84.73,
         wslope=0.5352,
-        wxlimt=((date.day / 32.0) * (23.34 - 18.39)) + 18.39,
+        # These are the values for the original Goddard values
+        # wxlimt=((date.day / 32.0) * (23.34 - 18.39)) + 18.39,
+        # These are the values for the CDR-derived values
+        wxlimt=((date.day / 32.0) * (21.7 - 13.7)) + 13.7,
     )
     actual = _get_wx_params(
         date=date,
@@ -27,7 +30,13 @@ def test__get_wx_params_in_between_seasons():
         ),
     )
 
-    assert expected == actual
+    try:
+        assert expected == actual
+    except AssertionError as e:
+        print('Failed expected == actual assertion')
+        print(f'expected:\n{expected}')
+        print(f'actual:\n{actual}')
+        raise e
 
 
 def test__get_wx_params_wrap_around_seasons():
@@ -37,7 +46,10 @@ def test__get_wx_params_wrap_around_seasons():
     expected = WeatherFilterParams(
         wintrc=((date.day / 32.0) * (84.73 - 82.71)) + 82.71,
         wslope=0.5352,
-        wxlimt=((date.day / 32.0) * (18.39 - 23.34)) + 23.34,
+        # Original Goddard values:
+        # wxlimt=((date.day / 32.0) * (18.39 - 23.34)) + 23.34,
+        # CDR-calculated values:
+        wxlimt=((date.day / 32.0) * (13.7 - 21.7)) + 21.7,
     )
     actual = _get_wx_params(
         date=date,
@@ -51,10 +63,17 @@ def test__get_wx_params_wrap_around_seasons():
 
 def test__get_wx_params_for_provided_season():
     date = dt.date(2020, 1, 16)
+    # Original Goddard values:
     expected = WeatherFilterParams(
         wintrc=84.73,
         wslope=0.5352,
         wxlimt=18.39,
+    )
+    # CDR-calculated values:
+    expected = WeatherFilterParams(
+        wintrc=84.73,
+        wslope=0.5352,
+        wxlimt=13.7,
     )
     actual = _get_wx_params(
         date=date,
