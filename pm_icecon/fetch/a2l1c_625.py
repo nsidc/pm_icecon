@@ -33,7 +33,7 @@ def _get_a2l1c_625_data_fields_nc(
     date: dt.date,
     hemisphere: Hemisphere,
     verbose=True,
-    tbfn_template:str='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
+    tbfn_template: str = 'NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
     timeframe: str,
 ) -> xr.Dataset:
     """Find raw binary files used for 6.25km NH from AMSR2 L1C (NSIDC-0763).
@@ -56,7 +56,7 @@ def _get_a2l1c_625_data_fields_nc(
         else:
             # native SIR grid is 3.125km
             gridres = '3.125'
-        tbfn = tbfn_.format(
+        tbfn = tbfn_template.format(
             hemlet=hemisphere[0].upper(),
             gridres=gridres,
             year=year,
@@ -208,7 +208,7 @@ def get_a2l1c_625_tbs(
                 f'Could not find a2l1c input files in base_dir: {base_dir},'
                 f' date: {date},'
                 f' hemisphere: {hemisphere},'
-                f' tbfn_template: {tbfn_template},'
+                f' ncfn_template: {ncfn_template},'
                 f' timeframe: {timeframe}'
             )
 

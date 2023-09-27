@@ -141,6 +141,7 @@ def get_adj_ad_line_offset_v2(
     perc=0.92,
 ) -> float:
     """Return the AD line offset.
+
     This version uses individual tie points, not a TiepointSet
 
     The AD line offset is used to determine between which tb set should be used
