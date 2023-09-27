@@ -16,7 +16,6 @@ from pm_icecon.config.models.bt import (
 )
 
 north_vh37_params = TbSetParams(
-    # water_tie_point_set=TiepointSet((Tiepoint(201.916), Tiepoint(132.815))),
     water_tie_point_set=(Tiepoint(201.916), Tiepoint(132.815)),
     ice_tie_point_set=(Tiepoint(255.670), Tiepoint(241.713)),
     lnline=Line(offset=-73.5471, slope=1.21104),
