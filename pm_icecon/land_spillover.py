@@ -32,11 +32,11 @@ The algorithm has two passes:
 
 
 def read_adj123_file(
-    gridid='psn12.5': str,
-    xdim=608: int,
-    ydim=896: int,
-    anc_dir='/share/apps/amsr2-cdr/nasateam2_ancillary': str,
-    adj123_fn_template='{anc_dir}/coastal_adj_diag123_{gridid}.dat': str,
+    gridid: str = 'psn12.5',
+    xdim: int = 608,
+    ydim: int = 896,
+    anc_dir: str = '/share/apps/amsr2-cdr/nasateam2_ancillary',
+    adj123_fn_template: str = '{anc_dir}/coastal_adj_diag123_{gridid}.dat',
 ):
     """Read the diagonal adjacency 123 file."""
     coast_adj_fn = adj123_fn_template.format(anc_dir=anc_dir, gridid=gridid)
@@ -47,19 +47,19 @@ def read_adj123_file(
 
 
 def create_land90_conc_file(
-    gridid='psn12.5': str,
-    xdim=608: int,
-    ydim=896: int,
-    anc_dir='/share/apps/amsr2-cdr/nasateam2_ancillary': str,
-    adj123_fn_template='{anc_dir}/coastal_adj_diag123_{gridid}.dat': str,
-    write_l90c_file=True: bool,
-    l90c_fn_template='{anc_dir}/land90_conc_{gridid}.dat': str,
+    gridid: str = 'psn12.5',
+    xdim: int = 608,
+    ydim: int = 896,
+    anc_dir: str = '/share/apps/amsr2-cdr/nasateam2_ancillary',
+    adj123_fn_template: str = '{anc_dir}/coastal_adj_diag123_{gridid}.dat',
+    write_l90c_file: bool = True,
+    l90c_fn_template: str = '{anc_dir}/land90_conc_{gridid}.dat',
 ):
     """Create the land90-conc file.
 
     The 'land90' array is a mock sea ice concentration array that is calculated
     from the land mask.  It assumes that the mock concentration value will be
-    the average of a 7x7 array of local surface mask values centered on the 
+    the average of a 7x7 array of local surface mask values centered on the
     center pixel.  Water grid cells are considered to have a sea ice
     concentration of zero.  Land grid cells are considered to have a sea ice
     concentration of 90%.  The average of the 49 grid cells in the 7x7 array
@@ -86,12 +86,12 @@ def create_land90_conc_file(
 
 
 def load_or_create_land90_conc(
-    gridid='psn12.5': str,
-    xdim=608: int,
-    ydim=896: int,
-    anc_dir='/share/apps/amsr2-cdr/nasateam2_ancillary': str,
-    l90c_fn_template='{anc_dir}/land90_conc_{gridid}.dat': str,
-    overwrite=False: bool,
+    gridid: str = 'psn12.5',
+    xdim: int = 608,
+    ydim: int = 896,
+    anc_dir: str = '/share/apps/amsr2-cdr/nasateam2_ancillary',
+    l90c_fn_template: str = '{anc_dir}/land90_conc_{gridid}.dat',
+    overwrite: bool = False,
 ):
     # Attempt to load the land90_conc field, and if fail, create it
     l90c_fn = l90c_fn_template.format(anc_dir=anc_dir, gridid=gridid)
