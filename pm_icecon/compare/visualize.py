@@ -195,7 +195,7 @@ def do_comparisons(
     _ax = fig.add_subplot(2, 2, 1, projection=map_proj)
 
     # Visualize the comparison conc.
-    _ax.title.set_text(f'{comparison_dataproduct} provided conc')
+    _ax.title.set_text(f'{comparison_dataproduct} provided conc')  # type: ignore
     _ax.set_xticks([])
     _ax.set_yticks([])
     save_conc_image(
@@ -206,7 +206,7 @@ def do_comparisons(
     )
 
     _ax = fig.add_subplot(2, 2, 2, projection=map_proj)
-    _ax.title.set_text(
+    _ax.title.set_text(  # type: ignore
         f'Python calculated conc from {pm_icecon_dataproduct}'
         f' using the {pm_icecon_algorithm} algorithm.'
     )
@@ -242,14 +242,14 @@ def do_comparisons(
     comparison_conc_masked = comparison_conc_masked.where(common_validice, 0)
     diff = pm_icecon_conc - comparison_conc_masked
     _ax = fig.add_subplot(2, 2, 3, projection=map_proj)
-    _ax.title.set_text('Python minus comparison conc')
+    _ax.title.set_text('Python minus comparison conc')  # type: ignore
     _ax.set_xticks([])
     _ax.set_yticks([])
-    _ax.coastlines()
+    _ax.coastlines()  # type: ignore
     plt.imshow(
         diff.data,
         cmap='RdBu',
-        extent=extent,
+        extent=extent,  # type: ignore
         vmin=-100,
         vmax=100,
     )
@@ -266,7 +266,7 @@ def do_comparisons(
     percent_different = (pixels_different / total_pixels) * 100
 
     _ax = fig.add_subplot(2, 2, 4)
-    _ax.title.set_text(
+    _ax.title.set_text(  # type: ignore
         'Histogram of non-zero differences'
         '\n'
         f'{percent_different:.3}% of pixels are different.'
