@@ -580,7 +580,7 @@ def a2l1c(
         hemisphere=hemisphere,
         tb_dir=tb_dir,
         anc_dir=anc_dir,
-        ncfn_=nctbfn_template,
+        ncfn_template=nctbfn_template,
         timeframe=timeframe,
     )
 

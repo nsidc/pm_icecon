@@ -254,7 +254,7 @@ def calculate_water_tiepoint(
         return (initial_value - 10) < value < (initial_value + 10)
 
     if not _within_plusminus_10(wtp_init, calculated_wtp):
-        calculated_wtp = wtp_init
+        calculated_wtp = Tiepoint(wtp_init)
 
     return calculated_wtp
 

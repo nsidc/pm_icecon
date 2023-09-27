@@ -16,14 +16,14 @@ tbs = get_au_si25_tbs(
 import datetime as dt
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Union
 
 import xarray as xr
 from loguru import logger
 
 from pm_icecon._types import Hemisphere
 
-AU_SI_RESOLUTIONS = Literal['25', '12', str]
+AU_SI_RESOLUTIONS = Union[Literal['25'], Literal['12'], str]
 
 
 def _get_au_si_fp(base_dir: Path, date: dt.date, resolution: AU_SI_RESOLUTIONS) -> Path:
