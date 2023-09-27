@@ -1023,7 +1023,6 @@ def bootstrap_for_cdr_orig(
         tbx=tb_v37,
         tby=tb_v19,
     )
-
     ad_line_offset = get_adj_ad_line_offset(
         wtp_set=wtp_set_37v37h,
         line_37v37h=line_37v37h,
@@ -1069,6 +1068,7 @@ def bootstrap_for_cdr(
     tb_mask: npt.NDArray[np.bool_],
     weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
+    dont_use_tiepointset:bool=False,
 ) -> npt.NDArray:
     """Calculate raw Bootstrap sea ice concentration field.
 
@@ -1085,6 +1085,42 @@ def bootstrap_for_cdr(
         add=params.add1,
         weather_mask=weather_mask,
     )
+
+    if dont_use_tiepointset:
+        # This is a dummy set of function calls because vulture
+        # declares these methods as unused...but they will eventually
+        # be used to replace the current methods that use TiepointSet
+        # variables...which we are trying to get away from
+
+        # calculate_water_tiepoint() will be called for each water tiepoint
+        wtp_tb_v37 = calculate_water_tiepoint(
+            wtp_init=12.,  # this "12" is just a dummy placeholder
+            weather_mask=weather_mask,
+            tbx=tb_v37,
+        )
+        assert wtp_tb_v37 is not None
+
+        ad_line_offset = get_adj_ad_line_offset_v2(
+            wtp_x=12.3,
+            wtp_y=24.8,
+            line_37v37h=line_37v37h,
+            perc=0.92,
+        )
+
+        weather_mask = get_weather_mask_v2(
+            v37=tb_v37,
+            h37=tb_h37,
+            v22=tb_v22,
+            v19=tb_v19,
+            land_mask=params.land_mask,
+            tb_mask=tb_mask,
+            ln1=params.vh37_params.lnline,
+            date=date,
+            weather_filter_seasons=params.weather_filter_seasons,
+            wintrc=1.2, # dummy placeholder var
+            wslop=2.3, # dummy placeholder var
+            wxlimt=3.4, # dummy placeholder var
+        )
 
     wtp_set_37v37h = get_water_tiepoint_set(
         wtp_set_default=params.vh37_params.water_tie_point_set,
