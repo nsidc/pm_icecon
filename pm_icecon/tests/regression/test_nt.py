@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import get_args
 
 import numpy as np
 import xarray as xr
@@ -89,10 +90,7 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
 
 def test_nt_f17_regressions():
     """Regression test for NT F17 output."""
-    for hemisphere in (
-        'north',
-        'south',
-    ):
+    for hemisphere in get_args(Hemisphere):
         regression_ds = xr.open_dataset(
             CDR_TESTDATA_DIR
             / 'nt_f17_regression'

@@ -1,6 +1,6 @@
-from typing import Literal, Union
+from typing import Literal
 
-Hemisphere = Union[Literal['north'], Literal['south'], str]
+Hemisphere = Literal['north', 'south']
 
 # TODO: can we make the algorithms satellite-independent? Currently code
 #       branches in e.g., `compute_bt_ic` that rely on exact string matches for
