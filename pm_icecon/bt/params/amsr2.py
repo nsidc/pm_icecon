@@ -4,12 +4,12 @@ Bootstrap parameters for use with AMSR2 derived from AU_SI products
 
 Parameters were originally pulled from `ret_parameters_amsru2.f`.
 """
-from typing import TypedDict
 import datetime as dt
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
+from pm_icecon.bt.params._types import ParamsDict
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     TbSetParams,
@@ -18,12 +18,6 @@ from pm_icecon.config.models.bt import (
 )
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
-
-class ParamsDict(TypedDict):
-    vh37_params: TbSetParams
-    v1937_params: TbSetParams
-    weather_filter_seasons: list[WeatherFilterParamsForSeason]
-
 
 AMSR2_NORTH_PARAMS = ParamsDict(
     vh37_params=TbSetParams(
