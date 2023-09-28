@@ -452,7 +452,7 @@ def _rad_adjust_ic(
 def _get_wx_params(
     *,
     date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],  # type: ignore
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> WeatherFilterParams:
     """Return weather filter params for a given date.
 
