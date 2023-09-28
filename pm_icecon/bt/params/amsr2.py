@@ -36,7 +36,9 @@ AMSR2_NORTH_PARAMS = ParamsDict(
             start_month=11,
             end_month=4,
             weather_filter_params=WeatherFilterParams(
-                wintrc=84.73, wslope=0.5352, wxlimt=13.7
+                wintrc=84.73,
+                wslope=0.5352,
+                wxlimt=13.7,
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -45,7 +47,9 @@ AMSR2_NORTH_PARAMS = ParamsDict(
             start_month=6,
             end_month=9,
             weather_filter_params=WeatherFilterParams(
-                wintrc=82.71, wslope=0.5352, wxlimt=21.7
+                wintrc=82.71,
+                wslope=0.5352,
+                wxlimt=21.7,
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
