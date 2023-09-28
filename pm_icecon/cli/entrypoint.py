@@ -11,12 +11,12 @@ def cli():
     ...
 
 
-cli.add_command(bt_cli)  # type: ignore
-cli.add_command(nt_cli)  # type: ignore
-cli.add_command(cdr_cli)  # type: ignore
+cli.add_command(bt_cli)
+cli.add_command(nt_cli)
+cli.add_command(cdr_cli)
 
 
 if __name__ == '__main__':
     from pm_icecon.cli.entrypoint import cli
 
-    cli()  # type: ignore
+    cli()
