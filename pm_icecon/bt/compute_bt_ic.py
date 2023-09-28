@@ -1094,15 +1094,15 @@ def bootstrap_for_cdr(
 
         # calculate_water_tiepoint() will be called for each water tiepoint
         wtp_tb_v37 = calculate_water_tiepoint(
-            wtp_init=12.0,  # this "12" is just a dummy placeholder
+            wtp_init=Tiepoint(12.0),  # this "12" is just a dummy placeholder
             weather_mask=weather_mask,
             tb=tb_v37,
         )
         assert wtp_tb_v37 is not None
 
         ad_line_offset = get_adj_ad_line_offset_v2(
-            wtp_x=12.3,
-            wtp_y=24.8,
+            wtp_x=Tiepoint(12.3),
+            wtp_y=Tiepoint(24.8),
             line_37v37h=line_37v37h,
             perc=0.92,
         )
