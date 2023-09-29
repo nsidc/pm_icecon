@@ -1,4 +1,4 @@
-"""amsr2_goddard.py: bootstrap parameters file.
+"""AMSR2 Bootstrap parameters from Goddard.
 
 Bootstrap parameters derived by Goddard for use with AMSR2 from AU_SI products
 

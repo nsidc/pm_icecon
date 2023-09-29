@@ -1,84 +1,67 @@
-"""amsr2.py: bootstrap parameters file.
+"""AMSR2 Bootstrap parameters.
 
 Bootstrap parameters for use with AMSR2 derived from AU_SI products
 
-Parameters were originally pulled from `ret_parameters_amsru2.f`.
+Parameters are based on values rom `ret_parameters_amsru2.f`. Updates have been
+made to the weather filter paramters (`wxlimt`).
 """
 import datetime as dt
 
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
-from pm_icecon.bt.params._types import ParamsDict
+from pm_icecon.bt.params.amsr2_goddard import AMSR2_NORTH_PARAMS as goddard_north_params
+from pm_icecon.bt.params.amsr2_goddard import AMSR2_SOUTH_PARAMS as goddard_south_params
 from pm_icecon.config.models.bt import (
     BootstrapParams,
-    TbSetParams,
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
-AMSR2_NORTH_PARAMS = ParamsDict(
-    vh37_params=TbSetParams(
-        water_tie_point_set=(Tiepoint(207.2), Tiepoint(131.9)),
-        ice_tie_point_set=(Tiepoint(256.3), Tiepoint(241.2)),
-        lnline=Line(offset=-71.99, slope=1.20),
-    ),
-    v1937_params=TbSetParams(
-        water_tie_point_set=(Tiepoint(207.2), Tiepoint(182.4)),
-        ice_tie_point_set=(Tiepoint(256.3), Tiepoint(258.9)),
-        lnline=Line(offset=48.26, slope=0.8048),
-    ),
-    weather_filter_seasons=[
-        # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
-        WeatherFilterParamsForSeason(
-            start_month=11,
-            end_month=4,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=84.73,
-                wslope=0.5352,
-                wxlimt=13.7,
-            ),
+AMSR2_NORTH_PARAMS = goddard_north_params.copy()
+AMSR2_NORTH_PARAMS['weather_filter_seasons'] = [
+    # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
+    WeatherFilterParamsForSeason(
+        start_month=11,
+        end_month=4,
+        weather_filter_params=WeatherFilterParams(
+            wintrc=84.73,
+            wslope=0.5352,
+            # The wxlimit was updated from 18.39
+            wxlimt=13.7,
         ),
-        # May (`seas=2`) will get interpolated from the previous and next season
-        # June through Sept. (`seas=3`)
-        WeatherFilterParamsForSeason(
-            start_month=6,
-            end_month=9,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=82.71,
-                wslope=0.5352,
-                wxlimt=21.7,
-            ),
+    ),
+    # May (`seas=2`) will get interpolated from the previous and next season
+    # June through Sept. (`seas=3`)
+    WeatherFilterParamsForSeason(
+        start_month=6,
+        end_month=9,
+        weather_filter_params=WeatherFilterParams(
+            wintrc=82.71,
+            wslope=0.5352,
+            # The wxlimt was updated from 23.34
+            wxlimt=21.7,
         ),
-        # October (`seas=4`) will get interpolated from the previous and next
-        # (first in this list) season.
-    ],
-)
+    ),
+    # October (`seas=4`) will get interpolated from the previous and next
+    # (first in this list) season.
+]
 
-AMSR2_SOUTH_PARAMS = ParamsDict(
-    vh37_params=TbSetParams(
-        water_tie_point_set=(Tiepoint(207.6), Tiepoint(131.9)),
-        ice_tie_point_set=(Tiepoint(259.4), Tiepoint(247.3)),
-        lnline=Line(offset=-90.62, slope=1.2759),
-    ),
-    v1937_params=TbSetParams(
-        water_tie_point_set=(Tiepoint(207.6), Tiepoint(182.7)),
-        ice_tie_point_set=(Tiepoint(259.4), Tiepoint(261.6)),
-        lnline=Line(offset=62.89, slope=0.7618),
-    ),
-    weather_filter_seasons=[
-        # Just one season for the S. hemisphere.
-        WeatherFilterParamsForSeason(
-            start_month=1,
-            end_month=12,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=85.13, wslope=0.5379, wxlimt=14.3
-            ),
+AMSR2_SOUTH_PARAMS = goddard_south_params.copy()
+AMSR2_SOUTH_PARAMS['weather_filter_seasons'] = [
+    # Just one season for the S. hemisphere.
+    WeatherFilterParamsForSeason(
+        start_month=1,
+        end_month=12,
+        weather_filter_params=WeatherFilterParams(
+            wintrc=85.13,
+            wslope=0.5379,
+            # The wxlimit was updated from 18.596
+            wxlimt=14.3,
         ),
-    ],
-)
+    ),
+]
 
 
 def get_amsr2_params(
