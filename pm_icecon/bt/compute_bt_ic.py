@@ -135,8 +135,8 @@ def get_adj_ad_line_offset(
 
 def get_adj_ad_line_offset_v2(
     *,
-    wtp_x: float,
-    wtp_y: float,
+    wtp_x: Tiepoint,
+    wtp_y: Tiepoint,
     line_37v37h: Line,
     perc=0.92,
 ) -> float:
@@ -239,7 +239,7 @@ def get_water_tiepoint_set(
 
 def calculate_water_tiepoint(
     *,
-    wtp_init: float,
+    wtp_init: Tiepoint,
     weather_mask: npt.NDArray[np.bool_],
     tb,
 ) -> float:
@@ -326,8 +326,8 @@ def _get_ic(
     *,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
     iline: Line,
     missing_flag_value,
     maxic: float,
@@ -401,10 +401,10 @@ def _get_len_between_points(
 
 def calc_rad_coeffs(
     *,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
-    itp_xaxis: float,
-    itp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
 ):
     rad_slope = (itp_yaxis - wtp_yaxis) / (itp_xaxis - wtp_xaxis)
@@ -423,10 +423,10 @@ def _rad_adjust_ic(
     ic: npt.NDArray,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
-    itp_xaxis: float,
-    itp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
 ):
     adjusted_ic = ic.copy()
@@ -452,7 +452,7 @@ def _rad_adjust_ic(
 def _get_wx_params(
     *,
     date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],  # type: ignore
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> WeatherFilterParams:
     """Return weather filter params for a given date.
 
@@ -882,10 +882,10 @@ def _calc_frac_conc_for_tbset(
     *,
     tbx,
     tby,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
-    itp_xaxis: float,
-    itp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
     missing_flag_value: float | int,
     maxic,
@@ -920,12 +920,12 @@ def calc_bootstrap_conc(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    wtp_37v: float,
-    wtp_37h: float,
-    wtp_19v: float,
-    itp_37v: float,
-    itp_37h: float,
-    itp_19v: float,
+    wtp_37v: Tiepoint,
+    wtp_37h: Tiepoint,
+    wtp_19v: Tiepoint,
+    itp_37v: Tiepoint,
+    itp_37h: Tiepoint,
+    itp_19v: Tiepoint,
     line_37v37h: Line,
     line_37v19v: Line,
     ad_line_offset: float,
@@ -1094,15 +1094,15 @@ def bootstrap_for_cdr(
 
         # calculate_water_tiepoint() will be called for each water tiepoint
         wtp_tb_v37 = calculate_water_tiepoint(
-            wtp_init=12.0,  # this "12" is just a dummy placeholder
+            wtp_init=Tiepoint(12.0),  # this "12" is just a dummy placeholder
             weather_mask=weather_mask,
             tb=tb_v37,
         )
         assert wtp_tb_v37 is not None
 
         ad_line_offset = get_adj_ad_line_offset_v2(
-            wtp_x=12.3,
-            wtp_y=24.8,
+            wtp_x=Tiepoint(12.3),
+            wtp_y=Tiepoint(24.8),
             line_37v37h=line_37v37h,
             perc=0.92,
         )

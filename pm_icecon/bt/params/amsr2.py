@@ -9,6 +9,7 @@ import datetime as dt
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
+from pm_icecon.bt.params._types import ParamsDict
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     TbSetParams,
@@ -18,7 +19,7 @@ from pm_icecon.config.models.bt import (
 from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
-AMSR2_NORTH_PARAMS = dict(
+AMSR2_NORTH_PARAMS = ParamsDict(
     vh37_params=TbSetParams(
         water_tie_point_set=(Tiepoint(207.2), Tiepoint(131.9)),
         ice_tie_point_set=(Tiepoint(256.3), Tiepoint(241.2)),
@@ -35,7 +36,9 @@ AMSR2_NORTH_PARAMS = dict(
             start_month=11,
             end_month=4,
             weather_filter_params=WeatherFilterParams(
-                wintrc=84.73, wslope=0.5352, wxlimt=13.7
+                wintrc=84.73,
+                wslope=0.5352,
+                wxlimt=13.7,
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -44,7 +47,9 @@ AMSR2_NORTH_PARAMS = dict(
             start_month=6,
             end_month=9,
             weather_filter_params=WeatherFilterParams(
-                wintrc=82.71, wslope=0.5352, wxlimt=21.7
+                wintrc=82.71,
+                wslope=0.5352,
+                wxlimt=21.7,
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
@@ -52,7 +57,7 @@ AMSR2_NORTH_PARAMS = dict(
     ],
 )
 
-AMSR2_SOUTH_PARAMS = dict(
+AMSR2_SOUTH_PARAMS = ParamsDict(
     vh37_params=TbSetParams(
         water_tie_point_set=(Tiepoint(207.6), Tiepoint(131.9)),
         ice_tie_point_set=(Tiepoint(259.4), Tiepoint(247.3)),
@@ -97,7 +102,7 @@ def get_amsr2_params(
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),  # type: ignore  # noqa
+        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
     )
 
     return bt_params
