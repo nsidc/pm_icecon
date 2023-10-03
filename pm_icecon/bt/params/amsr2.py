@@ -6,6 +6,8 @@ Parameters were originally pulled from `ret_parameters_amsru2.f`.
 """
 import datetime as dt
 
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
@@ -16,7 +18,6 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 AMSR2_NORTH_PARAMS = ParamsDict(

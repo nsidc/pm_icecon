@@ -12,6 +12,7 @@ import datetime as dt
 
 import numpy as np
 import numpy.typing as npt
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import (
@@ -19,7 +20,6 @@ from pm_icecon.constants import (
     BT_GODDARD_ANCILLARY_DIR,
     CDR_TESTDATA_DIR,
 )
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.util import get_ps25_grid_shape
 
 

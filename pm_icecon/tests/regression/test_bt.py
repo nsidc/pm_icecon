@@ -6,6 +6,7 @@ import pytest
 import xarray as xr
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
@@ -15,7 +16,6 @@ from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params.goddard_class import SSMIS_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_TESTDATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
