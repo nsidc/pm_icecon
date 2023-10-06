@@ -8,6 +8,7 @@ NSIDC
 import datetime as dt
 
 import numpy as np
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line
@@ -20,7 +21,6 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParamsForSeason,
     cast_as_TiepointSet,
 )
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
