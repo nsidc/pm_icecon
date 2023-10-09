@@ -117,12 +117,10 @@ def get_au_si_bt_conc(
     hemisphere: Hemisphere,
     resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> xr.DataArray:
-    ds = au_si._get_au_si_data_fields(
-        # TODO: DRY out base dir defualt. No need to pass this around...
-        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
+    ds = au_si.get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
-        resolution=resolution,  # type: ignore[arg-type]
+        resolution=resolution,
     )
 
     # flip the image to be 'right-side' up
