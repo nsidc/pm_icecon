@@ -118,7 +118,6 @@ def _original_f18_example() -> xr.Dataset:
     return conc_ds
 
 
-@pytest.mark.skip(reason='new bt_f18_regression files needed')
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     actual_ds = _original_f18_example()

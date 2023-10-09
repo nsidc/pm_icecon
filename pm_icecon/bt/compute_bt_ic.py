@@ -1190,7 +1190,15 @@ def bootstrap_for_cdr(
     return conc
 
 
-def fill_pole_hole(conc):
+# TODO: This pole hole logic should be refactored.
+#       Specifically, the definition of the pixels for which missing data
+#       will be considered "pole hole" rather than simply "missing (because
+#       of lack of sensor observation)" is on the same level of abstraction
+#       as a "land_mask", and therefore should be identified and stored as
+#       ancillary data in a similar location and with similar level of
+#       description, including the derivation of the set of grid cells
+#       identified as "pole hole".
+def fill_pole_hole_bt(conc):
     """Fill the pole hole with the average of nearby missing values.
 
     TODO: This routine needs a better way of determining how big the pole
@@ -1205,7 +1213,7 @@ def fill_pole_hole(conc):
     elif xdim == 3360:
         pole_radius = 30
     elif xdim == 304:
-        pole_radius = 30
+        pole_radius = 10
     elif xdim == 720:
         pole_radius = 10
     else:
@@ -1295,7 +1303,7 @@ def goddard_bootstrap(
     jdim, idim = conc.shape
     # If middle of land_mask is land, this is SH and needs no pole hole fill
     if not params.land_mask[jdim // 2, idim // 2]:
-        conc = fill_pole_hole(conc)
+        conc = fill_pole_hole_bt(conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 
