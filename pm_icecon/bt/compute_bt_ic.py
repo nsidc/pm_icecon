@@ -1016,23 +1016,6 @@ def bootstrap_for_cdr(
         missing_flag_value=missing_flag_value,
     )
 
-    """ Original ordering of call to calc_bootstrap_conc()
-    conc = calc_bootstrap_conc(
-        maxic_frac=params.maxic,
-        line_37v37h=line_37v37h,
-        ad_line_offset=ad_line_offset,
-        line_37v19v=line_37v19v,
-        wtp_set_37v37h=wtp_set_37v37h,
-        wtp_set_37v19v=wtp_set_37v19v,
-        itp_set_37v37h=params.vh37_params.ice_tie_point_set,
-        itp_set_37v19v=params.v1937_params.ice_tie_point_set,
-        tb_v37=tb_v37,
-        tb_h37=tb_h37,
-        tb_v19=tb_v19,
-        missing_flag_value=missing_flag_value,
-    )
-    """
-
     return conc
 
 
