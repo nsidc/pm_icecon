@@ -9,6 +9,7 @@ configurable for the user. Perhaps these should me moved into the `params`
 subpackage (e.g., `bt.params`)
 """
 import datetime as dt
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
@@ -108,7 +109,7 @@ def get_ps_land_mask(
     return land_mask
 
 
-def get_e2n625_land_mask(anc_dir) -> npt.NDArray[np.bool_]:
+def get_e2n625_land_mask(anc_dir: Path) -> npt.NDArray[np.bool_]:
     """Get the northern hemisphere e2n625 land mask.
 
     The authoritative mask for the NH EASE2 Arctic subset
