@@ -1,8 +1,9 @@
 import datetime as dt
 
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
 from pm_icecon.nt.params.amsr2 import get_amsr2_params

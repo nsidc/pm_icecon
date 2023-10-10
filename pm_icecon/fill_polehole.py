@@ -8,16 +8,27 @@ In general, these will be grid and sensor dependent
 import numpy as np
 
 
+# TODO: This pole hole logic should be refactored.
+#       Specifically, the definition of the pixels for which missing data
+#       will be considered "pole hole" rather than simply "missing (because
+#       of lack of sensor observation)" is on the same level of abstraction
+#       as a "land_mask", and therefore should be identified and stored as
+#       ancillary data in a similar location and with similar level of
+#       description, including the derivation of the set of grid cells
+#       identified as "pole hole".
 def fill_pole_hole(conc):
-    is_psn125 = conc.shape == (896, 608)
-
-    if not is_psn125:
-        raise ValueError(f'Could not determine pole hole for grid shape: {conc.shape}')
+    """Fill pole hole for Polar Stereo 12.5km grid.
 
     # Identify pole hole pixels for psn12.5
     # These pixels were identified by examining AUSI12-derived NH fields in 2021
     #    and are one ortho and diag from the commonly no-data pixels near
     #    the pole that year from AU_SI12 products
+    """
+    is_psn125 = conc.shape == (896, 608)
+
+    if not is_psn125:
+        raise ValueError(f'Could not determine pole hole for grid shape: {conc.shape}')
+
     pole_pixels = np.zeros((896, 608), dtype=np.uint8)
     pole_pixels[461, 304 : 311 + 1] = 1
     pole_pixels[462, 303 : 312 + 1] = 1

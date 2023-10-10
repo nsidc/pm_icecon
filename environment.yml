@@ -16,7 +16,7 @@ dependencies:
   - flake8-docstrings ~=1.6
   - invoke ~=1.7
   - isort ~=5.10
-  - mypy ~=1.0
+  - mypy ~=1.5
   - pytest ~=7.1
   - vulture ~=2.4
   # debugging/development tools
@@ -41,3 +41,4 @@ dependencies:
   - pandas ~=1.4.4
   - seaice ~=6.0
   - pyresample ~=1.27
+  - pm_tb_data ~=0.1.2

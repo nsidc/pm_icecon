@@ -135,8 +135,8 @@ def get_adj_ad_line_offset(
 
 def get_adj_ad_line_offset_v2(
     *,
-    wtp_x: float,
-    wtp_y: float,
+    wtp_x: Tiepoint,
+    wtp_y: Tiepoint,
     line_37v37h: Line,
     perc=0.92,
 ) -> float:
@@ -239,7 +239,7 @@ def get_water_tiepoint_set(
 
 def calculate_water_tiepoint(
     *,
-    wtp_init: float,
+    wtp_init: Tiepoint,
     weather_mask: npt.NDArray[np.bool_],
     tb,
 ) -> float:
@@ -326,8 +326,8 @@ def _get_ic(
     *,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
     iline: Line,
     missing_flag_value,
     maxic: float,
@@ -401,10 +401,10 @@ def _get_len_between_points(
 
 def calc_rad_coeffs(
     *,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
-    itp_xaxis: float,
-    itp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
 ):
     rad_slope = (itp_yaxis - wtp_yaxis) / (itp_xaxis - wtp_xaxis)
@@ -423,10 +423,10 @@ def _rad_adjust_ic(
     ic: npt.NDArray,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
-    itp_xaxis: float,
-    itp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
 ):
     adjusted_ic = ic.copy()
@@ -452,7 +452,7 @@ def _rad_adjust_ic(
 def _get_wx_params(
     *,
     date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],  # type: ignore
+    weather_filter_seasons: list[WeatherFilterParamsForSeason],
 ) -> WeatherFilterParams:
     """Return weather filter params for a given date.
 
@@ -882,10 +882,10 @@ def _calc_frac_conc_for_tbset(
     *,
     tbx,
     tby,
-    wtp_xaxis: float,
-    wtp_yaxis: float,
-    itp_xaxis: float,
-    itp_yaxis: float,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
     missing_flag_value: float | int,
     maxic,
@@ -920,12 +920,12 @@ def calc_bootstrap_conc(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    wtp_37v: float,
-    wtp_37h: float,
-    wtp_19v: float,
-    itp_37v: float,
-    itp_37h: float,
-    itp_19v: float,
+    wtp_37v: Tiepoint,
+    wtp_37h: Tiepoint,
+    wtp_19v: Tiepoint,
+    itp_37v: Tiepoint,
+    itp_37h: Tiepoint,
+    itp_19v: Tiepoint,
     line_37v37h: Line,
     line_37v19v: Line,
     ad_line_offset: float,
@@ -1094,15 +1094,15 @@ def bootstrap_for_cdr(
 
         # calculate_water_tiepoint() will be called for each water tiepoint
         wtp_tb_v37 = calculate_water_tiepoint(
-            wtp_init=12.0,  # this "12" is just a dummy placeholder
+            wtp_init=Tiepoint(12.0),  # this "12" is just a dummy placeholder
             weather_mask=weather_mask,
             tb=tb_v37,
         )
         assert wtp_tb_v37 is not None
 
         ad_line_offset = get_adj_ad_line_offset_v2(
-            wtp_x=12.3,
-            wtp_y=24.8,
+            wtp_x=Tiepoint(12.3),
+            wtp_y=Tiepoint(24.8),
             line_37v37h=line_37v37h,
             perc=0.92,
         )
@@ -1190,40 +1190,78 @@ def bootstrap_for_cdr(
     return conc
 
 
-def fill_pole_hole(conc):
+# TODO: This pole hole logic should be refactored.
+#       Specifically, the definition of the pixels for which missing data
+#       will be considered "pole hole" rather than simply "missing (because
+#       of lack of sensor observation)" is on the same level of abstraction
+#       as a "land_mask", and therefore should be identified and stored as
+#       ancillary data in a similar location and with similar level of
+#       description, including the derivation of the set of grid cells
+#       identified as "pole hole".
+def fill_pole_hole_bt(conc):
     """Fill the pole hole with the average of nearby missing values.
 
     TODO: This routine needs a better way of determining how big the pole
     hole region should be rather than assumptions based on grid size.
     """
     ydim, xdim = conc.shape
+
+    # TODO: This logic can be tightened up.  Multiples of 720 indicate
+    #       that we are using an EASE2 grid, and that the North Pole --
+    #       and therefore the pole hole -- is near the center of the grid.
+    #  For the polar stereo grid (see below) the pole hole pixels are
+    #       specified by manually creating a pole hole mask kernel.
     pole_radius = 50
-    if xdim == 1680:
+    grid_projection = 'EASE2'
+    if xdim == 3360:
+        pole_radius = 30
+    elif xdim == 1680:
         pole_radius = 15
     elif xdim == 840:
         pole_radius = 8
-    elif xdim == 3360:
-        pole_radius = 30
-    elif xdim == 304:
-        pole_radius = 30
     elif xdim == 720:
         pole_radius = 10
+    elif xdim == 304:
+        grid_projection = 'PS'
+    elif xdim == 304:
+        grid_projection = 'PS'
     else:
-        raise ValueError(f'Could not determine pole_radius for xdim {xdim}')
+        raise ValueError(f'Could not determine pole_radius for xdim: {xdim}')
 
-    half_ydim = ydim // 2
-    half_xdim = xdim // 2
+    if grid_projection == 'EASE2':
+        half_ydim = ydim // 2
+        half_xdim = xdim // 2
 
-    # Note: near_pole_conc is a view into the pole-hole region of conc
-    near_pole_conc = conc[
-        half_ydim - pole_radius : half_ydim + pole_radius,
-        half_xdim - pole_radius : half_xdim + pole_radius,
-    ]
+        # Note: near_pole_conc is a view into the pole-hole region of conc
+        near_pole_conc = conc[
+            half_ydim - pole_radius : half_ydim + pole_radius,
+            half_xdim - pole_radius : half_xdim + pole_radius,
+        ]
+    elif grid_projection == 'PS':
+        ph25ymin = 230
+        ph25ymax = 238
+        ph25xmin = 150
+        ph25xmax = 157
+
+        if xdim == 304:
+            # Use pixel set appropriate for AMSR2 pole hole on 25km PSN grid
+            near_pole_conc = conc[ph25ymin:ph25ymax, ph25xmin:ph25xmax]
+        elif xdim == 608:
+            # Use pixel set appropriate for AMSR2 pole hole on 12.5km PSN grid
+            near_pole_conc = conc[ph25ymin * 2:ph25ymax * 2, ph25xmin * 2:ph25xmax * 2]
+        elif xdim == 1216:
+            # Use pixel set appropriate for AMSR2 pole hole on 6.25km PSN grid
+            near_pole_conc = conc[ph25ymin * 4:ph25ymax * 4, ph25xmin * 4:ph25xmax * 4]
+        else:
+            raise ValueError(f'Expecting NH polar stereo, but unrecognized xdim: {xdim}')
 
     is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
 
     near_pole_mean = np.mean(near_pole_conc[~is_pole_hole])
+
     near_pole_conc[is_pole_hole] = near_pole_mean
+
+    logger.info(f'Filled missing values at pole hole with: {near_pole_mean}')
 
     return conc
 
@@ -1295,7 +1333,7 @@ def goddard_bootstrap(
     jdim, idim = conc.shape
     # If middle of land_mask is land, this is SH and needs no pole hole fill
     if not params.land_mask[jdim // 2, idim // 2]:
-        conc = fill_pole_hole(conc)
+        conc = fill_pole_hole_bt(conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 

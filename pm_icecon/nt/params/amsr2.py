@@ -4,10 +4,10 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 from loguru import logger
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import CDR_TESTDATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,

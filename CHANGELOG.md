@@ -8,6 +8,8 @@
 * Refactor of Bootstrap and NASA Team algorithms to allow CDR to apply weather
   filters and land spillover adjustments independently of the sea ice
   concentration calculation.
+* Replace `fetch` subpackage with usage of `pm_tb_data`. See the [`pm_tb_data`
+  repository](https://github.com/nsidc/pm_tb_data) for more information.
 
 # 0.1.1
 

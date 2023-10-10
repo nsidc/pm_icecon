@@ -14,6 +14,7 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 from matplotlib import pyplot as plt
+from pm_tb_data.fetch import au_si
 
 import pm_icecon.nt.api as nt_api
 from pm_icecon._types import Hemisphere
@@ -21,7 +22,6 @@ from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.cdr import amsr2_cdr
 from pm_icecon.compare.ref_data import get_au_si_bt_conc, get_cdr, get_sea_ice_index
-from pm_icecon.fetch import au_si
 from pm_icecon.masks import get_ps_pole_hole_mask
 from pm_icecon.nt.masks import get_ps25_sst_mask
 from pm_icecon.tests.regression import test_nt
