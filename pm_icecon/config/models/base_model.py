@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 
 class ConfigBaseModel(BaseModel):
@@ -14,8 +14,7 @@ class ConfigBaseModel(BaseModel):
 
     class Config:
         # Throw an error if any unexpected attrs are provided. default: 'ignore'
-        # TODO: Once the parameters are determined, uncomment this line
-        # extra = Extra.forbid
+        extra = Extra.forbid
 
         # https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
         allow_mutation = False
