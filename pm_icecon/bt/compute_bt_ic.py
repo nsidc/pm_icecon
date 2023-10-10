@@ -6,7 +6,6 @@ and computes:
 """
 
 import calendar
-import copy
 import datetime as dt
 import warnings
 from functools import reduce
@@ -18,7 +17,7 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 
-from pm_icecon.bt._types import Line, Tiepoint, TiepointSet
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -170,44 +169,12 @@ def _get_wtp(
     return wtp
 
 
-def get_water_tiepoint_set(
-    *,
-    wtp_set_default: TiepointSet,
-    weather_mask: npt.NDArray[np.bool_],
-    tbx,
-    tby,
-) -> TiepointSet:
-    """Return the deafult or calculate new water tiepoint set.
-
-    If the calculated water tiepoints are within +/- 10 of the
-    `wtp_set_default`, use the newly calculated values.
-    """
-    wtpx = _get_wtp(weather_mask, tbx)
-    wtpy = _get_wtp(weather_mask, tby)
-
-    new_wtp_set = list(copy.copy(wtp_set_default))
-
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    def _within_plusminus_10(initial_value, value) -> bool:
-        return (initial_value - 10) < value < (initial_value + 10)
-
-    if _within_plusminus_10(wtp_set_default[0], wtpx):
-        new_wtp_set[0] = wtpx
-    if _within_plusminus_10(wtp_set_default[1], wtpy):
-        new_wtp_set[1] = wtpy
-
-    wtp_set_tuple = (new_wtp_set[0], new_wtp_set[1])
-
-    return wtp_set_tuple
-
-
 def calculate_water_tiepoint(
     *,
     wtp_init: Tiepoint,
     weather_mask: npt.NDArray[np.bool_],
     tb,
-) -> float:
+) -> Tiepoint:
     """Return the default or calculate new water tiepoint.
 
     If the calculated water tiepoints are within +/- 10 of the
@@ -913,7 +880,6 @@ def bootstrap_for_cdr(
     tb_mask: npt.NDArray[np.bool_],
     weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
-    dont_use_tiepointset: bool = False,
 ) -> npt.NDArray:
     """Calculate raw Bootstrap sea ice concentration field.
 
@@ -931,57 +897,20 @@ def bootstrap_for_cdr(
         weather_mask=weather_mask,
     )
 
-    if dont_use_tiepointset:
-        # This is a dummy set of function calls because vulture
-        # declares these methods as unused...but they will eventually
-        # be used to replace the current methods that use TiepointSet
-        # variables...which we are trying to get away from
-
-        # calculate_water_tiepoint() will be called for each water tiepoint
-        wtp_tb_v37 = calculate_water_tiepoint(
-            wtp_init=Tiepoint(12.0),  # this "12" is just a dummy placeholder
-            weather_mask=weather_mask,
-            tb=tb_v37,
-        )
-
-        ad_line_offset = get_adj_ad_line_offset(
-            wtp_x=Tiepoint(12.3),
-            wtp_y=Tiepoint(24.8),
-            line_37v37h=line_37v37h,
-            perc=0.92,
-        )
-
-        weather_mask = get_weather_mask(
-            v37=tb_v37,
-            h37=tb_h37,
-            v22=tb_v37,
-            v19=tb_v19,
-            land_mask=params.land_mask,
-            tb_mask=tb_mask,
-            ln1=params.vh37_params.lnline,
-            date=dt.date(2000, 1, 1),
-            wintrc=1.2,  # dummy placeholder var
-            wslope=2.3,  # dummy placeholder var
-            wxlimt=3.4,  # dummy placeholder var
-        )
-
-    wtp_set_37v37h = get_water_tiepoint_set(
-        wtp_set_default=params.vh37_params.water_tie_point_set,
+    wtp_tb_v37 = calculate_water_tiepoint(
+        wtp_init=params.vh37_params.water_tie_point_set[0],
         weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_h37,
+        tb=tb_v37,
     )
-
-    wtp_set_37v19v = get_water_tiepoint_set(
-        wtp_set_default=params.v1937_params.water_tie_point_set,
+    wtp_tb_h37 = calculate_water_tiepoint(
+        wtp_init=params.vh37_params.water_tie_point_set[1],
         weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_v19,
+        tb=tb_h37,
     )
 
     ad_line_offset = get_adj_ad_line_offset(
-        wtp_x=wtp_set_37v37h[0],
-        wtp_y=wtp_set_37v37h[1],
+        wtp_x=wtp_tb_v37,
+        wtp_y=wtp_tb_h37,
         line_37v37h=line_37v37h,
     )
 
@@ -998,13 +927,19 @@ def bootstrap_for_cdr(
         ad_line_offset=ad_line_offset,
     )
 
+    wtp_tb_v19 = calculate_water_tiepoint(
+        wtp_init=params.v1937_params.water_tie_point_set[1],
+        weather_mask=weather_mask,
+        tb=tb_v19,
+    )
+
     conc = calc_bootstrap_conc(
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
-        wtp_37v=wtp_set_37v37h[0],
-        wtp_37h=wtp_set_37v37h[1],
-        wtp_19v=wtp_set_37v19v[1],
+        wtp_37v=wtp_tb_v37,
+        wtp_37h=wtp_tb_h37,
+        wtp_19v=wtp_tb_v19,
         itp_37v=params.vh37_params.ice_tie_point_set[0],
         itp_37h=params.vh37_params.ice_tie_point_set[1],
         itp_19v=params.v1937_params.ice_tie_point_set[1],
