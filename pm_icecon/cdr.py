@@ -79,7 +79,7 @@ def cdr(
     season_params = bt._get_wx_params(
         date=date, weather_filter_seasons=bt_params.weather_filter_seasons
     )
-    bt_weather_mask = bt.get_weather_mask_v2(
+    bt_weather_mask = bt.get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,

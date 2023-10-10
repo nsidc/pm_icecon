@@ -549,7 +549,7 @@ def _get_wx_params(
     )
 
 
-def get_weather_mask_v2(
+def get_weather_mask(
     *,
     v37,
     h37,
@@ -1067,7 +1067,7 @@ def bootstrap_for_cdr(
             perc=0.92,
         )
 
-        weather_mask = get_weather_mask_v2(
+        weather_mask = get_weather_mask(
             v37=tb_v37,
             h37=tb_h37,
             v22=tb_v37,
@@ -1259,7 +1259,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    weather_mask = get_weather_mask_v2(
+    weather_mask = get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,
