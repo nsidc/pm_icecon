@@ -583,46 +583,6 @@ def get_weather_mask_v2(
     return is_water
 
 
-def get_weather_mask(
-    *,
-    v37,
-    h37,
-    v22,
-    v19,
-    land_mask: npt.NDArray[np.bool_],
-    tb_mask: npt.NDArray[np.bool_],
-    ln1: Line,
-    date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],
-) -> npt.NDArray[np.bool_]:
-    """Return a water mask that has been weather filtered.
-
-    `True` indicates areas that are water and are weather masked. I.e., `True`
-    values should be treated as open ocean.
-    """
-    season_params = _get_wx_params(
-        date=date,
-        weather_filter_seasons=weather_filter_seasons,
-    )
-    wintrc = season_params.wintrc
-    wslope = season_params.wslope
-    wxlimt = season_params.wxlimt
-
-    # Determine where there is definitely water
-    not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = (wslope * v22) + wintrc
-    watchk2 = v22 - v19
-    watchk4 = (ln1['slope'] * v37) + ln1['offset']
-
-    is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
-    # TODO: where does this 230.0 value come from? Should it be configuratble?
-    is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
-
-    is_water = not_land_or_masked & is_cond1 & is_cond2
-
-    return is_water
-
-
 def apply_invalid_ice_mask(
     *,
     conc,
@@ -1294,7 +1254,12 @@ def goddard_bootstrap(
         max_tb=params.maxtb,
     )
 
-    weather_mask = get_weather_mask(
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
+    )
+
+    weather_mask = get_weather_mask_v2(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,
@@ -1303,7 +1268,9 @@ def goddard_bootstrap(
         tb_mask=tb_mask,
         ln1=params.vh37_params.lnline,
         date=date,
-        weather_filter_seasons=params.weather_filter_seasons,
+        wintrc=season_params.wintrc,
+        wslope=season_params.wslope,
+        wxlimt=season_params.wxlimt,
     )
 
     conc = bootstrap_for_cdr(
