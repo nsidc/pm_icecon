@@ -3,7 +3,6 @@
 land_spillover.py
 """
 
-import os
 from pathlib import Path
 
 import numpy as np
@@ -43,9 +42,9 @@ def read_adj123_file(
     adj123_fn_template: str = '{anc_dir}/coastal_adj_diag123_{gridid}.dat',
 ):
     """Read the diagonal adjacency 123 file."""
-    coast_adj_fn = adj123_fn_template.format(anc_dir=anc_dir, gridid=gridid)
-    assert os.path.isfile(coast_adj_fn)
-    adj123 = np.fromfile(coast_adj_fn, dtype=np.uint8).reshape(ydim, xdim)
+    coast_adj_filepath = Path(adj123_fn_template.format(anc_dir=anc_dir, gridid=gridid))
+    assert coast_adj_filepath.is_file()
+    adj123 = np.fromfile(coast_adj_filepath, dtype=np.uint8).reshape(ydim, xdim)
 
     return adj123
 
@@ -98,14 +97,14 @@ def load_or_create_land90_conc(
     overwrite: bool = False,
 ):
     # Attempt to load the land90_conc field, and if fail, create it
-    l90c_fn = l90c_fn_template.format(anc_dir=anc_dir, gridid=gridid)
-    if overwrite or not os.path.isfile(l90c_fn):
+    l90c_filepath = Path(l90c_fn_template.format(anc_dir=anc_dir, gridid=gridid))
+    if overwrite or not l90c_filepath.is_file():
         data = create_land90_conc_file(
             gridid, xdim, ydim, anc_dir=anc_dir, l90c_fn_template=l90c_fn_template
         )
     else:
-        data = np.fromfile(l90c_fn, dtype=np.float32).reshape(ydim, xdim)
-        logger.info(f'Read NT2 land90 mask from:\n  {l90c_fn}')
+        data = np.fromfile(l90c_filepath, dtype=np.float32).reshape(ydim, xdim)
+        logger.info(f'Read NT2 land90 mask from:\n  {l90c_filepath}')
 
     return data
 
