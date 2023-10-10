@@ -1248,12 +1248,18 @@ def fill_pole_hole_bt(conc):
             near_pole_conc = conc[ph25ymin:ph25ymax, ph25xmin:ph25xmax]
         elif xdim == 608:
             # Use pixel set appropriate for AMSR2 pole hole on 12.5km PSN grid
-            near_pole_conc = conc[ph25ymin * 2:ph25ymax * 2, ph25xmin * 2:ph25xmax * 2]
+            near_pole_conc = conc[
+                ph25ymin * 2 : ph25ymax * 2, ph25xmin * 2 : ph25xmax * 2
+            ]
         elif xdim == 1216:
             # Use pixel set appropriate for AMSR2 pole hole on 6.25km PSN grid
-            near_pole_conc = conc[ph25ymin * 4:ph25ymax * 4, ph25xmin * 4:ph25xmax * 4]
+            near_pole_conc = conc[
+                ph25ymin * 4 : ph25ymax * 4, ph25xmin * 4 : ph25xmax * 4
+            ]
         else:
-            raise ValueError(f'Expecting NH polar stereo, but unrecognized xdim: {xdim}')
+            raise ValueError(
+                f'Expecting NH polar stereo, but unrecognized xdim: {xdim}'
+            )
 
     is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
 
