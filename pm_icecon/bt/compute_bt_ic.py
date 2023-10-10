@@ -6,7 +6,6 @@ and computes:
 """
 
 import calendar
-import copy
 import datetime as dt
 import warnings
 from functools import reduce
@@ -18,7 +17,7 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 
-from pm_icecon.bt._types import Line, Tiepoint, TiepointSet
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -94,49 +93,14 @@ def xfer_class_tbs(
     }
 
 
-# TODO: is this function really specific to 37v37h or should it be more generic?
-# If specific, also rename `wtp` and rename func to make this clear. If not,
-# rename `vh37` kwarg to e.g., 'line'?
 def get_adj_ad_line_offset(
-    *,
-    wtp_set: TiepointSet,
-    line_37v37h: Line,
-    perc=0.92,
-) -> float:
-    """Return the AD line offset.
-
-    The AD line offset is used to determine between which tb set should be used
-    to calculate a pixel's ice concentration. For the Goddard bootstrap
-    algorithm, data points above the offset AD line (appox. AD - 5K) use
-    HV37. For data points below the offset AD line, the V1937 tbs et is used
-    instead.
-    """
-    wtp_x, wtp_y = wtp_set[0], wtp_set[1]
-    off = line_37v37h['offset']
-    slp = line_37v37h['slope']
-
-    x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
-    y = slp * x + off
-
-    dx = wtp_x - x
-    dx2 = perc * dx
-    x2 = wtp_x - dx2
-
-    dy = y - wtp_y
-    dy2 = perc * dy
-    y2 = wtp_y + dy2
-
-    new_off = y2 - slp * x2
-
-    ad_line_offset = off - new_off
-
-    return ad_line_offset
-
-
-def get_adj_ad_line_offset_v2(
     *,
     wtp_x: Tiepoint,
     wtp_y: Tiepoint,
+    # TODO: should this just be `line` instad of `line_37v37h`? Is this
+    # function really specific to that set of channels? If so, maybe it's
+    # worth changing `wtp_x` and `wpt_y` to more clearly indicate `wpt_37v`
+    # and `wtp_37h`.
     line_37v37h: Line,
     perc=0.92,
 ) -> float:
@@ -205,44 +169,12 @@ def _get_wtp(
     return wtp
 
 
-def get_water_tiepoint_set(
-    *,
-    wtp_set_default: TiepointSet,
-    weather_mask: npt.NDArray[np.bool_],
-    tbx,
-    tby,
-) -> TiepointSet:
-    """Return the deafult or calculate new water tiepoint set.
-
-    If the calculated water tiepoints are within +/- 10 of the
-    `wtp_set_default`, use the newly calculated values.
-    """
-    wtpx = _get_wtp(weather_mask, tbx)
-    wtpy = _get_wtp(weather_mask, tby)
-
-    new_wtp_set = list(copy.copy(wtp_set_default))
-
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    def _within_plusminus_10(initial_value, value) -> bool:
-        return (initial_value - 10) < value < (initial_value + 10)
-
-    if _within_plusminus_10(wtp_set_default[0], wtpx):
-        new_wtp_set[0] = wtpx
-    if _within_plusminus_10(wtp_set_default[1], wtpy):
-        new_wtp_set[1] = wtpy
-
-    wtp_set_tuple = (new_wtp_set[0], new_wtp_set[1])
-
-    return wtp_set_tuple
-
-
 def calculate_water_tiepoint(
     *,
     wtp_init: Tiepoint,
     weather_mask: npt.NDArray[np.bool_],
     tb,
-) -> float:
+) -> Tiepoint:
     """Return the default or calculate new water tiepoint.
 
     If the calculated water tiepoints are within +/- 10 of the
@@ -549,7 +481,7 @@ def _get_wx_params(
     )
 
 
-def get_weather_mask_v2(
+def get_weather_mask(
     *,
     v37,
     h37,
@@ -568,46 +500,6 @@ def get_weather_mask_v2(
     `True` indicates areas that are water and are weather masked. I.e., `True`
     values should be treated as open ocean.
     """
-    # Determine where there is definitely water
-    not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = (wslope * v22) + wintrc
-    watchk2 = v22 - v19
-    watchk4 = (ln1['slope'] * v37) + ln1['offset']
-
-    is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
-    # TODO: where does this 230.0 value come from? Should it be configuratble?
-    is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
-
-    is_water = not_land_or_masked & is_cond1 & is_cond2
-
-    return is_water
-
-
-def get_weather_mask(
-    *,
-    v37,
-    h37,
-    v22,
-    v19,
-    land_mask: npt.NDArray[np.bool_],
-    tb_mask: npt.NDArray[np.bool_],
-    ln1: Line,
-    date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],
-) -> npt.NDArray[np.bool_]:
-    """Return a water mask that has been weather filtered.
-
-    `True` indicates areas that are water and are weather masked. I.e., `True`
-    values should be treated as open ocean.
-    """
-    season_params = _get_wx_params(
-        date=date,
-        weather_filter_seasons=weather_filter_seasons,
-    )
-    wintrc = season_params.wintrc
-    wslope = season_params.wslope
-    wxlimt = season_params.wxlimt
-
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = (wslope * v22) + wintrc
@@ -980,86 +872,6 @@ def calc_bootstrap_conc(
     return ic_perc
 
 
-'''  This is the original bootstrap_for_cdr() routine.
-     I am leaving it here while refactoring for reference
-def bootstrap_for_cdr_orig(
-    tb_v37: npt.NDArray,
-    tb_h37: npt.NDArray,
-    tb_v19: npt.NDArray,
-    params: BootstrapParams,
-    # TODO: can we run the algorithm without needing to pass in masks?
-    # Currently used to e.g., calculate water tie points from the
-    # scatterplot of ocean tbs
-    tb_mask: npt.NDArray[np.bool_],
-    weather_mask: npt.NDArray[np.bool_],
-    missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
-) -> npt.NDArray:
-    """Bootstrap algorithm without weather filtering.
-
-    Returns an NDArray with a concentration estimate at every cell.
-
-    Flags values are not set and spillover correction is not applied.
-    """
-    line_37v37h = get_linfit(
-        land_mask=params.land_mask,
-        tb_mask=tb_mask,
-        tbx=tb_v37,
-        tby=tb_h37,
-        lnline=params.vh37_params.lnline,
-        add=params.add1,
-        weather_mask=weather_mask,
-    )
-
-    wtp_set_37v37h = get_water_tiepoint_set(
-        wtp_set_default=params.vh37_params.water_tie_point_set,
-        weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_h37,
-    )
-
-    wtp_set_37v19v = get_water_tiepoint_set(
-        wtp_set_default=params.v1937_params.water_tie_point_set,
-        weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_v19,
-    )
-    ad_line_offset = get_adj_ad_line_offset(
-        wtp_set=wtp_set_37v37h,
-        line_37v37h=line_37v37h,
-    )
-
-    line_37v19v = get_linfit(
-        land_mask=params.land_mask,
-        tb_mask=tb_mask,
-        tbx=tb_v37,
-        tby=tb_v19,
-        lnline=params.v1937_params.lnline,
-        add=params.add2,
-        weather_mask=weather_mask,
-        tba=tb_h37,
-        iceline=line_37v37h,
-        ad_line_offset=ad_line_offset,
-    )
-
-    conc = calc_bootstrap_conc(
-        maxic_frac=params.maxic,
-        line_37v37h=line_37v37h,
-        ad_line_offset=ad_line_offset,
-        line_37v19v=line_37v19v,
-        wtp_set_37v37h=wtp_set_37v37h,
-        wtp_set_37v19v=wtp_set_37v19v,
-        itp_set_37v37h=params.vh37_params.ice_tie_point_set,
-        itp_set_37v19v=params.v1937_params.ice_tie_point_set,
-        tb_v37=tb_v37,
-        tb_h37=tb_h37,
-        tb_v19=tb_v19,
-        missing_flag_value=missing_flag_value,
-    )
-
-    return conc
-'''
-
-
 def bootstrap_for_cdr(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
@@ -1068,7 +880,6 @@ def bootstrap_for_cdr(
     tb_mask: npt.NDArray[np.bool_],
     weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
-    dont_use_tiepointset: bool = False,
 ) -> npt.NDArray:
     """Calculate raw Bootstrap sea ice concentration field.
 
@@ -1086,57 +897,20 @@ def bootstrap_for_cdr(
         weather_mask=weather_mask,
     )
 
-    if dont_use_tiepointset:
-        # This is a dummy set of function calls because vulture
-        # declares these methods as unused...but they will eventually
-        # be used to replace the current methods that use TiepointSet
-        # variables...which we are trying to get away from
-
-        # calculate_water_tiepoint() will be called for each water tiepoint
-        wtp_tb_v37 = calculate_water_tiepoint(
-            wtp_init=Tiepoint(12.0),  # this "12" is just a dummy placeholder
-            weather_mask=weather_mask,
-            tb=tb_v37,
-        )
-        assert wtp_tb_v37 is not None
-
-        ad_line_offset = get_adj_ad_line_offset_v2(
-            wtp_x=Tiepoint(12.3),
-            wtp_y=Tiepoint(24.8),
-            line_37v37h=line_37v37h,
-            perc=0.92,
-        )
-
-        weather_mask = get_weather_mask_v2(
-            v37=tb_v37,
-            h37=tb_h37,
-            v22=tb_v37,
-            v19=tb_v19,
-            land_mask=params.land_mask,
-            tb_mask=tb_mask,
-            ln1=params.vh37_params.lnline,
-            date=dt.date(2000, 1, 1),
-            wintrc=1.2,  # dummy placeholder var
-            wslope=2.3,  # dummy placeholder var
-            wxlimt=3.4,  # dummy placeholder var
-        )
-
-    wtp_set_37v37h = get_water_tiepoint_set(
-        wtp_set_default=params.vh37_params.water_tie_point_set,
+    wtp_tb_v37 = calculate_water_tiepoint(
+        wtp_init=params.vh37_params.water_tie_point_set[0],
         weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_h37,
+        tb=tb_v37,
     )
-
-    wtp_set_37v19v = get_water_tiepoint_set(
-        wtp_set_default=params.v1937_params.water_tie_point_set,
+    wtp_tb_h37 = calculate_water_tiepoint(
+        wtp_init=params.vh37_params.water_tie_point_set[1],
         weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_v19,
+        tb=tb_h37,
     )
 
     ad_line_offset = get_adj_ad_line_offset(
-        wtp_set=wtp_set_37v37h,
+        wtp_x=wtp_tb_v37,
+        wtp_y=wtp_tb_h37,
         line_37v37h=line_37v37h,
     )
 
@@ -1153,13 +927,19 @@ def bootstrap_for_cdr(
         ad_line_offset=ad_line_offset,
     )
 
+    wtp_tb_v19 = calculate_water_tiepoint(
+        wtp_init=params.v1937_params.water_tie_point_set[1],
+        weather_mask=weather_mask,
+        tb=tb_v19,
+    )
+
     conc = calc_bootstrap_conc(
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
-        wtp_37v=wtp_set_37v37h[0],
-        wtp_37h=wtp_set_37v37h[1],
-        wtp_19v=wtp_set_37v19v[1],
+        wtp_37v=wtp_tb_v37,
+        wtp_37h=wtp_tb_h37,
+        wtp_19v=wtp_tb_v19,
         itp_37v=params.vh37_params.ice_tie_point_set[0],
         itp_37h=params.vh37_params.ice_tie_point_set[1],
         itp_19v=params.v1937_params.ice_tie_point_set[1],
@@ -1170,60 +950,87 @@ def bootstrap_for_cdr(
         missing_flag_value=missing_flag_value,
     )
 
-    """ Original ordering of call to calc_bootstrap_conc()
-    conc = calc_bootstrap_conc(
-        maxic_frac=params.maxic,
-        line_37v37h=line_37v37h,
-        ad_line_offset=ad_line_offset,
-        line_37v19v=line_37v19v,
-        wtp_set_37v37h=wtp_set_37v37h,
-        wtp_set_37v19v=wtp_set_37v19v,
-        itp_set_37v37h=params.vh37_params.ice_tie_point_set,
-        itp_set_37v19v=params.v1937_params.ice_tie_point_set,
-        tb_v37=tb_v37,
-        tb_h37=tb_h37,
-        tb_v19=tb_v19,
-        missing_flag_value=missing_flag_value,
-    )
-    """
-
     return conc
 
 
-def fill_pole_hole(conc):
+# TODO: This pole hole logic should be refactored.
+#       Specifically, the definition of the pixels for which missing data
+#       will be considered "pole hole" rather than simply "missing (because
+#       of lack of sensor observation)" is on the same level of abstraction
+#       as a "land_mask", and therefore should be identified and stored as
+#       ancillary data in a similar location and with similar level of
+#       description, including the derivation of the set of grid cells
+#       identified as "pole hole".
+def fill_pole_hole_bt(conc):
     """Fill the pole hole with the average of nearby missing values.
 
     TODO: This routine needs a better way of determining how big the pole
     hole region should be rather than assumptions based on grid size.
     """
     ydim, xdim = conc.shape
+
+    # TODO: This logic can be tightened up.  Multiples of 720 indicate
+    #       that we are using an EASE2 grid, and that the North Pole --
+    #       and therefore the pole hole -- is near the center of the grid.
+    #  For the polar stereo grid (see below) the pole hole pixels are
+    #       specified by manually creating a pole hole mask kernel.
     pole_radius = 50
-    if xdim == 1680:
+    grid_projection = 'EASE2'
+    if xdim == 3360:
+        pole_radius = 30
+    elif xdim == 1680:
         pole_radius = 15
     elif xdim == 840:
         pole_radius = 8
-    elif xdim == 3360:
-        pole_radius = 30
-    elif xdim == 304:
-        pole_radius = 30
     elif xdim == 720:
         pole_radius = 10
+    elif xdim == 304:
+        grid_projection = 'PS'
+    elif xdim == 304:
+        grid_projection = 'PS'
     else:
-        raise ValueError(f'Could not determine pole_radius for xdim {xdim}')
+        raise ValueError(f'Could not determine pole_radius for xdim: {xdim}')
 
-    half_ydim = ydim // 2
-    half_xdim = xdim // 2
+    if grid_projection == 'EASE2':
+        half_ydim = ydim // 2
+        half_xdim = xdim // 2
 
-    # Note: near_pole_conc is a view into the pole-hole region of conc
-    near_pole_conc = conc[
-        half_ydim - pole_radius : half_ydim + pole_radius,
-        half_xdim - pole_radius : half_xdim + pole_radius,
-    ]
+        # Note: near_pole_conc is a view into the pole-hole region of conc
+        near_pole_conc = conc[
+            half_ydim - pole_radius : half_ydim + pole_radius,
+            half_xdim - pole_radius : half_xdim + pole_radius,
+        ]
+    elif grid_projection == 'PS':
+        ph25ymin = 230
+        ph25ymax = 238
+        ph25xmin = 150
+        ph25xmax = 157
+
+        if xdim == 304:
+            # Use pixel set appropriate for AMSR2 pole hole on 25km PSN grid
+            near_pole_conc = conc[ph25ymin:ph25ymax, ph25xmin:ph25xmax]
+        elif xdim == 608:
+            # Use pixel set appropriate for AMSR2 pole hole on 12.5km PSN grid
+            near_pole_conc = conc[
+                ph25ymin * 2 : ph25ymax * 2, ph25xmin * 2 : ph25xmax * 2
+            ]
+        elif xdim == 1216:
+            # Use pixel set appropriate for AMSR2 pole hole on 6.25km PSN grid
+            near_pole_conc = conc[
+                ph25ymin * 4 : ph25ymax * 4, ph25xmin * 4 : ph25xmax * 4
+            ]
+        else:
+            raise ValueError(
+                f'Expecting NH polar stereo, but unrecognized xdim: {xdim}'
+            )
 
     is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
 
     near_pole_mean = np.mean(near_pole_conc[~is_pole_hole])
+
     near_pole_conc[is_pole_hole] = near_pole_mean
+
+    logger.info(f'Filled missing values at pole hole with: {near_pole_mean}')
 
     return conc
 
@@ -1250,6 +1057,11 @@ def goddard_bootstrap(
         max_tb=params.maxtb,
     )
 
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
+    )
+
     weather_mask = get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
@@ -1259,7 +1071,9 @@ def goddard_bootstrap(
         tb_mask=tb_mask,
         ln1=params.vh37_params.lnline,
         date=date,
-        weather_filter_seasons=params.weather_filter_seasons,
+        wintrc=season_params.wintrc,
+        wslope=season_params.wslope,
+        wxlimt=season_params.wxlimt,
     )
 
     conc = bootstrap_for_cdr(
@@ -1295,7 +1109,7 @@ def goddard_bootstrap(
     jdim, idim = conc.shape
     # If middle of land_mask is land, this is SH and needs no pole hole fill
     if not params.land_mask[jdim // 2, idim // 2]:
-        conc = fill_pole_hole(conc)
+        conc = fill_pole_hole_bt(conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 

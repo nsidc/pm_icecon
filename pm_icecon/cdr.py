@@ -23,6 +23,7 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 from loguru import logger
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 
 import pm_icecon.bt.compute_bt_ic as bt
 import pm_icecon.bt.params.amsr2 as bt_amsr2_params
@@ -32,7 +33,6 @@ from pm_icecon._types import Hemisphere
 from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_DATA_DIR, DEFAULT_FLAG_VALUES
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.fill_polehole import fill_pole_hole
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.land_spillover import (
@@ -76,6 +76,9 @@ def cdr(
         max_tb=bt_params.maxtb,
     )
 
+    season_params = bt._get_wx_params(
+        date=date, weather_filter_seasons=bt_params.weather_filter_seasons
+    )
     bt_weather_mask = bt.get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
@@ -85,7 +88,9 @@ def cdr(
         tb_mask=bt_tb_mask,
         ln1=bt_params.vh37_params.lnline,
         date=date,
-        weather_filter_seasons=bt_params.weather_filter_seasons,
+        wintrc=season_params.wintrc,
+        wslope=season_params.wslope,
+        wxlimt=season_params.wxlimt,
     )
     bt_conc = bt.bootstrap_for_cdr(
         tb_v37=tb_v37,

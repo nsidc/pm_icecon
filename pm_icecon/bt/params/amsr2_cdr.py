@@ -1,6 +1,8 @@
 """Routines to yield parameters for Bootstrap.
 
-Bootstrap Parameters for AMSR2 were taken from `ret_parameters_amsru2.f`
+Bootstrap Parameters for AMSR2 were adapted from Goddard parameters
+for AUSI12 input, but use weather coefficient paramters derived at
+NSIDC
 """
 
 import datetime as dt
@@ -38,7 +40,7 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=84.73,
                 wslope=0.5352,
-                wxlimt=18.39,
+                wxlimt=13.7,
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -49,7 +51,7 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=82.71,
                 wslope=0.5352,
-                wxlimt=23.34,
+                wxlimt=21.7,
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
@@ -76,7 +78,7 @@ AMSR2_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=84.73,
                 wslope=0.5352,
-                wxlimt=18.39,
+                wxlimt=13.7,
             ),
         ),
         # May (`seas=2`) will get interpolated from the previous and next season
@@ -87,7 +89,7 @@ AMSR2_NORTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=82.71,
                 wslope=0.5352,
-                wxlimt=23.34,
+                wxlimt=21.7,
             ),
         ),
         # October (`seas=4`) will get interpolated from the previous and next
@@ -112,7 +114,7 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=85.13,
                 wslope=0.5379,
-                wxlimt=18.596,
+                wxlimt=14.3,
             ),
         ),
     ],  # noqa (ignore "not used" flake8 warning)
@@ -137,7 +139,7 @@ AMSR2_SOUTH_PARAMS = dict(
             weather_filter_params=WeatherFilterParams(
                 wintrc=85.13,
                 wslope=0.5379,
-                wxlimt=18.596,
+                wxlimt=14.3,
             ),
         ),
     ],
