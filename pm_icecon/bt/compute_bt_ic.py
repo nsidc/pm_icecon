@@ -943,7 +943,6 @@ def bootstrap_for_cdr(
             weather_mask=weather_mask,
             tb=tb_v37,
         )
-        assert wtp_tb_v37 is not None
 
         ad_line_offset = get_adj_ad_line_offset(
             wtp_x=Tiepoint(12.3),
