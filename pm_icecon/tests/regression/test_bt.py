@@ -2,7 +2,6 @@ import datetime as dt
 from pathlib import Path
 
 import numpy as np
-import pytest
 import xarray as xr
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
@@ -20,7 +19,6 @@ from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 
-@pytest.mark.skip(reason='new bt_amsr2_regression files needed')
 def test_bt_amsr2_regression():
     """Regression test for BT AMSR2 outputs.
 
@@ -37,10 +35,12 @@ def test_bt_amsr2_regression():
             hemisphere='north',
             resolution='25',
         )
+
         filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
         regression_ds = xr.open_dataset(
             CDR_TESTDATA_DIR / 'bt_amsru_regression' / filename
         )
+
         assert_almost_equal(
             regression_ds.conc.data,
             actual_ds.conc.data,

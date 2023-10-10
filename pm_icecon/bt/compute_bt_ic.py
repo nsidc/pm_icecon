@@ -1205,33 +1205,63 @@ def fill_pole_hole_bt(conc):
     hole region should be rather than assumptions based on grid size.
     """
     ydim, xdim = conc.shape
+
+    # TODO: This logic can be tightened up.  Multiples of 720 indicate
+    #       that we are using an EASE2 grid, and that the North Pole --
+    #       and therefore the pole hole -- is near the center of the grid.
+    #  For the polar stereo grid (see below) the pole hole pixels are
+    #       specified by manually creating a pole hole mask kernel.
     pole_radius = 50
-    if xdim == 1680:
+    grid_projection = 'EASE2'
+    if xdim == 3360:
+        pole_radius = 30
+    elif xdim == 1680:
         pole_radius = 15
     elif xdim == 840:
         pole_radius = 8
-    elif xdim == 3360:
-        pole_radius = 30
-    elif xdim == 304:
-        pole_radius = 10
     elif xdim == 720:
         pole_radius = 10
+    elif xdim == 304:
+        grid_projection = 'PS'
+    elif xdim == 304:
+        grid_projection = 'PS'
     else:
-        raise ValueError(f'Could not determine pole_radius for xdim {xdim}')
+        raise ValueError(f'Could not determine pole_radius for xdim: {xdim}')
 
-    half_ydim = ydim // 2
-    half_xdim = xdim // 2
+    if grid_projection == 'EASE2':
+        half_ydim = ydim // 2
+        half_xdim = xdim // 2
 
-    # Note: near_pole_conc is a view into the pole-hole region of conc
-    near_pole_conc = conc[
-        half_ydim - pole_radius : half_ydim + pole_radius,
-        half_xdim - pole_radius : half_xdim + pole_radius,
-    ]
+        # Note: near_pole_conc is a view into the pole-hole region of conc
+        near_pole_conc = conc[
+            half_ydim - pole_radius : half_ydim + pole_radius,
+            half_xdim - pole_radius : half_xdim + pole_radius,
+        ]
+    elif grid_projection == 'PS':
+        ph25ymin = 230
+        ph25ymax = 238
+        ph25xmin = 150
+        ph25xmax = 157
+
+        if xdim == 304:
+            # Use pixel set appropriate for AMSR2 pole hole on 25km PSN grid
+            near_pole_conc = conc[ph25ymin:ph25ymax, ph25xmin:ph25xmax]
+        elif xdim == 608:
+            # Use pixel set appropriate for AMSR2 pole hole on 12.5km PSN grid
+            near_pole_conc = conc[ph25ymin * 2:ph25ymax * 2, ph25xmin * 2:ph25xmax * 2]
+        elif xdim == 1216:
+            # Use pixel set appropriate for AMSR2 pole hole on 6.25km PSN grid
+            near_pole_conc = conc[ph25ymin * 4:ph25ymax * 4, ph25xmin * 4:ph25xmax * 4]
+        else:
+            raise ValueError(f'Expecting NH polar stereo, but unrecognized xdim: {xdim}')
 
     is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
 
     near_pole_mean = np.mean(near_pole_conc[~is_pole_hole])
+
     near_pole_conc[is_pole_hole] = near_pole_mean
+
+    logger.info(f'Filled missing values at pole hole with: {near_pole_mean}')
 
     return conc
 
