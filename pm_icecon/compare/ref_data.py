@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import xarray as xr
+from pm_tb_data.fetch import au_si
 from pyresample import AreaDefinition
 from pyresample.image import ImageContainerNearest
 from seaice.data.api import concentration_daily
@@ -17,7 +18,6 @@ from seaice.nasateam import NORTH, SOUTH
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
-from pm_icecon.fetch import au_si
 from pm_icecon.util import date_range, get_ps12_grid_shape, get_ps25_grid_shape
 
 

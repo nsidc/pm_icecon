@@ -2,10 +2,10 @@ import datetime as dt
 from pathlib import Path
 
 import numpy as np
-import pytest
 import xarray as xr
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
@@ -15,12 +15,10 @@ from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params.goddard_class import SSMIS_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_TESTDATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 
-@pytest.mark.skip(reason='new bt_amsr2_regression files needed')
 def test_bt_amsr2_regression():
     """Regression test for BT AMSR2 outputs.
 
@@ -37,10 +35,12 @@ def test_bt_amsr2_regression():
             hemisphere='north',
             resolution='25',
         )
+
         filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
         regression_ds = xr.open_dataset(
             CDR_TESTDATA_DIR / 'bt_amsru_regression' / filename
         )
+
         assert_almost_equal(
             regression_ds.conc.data,
             actual_ds.conc.data,
@@ -118,7 +118,6 @@ def _original_f18_example() -> xr.Dataset:
     return conc_ds
 
 
-@pytest.mark.skip(reason='new bt_f18_regression files needed')
 def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     actual_ds = _original_f18_example()
