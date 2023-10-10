@@ -185,7 +185,6 @@ def a2l1c(
         timeframe=timeframe,
     )
     output_path = output_dir / output_fn
-    # conc_ds.to_netcdf(output_path)
     conc_ds.astype(np.float32).to_netcdf(output_path, encoding={'conc': {'zlib': True}})
 
     logger.info(f'Wrote a2l1c concentration field: {output_path}')
