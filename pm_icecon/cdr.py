@@ -76,6 +76,9 @@ def cdr(
         max_tb=bt_params.maxtb,
     )
 
+    season_params = bt._get_wx_params(
+        date=date, weather_filter_seasons=bt_params.weather_filter_seasons
+    )
     bt_weather_mask = bt.get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
@@ -85,7 +88,9 @@ def cdr(
         tb_mask=bt_tb_mask,
         ln1=bt_params.vh37_params.lnline,
         date=date,
-        weather_filter_seasons=bt_params.weather_filter_seasons,
+        wintrc=season_params.wintrc,
+        wslope=season_params.wslope,
+        wxlimt=season_params.wxlimt,
     )
     bt_conc = bt.bootstrap_for_cdr(
         tb_v37=tb_v37,
