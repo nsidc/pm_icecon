@@ -94,49 +94,14 @@ def xfer_class_tbs(
     }
 
 
-# TODO: is this function really specific to 37v37h or should it be more generic?
-# If specific, also rename `wtp` and rename func to make this clear. If not,
-# rename `vh37` kwarg to e.g., 'line'?
-def get_adj_ad_line_offset(
-    *,
-    wtp_set: TiepointSet,
-    line_37v37h: Line,
-    perc=0.92,
-) -> float:
-    """Return the AD line offset.
-
-    The AD line offset is used to determine between which tb set should be used
-    to calculate a pixel's ice concentration. For the Goddard bootstrap
-    algorithm, data points above the offset AD line (appox. AD - 5K) use
-    HV37. For data points below the offset AD line, the V1937 tbs et is used
-    instead.
-    """
-    wtp_x, wtp_y = wtp_set[0], wtp_set[1]
-    off = line_37v37h['offset']
-    slp = line_37v37h['slope']
-
-    x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
-    y = slp * x + off
-
-    dx = wtp_x - x
-    dx2 = perc * dx
-    x2 = wtp_x - dx2
-
-    dy = y - wtp_y
-    dy2 = perc * dy
-    y2 = wtp_y + dy2
-
-    new_off = y2 - slp * x2
-
-    ad_line_offset = off - new_off
-
-    return ad_line_offset
-
-
 def get_adj_ad_line_offset_v2(
     *,
     wtp_x: Tiepoint,
     wtp_y: Tiepoint,
+    # TODO: should this just be `line` instad of `line_37v37h`? Is this
+    # function really specific to that set of channels? If so, maybe it's
+    # worth changing `wtp_x` and `wpt_y` to more clearly indicate `wpt_37v`
+    # and `wtp_37h`.
     line_37v37h: Line,
     perc=0.92,
 ) -> float:
@@ -1095,8 +1060,9 @@ def bootstrap_for_cdr(
         tby=tb_v19,
     )
 
-    ad_line_offset = get_adj_ad_line_offset(
-        wtp_set=wtp_set_37v37h,
+    ad_line_offset = get_adj_ad_line_offset_v2(
+        wtp_x=wtp_set_37v37h[0],
+        wtp_y=wtp_set_37v37h[1],
         line_37v37h=line_37v37h,
     )
 
