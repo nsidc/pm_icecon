@@ -3,6 +3,16 @@
 This is a starting point for ensuring that we don't tweak paramters in defined
 parameter sets that are specific to a particular combination of hemisphere,
 sensor, and time.
+
+To compute a checksum for a new set of parameters:
+
+```
+from pm_icecon.path.to.params import new_params
+
+print(_get_config_hash(new_params))
+```
+
+Then setup a new test that asserts that hash doesn't change!
 """
 import hashlib
 import json
