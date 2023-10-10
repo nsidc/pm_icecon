@@ -94,7 +94,7 @@ def xfer_class_tbs(
     }
 
 
-def get_adj_ad_line_offset_v2(
+def get_adj_ad_line_offset(
     *,
     wtp_x: Tiepoint,
     wtp_y: Tiepoint,
@@ -1025,7 +1025,7 @@ def bootstrap_for_cdr(
         )
         assert wtp_tb_v37 is not None
 
-        ad_line_offset = get_adj_ad_line_offset_v2(
+        ad_line_offset = get_adj_ad_line_offset(
             wtp_x=Tiepoint(12.3),
             wtp_y=Tiepoint(24.8),
             line_37v37h=line_37v37h,
@@ -1060,7 +1060,7 @@ def bootstrap_for_cdr(
         tby=tb_v19,
     )
 
-    ad_line_offset = get_adj_ad_line_offset_v2(
+    ad_line_offset = get_adj_ad_line_offset(
         wtp_x=wtp_set_37v37h[0],
         wtp_y=wtp_set_37v37h[1],
         line_37v37h=line_37v37h,
