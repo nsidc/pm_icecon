@@ -4,14 +4,18 @@ land_spillover.py
 """
 
 import os
+from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 from loguru import logger
 from scipy.signal import convolve2d
 
+from pm_icecon.constants import NASATEAM2_ANCILLARY_DIR
+
 # TODO: The various directory vars, eg anc_dir, should be either abstracted
 #   as a constant or passed as a configuration parameter.
+
 # TODO: So too, the filename template strings should be authoritatively
 #   set in a central location.
 
@@ -35,7 +39,7 @@ def read_adj123_file(
     gridid: str = 'psn12.5',
     xdim: int = 608,
     ydim: int = 896,
-    anc_dir: str = '/share/apps/amsr2-cdr/nasateam2_ancillary',
+    anc_dir: Path = NASATEAM2_ANCILLARY_DIR,
     adj123_fn_template: str = '{anc_dir}/coastal_adj_diag123_{gridid}.dat',
 ):
     """Read the diagonal adjacency 123 file."""
@@ -50,7 +54,7 @@ def create_land90_conc_file(
     gridid: str = 'psn12.5',
     xdim: int = 608,
     ydim: int = 896,
-    anc_dir: str = '/share/apps/amsr2-cdr/nasateam2_ancillary',
+    anc_dir: Path = NASATEAM2_ANCILLARY_DIR,
     adj123_fn_template: str = '{anc_dir}/coastal_adj_diag123_{gridid}.dat',
     write_l90c_file: bool = True,
     l90c_fn_template: str = '{anc_dir}/land90_conc_{gridid}.dat',
@@ -89,7 +93,7 @@ def load_or_create_land90_conc(
     gridid: str = 'psn12.5',
     xdim: int = 608,
     ydim: int = 896,
-    anc_dir: str = '/share/apps/amsr2-cdr/nasateam2_ancillary',
+    anc_dir: Path = NASATEAM2_ANCILLARY_DIR,
     l90c_fn_template: str = '{anc_dir}/land90_conc_{gridid}.dat',
     overwrite: bool = False,
 ):

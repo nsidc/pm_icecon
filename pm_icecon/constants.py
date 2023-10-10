@@ -14,3 +14,5 @@ BOOTSTRAP_MASKS_DIR = NSIDC_NFS_SHARE_DIR / 'bootstrap_masks'
 # ancillary nasateam files in cdr_testdata are also in the `NSIDC_NFS_SHARE_DIR`
 CDR_TESTDATA_DIR = NSIDC_NFS_SHARE_DIR / 'cdr_testdata'
 BT_GODDARD_ANCILLARY_DIR = CDR_TESTDATA_DIR / 'bt_goddard_ANCILLARY'
+
+NASATEAM2_ANCILLARY_DIR = CDR_DATA_DIR / 'nasateam2_ancillary'
