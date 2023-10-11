@@ -173,7 +173,7 @@ def get_gridid_resolution(gridid):
         raise ValueError(f'Could not find resolution for gridid: {gridid}')
 
 
-def convert_to_pmicecon_bt_params(hemisphere, params, fields):
+def convert_to_pmicecon_bt_params(hemisphere, params, fields) -> BootstrapParams:
     """Convert to old-style bt_params."""
     oldstyle_bt_params = BootstrapParams(
         land_mask=np.array(fields['land_mask']).squeeze(),
@@ -208,7 +208,7 @@ def get_bootstrap_params(
     date: dt.date,
     satellite: str,
     gridid: str,
-):
+) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
     if satellite == 'amsr2':
