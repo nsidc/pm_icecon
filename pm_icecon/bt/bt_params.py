@@ -175,7 +175,6 @@ def get_gridid_resolution(gridid):
 
 def convert_to_pmicecon_bt_params(hemisphere, params, fields):
     """Convert to old-style bt_params."""
-    # oldstyle_bt_params = {**params, **fields}
     oldstyle_bt_params = BootstrapParams(
         land_mask=np.array(fields['land_mask']).squeeze(),
         # There's no pole hole in the southern hemisphere.
