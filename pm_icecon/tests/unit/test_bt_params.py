@@ -18,8 +18,8 @@ import hashlib
 import json
 from pathlib import Path
 
-import pm_icecon.bt.params.amsr2 as amsr2_params
 import pm_icecon.bt.params.amsr2_goddard as amsr2_goddard_params
+import pm_icecon.bt.params.ausi_amsr2 as amsr2_params
 
 
 # This class stolen from qgreenland's config export code...
