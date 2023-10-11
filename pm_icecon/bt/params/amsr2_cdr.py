@@ -1,8 +1,12 @@
 """Routines to yield parameters for Bootstrap.
 
-Bootstrap Parameters for AMSR2 were adapted from Goddard parameters
-for AUSI12 input, but use weather coefficient paramters derived at
-NSIDC
+Bootstrap Parameters for AMSR2 were adapted from Goddard parameters for AUSI12
+input for use with the CDR, but use weather coefficient paramters derived at
+NSIDC.
+
+TODO: use the params from `ausi_amsr2.py` as the source of these paramters, and
+then override the values we need to change for the CDR (like what is done in
+`ausi_amsr2.py` inheriting from the goddard CLASS params.
 """
 
 import datetime as dt
