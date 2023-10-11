@@ -85,8 +85,8 @@ GODDARD_AMSR2_SOUTH_PARAMS = ParamsDict(
 )
 
 # TODO: rename to indicate these are calculated for the CDR.
-AMSR2_NORTH_PARAMS = GODDARD_AMSR2_NORTH_PARAMS.copy()
-AMSR2_NORTH_PARAMS['weather_filter_seasons'] = [
+CDR_AMSR2_NORTH_PARAMS = GODDARD_AMSR2_NORTH_PARAMS.copy()
+CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons'] = [
     # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
     WeatherFilterParamsForSeason(
         start_month=11,
@@ -114,8 +114,8 @@ AMSR2_NORTH_PARAMS['weather_filter_seasons'] = [
     # (first in this list) season.
 ]
 
-AMSR2_SOUTH_PARAMS = GODDARD_AMSR2_SOUTH_PARAMS.copy()
-AMSR2_SOUTH_PARAMS['weather_filter_seasons'] = [
+CDR_AMSR2_SOUTH_PARAMS = GODDARD_AMSR2_SOUTH_PARAMS.copy()
+CDR_AMSR2_SOUTH_PARAMS['weather_filter_seasons'] = [
     # Just one season for the S. hemisphere.
     WeatherFilterParamsForSeason(
         start_month=1,
@@ -151,7 +151,7 @@ def get_amsr2_params(
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(AMSR2_NORTH_PARAMS if hemisphere == 'north' else AMSR2_SOUTH_PARAMS),
+        **(CDR_AMSR2_NORTH_PARAMS if hemisphere == 'north' else CDR_AMSR2_SOUTH_PARAMS),
     )
 
     return bt_params
