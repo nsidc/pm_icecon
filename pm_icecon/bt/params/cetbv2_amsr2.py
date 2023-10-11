@@ -1,4 +1,4 @@
-"""Bootstrap parameters for AMSR2 CETB product.
+"""Bootstrap parameters for AMSR2 CETB v2 product.
 
 Bootstrap parameters for use with AMSR2 from new CETB product, i.e. either
 NSIDC-0763 or NSIDC-0630 version 2.
