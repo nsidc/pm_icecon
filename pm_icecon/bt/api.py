@@ -8,8 +8,8 @@ from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.params.cetbv2_amsr2 import A2L1C_NORTH_PARAMS
 from pm_icecon.bt.params.amsr2 import get_amsr2_params
+from pm_icecon.bt.params.cetbv2_amsr2 import A2L1C_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_e2n625_land_mask

@@ -1,12 +1,12 @@
 import datetime as dt
 
 from pm_icecon.bt.compute_bt_ic import _get_wx_params
+from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS
 from pm_icecon.bt.params.cetbv2_amsr2 import (
     A2L1C_NORTH_PARAMS,
     _ret_parameters_amsru2_f_params,
 )
-from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS
-from pm_icecon.bt.params.goddard_class import (
+from pm_icecon.bt.params.class_sats import (
     OTHER_NORTH_PARAMS,
     SMMR_NORTH_PARAMS,
     SSMIS_NORTH_PARAMS,
