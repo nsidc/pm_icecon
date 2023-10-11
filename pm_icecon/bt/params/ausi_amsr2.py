@@ -130,6 +130,7 @@ CDR_AMSR2_SOUTH_PARAMS['weather_filter_seasons'] = [
 ]
 
 
+# used to get parameters in `cdr.py`. Not used by the ecdr.
 def get_amsr2_params(
     *,
     date: dt.date,
