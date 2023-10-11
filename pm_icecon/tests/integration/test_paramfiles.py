@@ -1,6 +1,6 @@
 import datetime as dt
 
-from pm_icecon.bt.params.experimental.bt_params import (
+from pm_icecon.bt.params.experimental.ausi12_amsr2 import (
     convert_to_pmicecon_bt_params,
     get_bootstrap_fields,
     get_bootstrap_params,

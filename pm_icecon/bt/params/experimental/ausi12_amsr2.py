@@ -2,7 +2,7 @@
 
 Bootstrap Parameters for AMSR2 were taken from `ret_parameters_amsru2.f`
 
-WIP parameters for AU_SI12 AMSR2 data used by the CDR. 
+WIP parameters for AU_SI12 AMSR2 data used by the CDR.
 """
 
 import datetime as dt
