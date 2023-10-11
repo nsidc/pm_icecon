@@ -7,6 +7,8 @@ NSIDC.
 TODO: use the params from `ausi_amsr2.py` as the source of these paramters, and
 then override the values we need to change for the CDR (like what is done in
 `ausi_amsr2.py` inheriting from the goddard CLASS params.
+
+This code is _only_ used in the ecdr.
 """
 
 import datetime as dt

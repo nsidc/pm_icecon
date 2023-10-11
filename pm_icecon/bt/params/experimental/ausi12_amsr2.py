@@ -3,6 +3,9 @@
 Bootstrap Parameters for AMSR2 were taken from `ret_parameters_amsru2.f`
 
 WIP parameters for AU_SI12 AMSR2 data used by the CDR.
+
+This differs from what's used in the ECDR, which is defined in
+`bt.params.ausi12_amsr2.py`
 """
 
 import datetime as dt
