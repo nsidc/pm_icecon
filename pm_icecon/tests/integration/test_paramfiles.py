@@ -1,10 +1,8 @@
 import datetime as dt
 
 from pm_icecon.bt.fields import get_bootstrap_fields
-from pm_icecon.bt.params.experimental.ausi12_amsr2 import (
-    convert_to_pmicecon_bt_params,
-    get_bootstrap_params,
-)
+from pm_icecon.bt.params.experimental.ausi12_amsr2 import get_bootstrap_params
+from pm_icecon.bt.params.util import convert_to_pmicecon_bt_params
 
 
 def test_get_bootstrap_params():
