@@ -18,6 +18,7 @@ import numpy as np
 from pm_icecon.bt._types import Line
 from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
+from pm_icecon.bt.params.ausi_amsr2 import GODDARD_AMSR2_NORTH_PARAMS
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     TbSetParams,
@@ -28,14 +29,14 @@ from pm_icecon.config.models.bt import (
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
-    bt_wtp_v37=207.2,
-    bt_wtp_h37=131.9,
-    bt_wtp_v19=182.4,
-    bt_itp_v37=256.3,
-    bt_itp_h37=241.2,
-    bt_itp_v19=258.9,
-    vh37_lnline=Line(offset=-71.99, slope=1.20),
-    v1937_lnline=Line(offset=48.26, slope=0.8048),
+    bt_wtp_v37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].water_tie_point_set[0],
+    bt_wtp_h37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].water_tie_point_set[1],
+    bt_wtp_v19=GODDARD_AMSR2_NORTH_PARAMS['v1937_params'].water_tie_point_set[1],
+    bt_itp_v37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].ice_tie_point_set[0],
+    bt_itp_h37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].ice_tie_point_set[1],
+    bt_itp_v19=GODDARD_AMSR2_NORTH_PARAMS['v1937_params'].ice_tie_point_set[1],
+    vh37_lnline=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].lnline,
+    v1937_lnline=GODDARD_AMSR2_NORTH_PARAMS['v1937_params'].lnline,
     weather_filter_seasons=[
         # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
         WeatherFilterParamsForSeason(
