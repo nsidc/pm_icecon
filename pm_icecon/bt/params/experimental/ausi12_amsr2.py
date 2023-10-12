@@ -11,9 +11,7 @@ This differs from what's used in the ECDR, which is defined in
 import datetime as dt
 
 import numpy as np
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line
 from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
@@ -62,44 +60,6 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
     ],
 )
 
-AMSR2_NORTH_PARAMS = dict(
-    vh37_params=TbSetParams(
-        water_tie_point_set=cast_as_TiepointSet(207.2, 131.9),
-        ice_tie_point_set=cast_as_TiepointSet(256.3, 241.2),
-        lnline=Line(offset=-71.99, slope=1.20),
-    ),
-    v1937_params=TbSetParams(
-        water_tie_point_set=cast_as_TiepointSet(207.2, 182.4),
-        ice_tie_point_set=cast_as_TiepointSet(256.3, 258.9),
-        lnline=Line(offset=48.26, slope=0.8048),
-    ),
-    weather_filter_seasons=[
-        # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
-        WeatherFilterParamsForSeason(
-            start_month=11,
-            end_month=4,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=84.73,
-                wslope=0.5352,
-                wxlimt=18.39,
-            ),
-        ),
-        # May (`seas=2`) will get interpolated from the previous and next season
-        # June through Sept. (`seas=3`)
-        WeatherFilterParamsForSeason(
-            start_month=6,
-            end_month=9,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=82.71,
-                wslope=0.5352,
-                wxlimt=23.34,
-            ),
-        ),
-        # October (`seas=4`) will get interpolated from the previous and next
-        # (first in this list) season.
-    ],  # noqa (ignore "not used" flake8 warning)
-)
-
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
     bt_wtp_v37=207.6,
     bt_wtp_h37=131.9,
@@ -121,31 +81,6 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
             ),
         ),
     ],  # noqa (ignore "not used" flake8 warning)
-)
-
-AMSR2_SOUTH_PARAMS = dict(
-    vh37_params=TbSetParams(
-        water_tie_point_set=cast_as_TiepointSet(207.6, 131.9),
-        ice_tie_point_set=cast_as_TiepointSet(259.4, 247.3),
-        lnline=Line(offset=-90.62, slope=1.2759),
-    ),
-    v1937_params=TbSetParams(
-        water_tie_point_set=cast_as_TiepointSet(207.6, 182.7),
-        ice_tie_point_set=cast_as_TiepointSet(259.4, 261.6),
-        lnline=Line(offset=62.89, slope=0.7618),
-    ),
-    weather_filter_seasons=[
-        # Just one season for the S. hemisphere.
-        WeatherFilterParamsForSeason(
-            start_month=1,
-            end_month=12,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=85.13,
-                wslope=0.5379,
-                wxlimt=18.596,
-            ),
-        ),
-    ],
 )
 
 
@@ -284,35 +219,3 @@ def get_bootstrap_fields(
         land_mask=land_mask,
         pole_mask=pole_mask,
     )
-
-
-def get_amsr2_params(
-    *,
-    date: dt.date,
-    hemisphere: Hemisphere,
-    resolution: AU_SI_RESOLUTIONS,
-) -> BootstrapParams:
-    invalid_ice_mask = get_ps_invalid_ice_mask(
-        hemisphere=hemisphere,
-        date=date,
-        resolution=resolution,  # type: ignore[arg-type]
-    )
-
-    if hemisphere == 'north':
-        bt_params = BootstrapParams(
-            land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-            # There's no pole hole in the southern hemisphere.
-            pole_mask=get_ps_pole_hole_mask(resolution=resolution),
-            invalid_ice_mask=invalid_ice_mask,
-            **(AMSR2_NORTH_PARAMS),  # type: ignore
-        )
-    else:  # this is: hemisphere == 'south'
-        bt_params = BootstrapParams(
-            land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-            # There's no pole hole in the southern hemisphere.
-            pole_mask=None,
-            invalid_ice_mask=invalid_ice_mask,
-            **(AMSR2_SOUTH_PARAMS),  # type: ignore
-        )
-
-    return bt_params
