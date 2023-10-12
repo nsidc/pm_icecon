@@ -28,6 +28,7 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParamsForSeason,
     cast_as_TiepointSet,
 )
+from pm_icecon.gridid import get_gridid_hemisphere, get_gridid_resolution
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
@@ -88,35 +89,6 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
         ),
     ],  # noqa (ignore "not used" flake8 warning)
 )
-
-
-# Note: these routines are also in seaice_ecdr's gridid_to_xr_dataarray.py
-def get_gridid_hemisphere(gridid):
-    # Return the hemisphere of the gridid
-    if 'psn' in gridid:
-        return 'north'
-    elif 'e2n' in gridid:
-        return 'north'
-    elif 'pss' in gridid:
-        return 'south'
-    elif 'e2s' in gridid:
-        return 'south'
-    else:
-        raise ValueError(f'Could not find hemisphere for gridid: {gridid}')
-
-
-def get_gridid_resolution(gridid):
-    # Return the hemisphere of the gridid
-    if '3.125' in gridid:
-        return '3.125'
-    elif '6.25' in gridid:
-        return '6.25'
-    elif '12.5' in gridid:
-        return '12.5'
-    elif '25' in gridid:
-        return '25'
-    else:
-        raise ValueError(f'Could not find resolution for gridid: {gridid}')
 
 
 def convert_to_pmicecon_bt_params(hemisphere, params, fields) -> BootstrapParams:
@@ -204,9 +176,6 @@ def get_bootstrap_fields(
 ):
     hemisphere = get_gridid_hemisphere(gridid)
     resolution = get_gridid_resolution(gridid)
-    # Modification for inexact resolution
-    if resolution == '12.5':
-        resolution = '12'
 
     invalid_ice_mask = get_ps_invalid_ice_mask(
         hemisphere=hemisphere,
