@@ -14,10 +14,14 @@ print(_get_config_hash(new_params))
 
 Then setup a new test that asserts that hash doesn't change!
 """
+import datetime as dt
 import hashlib
 import json
 from pathlib import Path
 
+import numpy as np
+
+import pm_icecon.bt.params.ausi12_amsr2 as ausi12_amsr2_params
 import pm_icecon.bt.params.ausi_amsr2 as amsr2_params
 
 
@@ -37,6 +41,8 @@ class MagicJSONEncoder(json.JSONEncoder):
             return o.__json__()
         if hasattr(o, '__dict__'):
             return json.dumps(o.__dict__, cls=MagicJSONEncoder)
+        if isinstance(o, np.ndarray):
+            return np.array2string(o)
 
         return super().default(o)
 
@@ -79,3 +85,18 @@ def test_cdr_amsr2_params():
         _get_config_hash(amsr2_params.CDR_AMSR2_SOUTH_PARAMS)
         == 'f9bd22a2d2c48a874d89c51cb2480436'
     )
+
+
+def test_ausi12_amsr2_bt_params():
+    date = dt.date(2022, 1, 1)
+    fields = ausi12_amsr2_params.get_bootstrap_fields(
+        date=date, satellite='amsr2', gridid='e2ns25'
+    )
+    params = ausi12_amsr2_params.get_bootstrap_params(
+        date=date, satellite='amsr2', gridid='e2ns25'
+    )
+    bt_params = ausi12_amsr2_params.convert_to_pmicecon_bt_params(
+        hemisphere='north', params=params, fields=fields
+    )
+
+    assert _get_config_hash(bt_params) == '8e61f93a2f762e962323f159342d282c'
