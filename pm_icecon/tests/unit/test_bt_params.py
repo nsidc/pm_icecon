@@ -87,7 +87,7 @@ def test_cdr_amsr2_params():
     )
 
 
-def test_ausi12_amsr2_bt_params():
+def test_ausi12_amsr2_bt_params_north():
     date = dt.date(2022, 1, 1)
     fields = ausi12_amsr2_params.get_bootstrap_fields(
         date=date, satellite='amsr2', gridid='e2ns25'
@@ -100,3 +100,18 @@ def test_ausi12_amsr2_bt_params():
     )
 
     assert _get_config_hash(bt_params) == '8e61f93a2f762e962323f159342d282c'
+
+
+def test_ausi12_amsr2_bt_params_south():
+    date = dt.date(2022, 1, 1)
+    fields = ausi12_amsr2_params.get_bootstrap_fields(
+        date=date, satellite='amsr2', gridid='e2ss25'
+    )
+    params = ausi12_amsr2_params.get_bootstrap_params(
+        date=date, satellite='amsr2', gridid='e2ss25'
+    )
+    bt_params = ausi12_amsr2_params.convert_to_pmicecon_bt_params(
+        hemisphere='south', params=params, fields=fields
+    )
+
+    assert _get_config_hash(bt_params) == 'a5e1d2959f31ad165a075cd9003fbdff'
