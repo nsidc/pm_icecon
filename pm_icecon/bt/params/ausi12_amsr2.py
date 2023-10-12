@@ -15,10 +15,12 @@ import datetime as dt
 
 import numpy as np
 
-from pm_icecon.bt._types import Line
 from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
-from pm_icecon.bt.params.ausi_amsr2 import GODDARD_AMSR2_NORTH_PARAMS
+from pm_icecon.bt.params.ausi_amsr2 import (
+    GODDARD_AMSR2_NORTH_PARAMS,
+    GODDARD_AMSR2_SOUTH_PARAMS,
+)
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     TbSetParams,
@@ -65,14 +67,14 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
 )
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
-    bt_wtp_v37=207.6,
-    bt_wtp_h37=131.9,
-    bt_wtp_v19=182.7,
-    bt_itp_v37=259.4,
-    bt_itp_h37=247.3,
-    bt_itp_v19=261.6,
-    vh37_lnline=Line(offset=-90.62, slope=1.2759),
-    v1937_lnline=Line(offset=62.89, slope=0.7618),
+    bt_wtp_v37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].water_tie_point_set[0],
+    bt_wtp_h37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].water_tie_point_set[1],
+    bt_wtp_v19=GODDARD_AMSR2_SOUTH_PARAMS['v1937_params'].water_tie_point_set[1],
+    bt_itp_v37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].ice_tie_point_set[0],
+    bt_itp_h37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].ice_tie_point_set[1],
+    bt_itp_v19=GODDARD_AMSR2_SOUTH_PARAMS['v1937_params'].ice_tie_point_set[1],
+    vh37_lnline=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].lnline,
+    v1937_lnline=GODDARD_AMSR2_SOUTH_PARAMS['v1937_params'].lnline,
     weather_filter_seasons=[
         # Just one season for the S. hemisphere.
         WeatherFilterParamsForSeason(
