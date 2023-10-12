@@ -23,6 +23,7 @@ import numpy as np
 
 import pm_icecon.bt.params.ausi12_amsr2 as ausi12_amsr2_params
 import pm_icecon.bt.params.ausi_amsr2 as amsr2_params
+from pm_icecon.bt.fields import get_bootstrap_fields
 
 
 # This class stolen from qgreenland's config export code...
@@ -89,9 +90,7 @@ def test_cdr_amsr2_params():
 
 def test_ausi12_amsr2_bt_params_north():
     date = dt.date(2022, 1, 1)
-    fields = ausi12_amsr2_params.get_bootstrap_fields(
-        date=date, satellite='amsr2', gridid='e2ns25'
-    )
+    fields = get_bootstrap_fields(date=date, satellite='amsr2', gridid='e2ns25')
     params = ausi12_amsr2_params.get_bootstrap_params(
         date=date, satellite='amsr2', gridid='e2ns25'
     )
@@ -104,9 +103,7 @@ def test_ausi12_amsr2_bt_params_north():
 
 def test_ausi12_amsr2_bt_params_south():
     date = dt.date(2022, 1, 1)
-    fields = ausi12_amsr2_params.get_bootstrap_fields(
-        date=date, satellite='amsr2', gridid='e2ss25'
-    )
+    fields = get_bootstrap_fields(date=date, satellite='amsr2', gridid='e2ss25')
     params = ausi12_amsr2_params.get_bootstrap_params(
         date=date, satellite='amsr2', gridid='e2ss25'
     )

@@ -16,7 +16,6 @@ import datetime as dt
 import numpy as np
 
 from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
-from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params.ausi_amsr2 import (
     GODDARD_AMSR2_NORTH_PARAMS,
     GODDARD_AMSR2_SOUTH_PARAMS,
@@ -28,8 +27,7 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParamsForSeason,
     cast_as_TiepointSet,
 )
-from pm_icecon.gridid import get_gridid_hemisphere, get_gridid_resolution
-from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
+from pm_icecon.gridid import get_gridid_hemisphere
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
     bt_wtp_v37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].water_tie_point_set[0],
@@ -166,32 +164,3 @@ def get_bootstrap_params(
         bt_params['wxlimt'] = bt_weather_params_struct.wxlimt
 
     return bt_params
-
-
-def get_bootstrap_fields(
-    *,
-    date: dt.date,
-    satellite: str,
-    gridid: str,
-):
-    hemisphere = get_gridid_hemisphere(gridid)
-    resolution = get_gridid_resolution(gridid)
-
-    invalid_ice_mask = get_ps_invalid_ice_mask(
-        hemisphere=hemisphere,
-        date=date,
-        resolution=resolution,  # type: ignore[arg-type]
-    )
-
-    land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution)
-
-    # There's no pole hole in the southern hemisphere.
-    pole_mask = (
-        get_ps_pole_hole_mask(resolution=resolution) if hemisphere == 'north' else None
-    )
-
-    return dict(
-        invalid_ice_mask=invalid_ice_mask,
-        land_mask=land_mask,
-        pole_mask=pole_mask,
-    )
