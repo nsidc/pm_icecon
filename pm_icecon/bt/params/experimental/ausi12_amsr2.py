@@ -11,7 +11,7 @@ This differs from what's used in the ECDR, which is defined in
 import datetime as dt
 
 from pm_icecon.bt._types import Line
-from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
+from pm_icecon.bt.params.util import setup_bootstrap_params_dict
 from pm_icecon.config.models.bt import WeatherFilterParams, WeatherFilterParamsForSeason
 from pm_icecon.gridid import get_gridid_hemisphere
 
@@ -75,7 +75,10 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
 )
 
 
-def get_bootstrap_params(
+# TODO: this is essentially the same logic as in `bt.params.ausi12_amsr2`. We
+# need to make this a generic function that can look up the right set of initial
+# params from the sat, date, hemisphere, and data resolution.
+def get_ausi12_experimental_bootstrap_params(
     *,
     date: dt.date,
     satellite: str,
@@ -85,9 +88,9 @@ def get_bootstrap_params(
     hemisphere = get_gridid_hemisphere(gridid)
     if satellite == 'amsr2':
         if hemisphere == 'north':
-            bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH
+            initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH
         elif hemisphere == 'south':
-            bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH
+            initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH
         else:
             raise ValueError(
                 'Could not initialize Bootstrap params for:\n'
@@ -98,24 +101,8 @@ def get_bootstrap_params(
             f'Bootstrap params not yet definted for:\n  satellite: {satellite}'
         )
 
-    # Set standard bootstrap values
-    bt_params['add1'] = 0.0
-    bt_params['add2'] = -2.0
-    bt_params['minic'] = 10.0
-    bt_params['maxic'] = 1.0
-    bt_params['mintb'] = 10.0
-    bt_params['maxtb'] = 320.0
-
-    # Some definitions include seasonal values for wintrc, wslope, wxlimt
-    if 'wintrc' not in bt_params.keys():
-        # weather_filter_seasons = bt_params['weather_filter_seasons']
-        wfs = bt_params['weather_filter_seasons']
-        bt_weather_params_struct = interpolate_bt_wx_params(
-            date=date,
-            weather_filter_seasons=wfs,  # type: ignore
-        )
-        bt_params['wintrc'] = bt_weather_params_struct.wintrc
-        bt_params['wslope'] = bt_weather_params_struct.wslope
-        bt_params['wxlimt'] = bt_weather_params_struct.wxlimt
+    bt_params = setup_bootstrap_params_dict(
+        initial_params_dict=initial_bt_params, date=date
+    )
 
     return bt_params

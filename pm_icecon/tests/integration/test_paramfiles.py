@@ -1,16 +1,18 @@
 import datetime as dt
 
 from pm_icecon.bt.fields import get_bootstrap_fields
-from pm_icecon.bt.params.experimental.ausi12_amsr2 import get_bootstrap_params
+from pm_icecon.bt.params.experimental.ausi12_amsr2 import (
+    get_ausi12_experimental_bootstrap_params,
+)
 from pm_icecon.bt.params.util import convert_to_pmicecon_bt_params
 
 
-def test_get_bootstrap_params():
+def test_get_ausi12_experimental_bootstrap_params():
     date = dt.date(2020, 1, 1)
     satellite = 'amsr2'
     gridid = 'e2n25'
 
-    bt_parameters = get_bootstrap_params(
+    bt_parameters = get_ausi12_experimental_bootstrap_params(
         date=date,
         satellite=satellite,
         gridid=gridid,
@@ -38,7 +40,7 @@ def test_convert_to_pmicecon_bt_params():
     satellite = 'amsr2'
     gridid = 'e2n25'
 
-    bt_parameters = get_bootstrap_params(
+    bt_parameters = get_ausi12_experimental_bootstrap_params(
         date=date,
         satellite=satellite,
         gridid=gridid,

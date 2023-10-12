@@ -21,9 +21,9 @@ from pathlib import Path
 
 import numpy as np
 
-import pm_icecon.bt.params.ausi12_amsr2 as ausi12_amsr2_params
 import pm_icecon.bt.params.ausi_amsr2 as amsr2_params
 from pm_icecon.bt.fields import get_bootstrap_fields
+from pm_icecon.bt.params.ausi12_amsr2 import get_ausi_bootstrap_params
 from pm_icecon.bt.params.util import convert_to_pmicecon_bt_params
 
 
@@ -92,9 +92,7 @@ def test_cdr_amsr2_params():
 def test_ausi12_amsr2_bt_params_north():
     date = dt.date(2022, 1, 1)
     fields = get_bootstrap_fields(date=date, satellite='amsr2', gridid='e2ns25')
-    params = ausi12_amsr2_params.get_bootstrap_params(
-        date=date, satellite='amsr2', gridid='e2ns25'
-    )
+    params = get_ausi_bootstrap_params(date=date, satellite='amsr2', gridid='e2ns25')
     bt_params = convert_to_pmicecon_bt_params(
         hemisphere='north', params=params, fields=fields
     )
@@ -105,9 +103,7 @@ def test_ausi12_amsr2_bt_params_north():
 def test_ausi12_amsr2_bt_params_south():
     date = dt.date(2022, 1, 1)
     fields = get_bootstrap_fields(date=date, satellite='amsr2', gridid='e2ss25')
-    params = ausi12_amsr2_params.get_bootstrap_params(
-        date=date, satellite='amsr2', gridid='e2ss25'
-    )
+    params = get_ausi_bootstrap_params(date=date, satellite='amsr2', gridid='e2ss25')
     bt_params = convert_to_pmicecon_bt_params(
         hemisphere='south', params=params, fields=fields
     )
