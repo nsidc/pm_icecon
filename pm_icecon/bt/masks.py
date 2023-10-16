@@ -3,10 +3,11 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+from loguru import logger
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import BT_GODDARD_ANCILLARY_DIR, CDR_TESTDATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.masks import get_pss_12_validice_land_coast_array
 from pm_icecon.util import get_ps25_grid_shape
 
@@ -21,7 +22,9 @@ def get_ps_invalid_ice_mask(
 
     `True` values indicate areas that are masked as invalid.
     """
-    print(f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid')
+    logger.info(
+        f'Reading valid ice mask for PS{hemisphere[0].upper()} {resolution}km grid'
+    )  # noqa
     if hemisphere == 'north':
         if resolution == '25':
             sst_fn = (

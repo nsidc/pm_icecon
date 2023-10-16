@@ -6,8 +6,8 @@ and computes:
 """
 
 import calendar
-import copy
 import datetime as dt
+import warnings
 from functools import reduce
 from typing import Literal, Sequence
 
@@ -17,7 +17,7 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 
-from pm_icecon.bt._types import Line, Tiepoint, TiepointSet
+from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
     BootstrapParams,
     WeatherFilterParams,
@@ -93,16 +93,20 @@ def xfer_class_tbs(
     }
 
 
-# TODO: is this function really specific to 37v37h or should it be more generic?
-# If specific, also rename `wtp` and rename func to make this clear. If not,
-# rename `vh37` kwarg to e.g., 'line'?
 def get_adj_ad_line_offset(
     *,
-    wtp_set: TiepointSet,
+    wtp_x: Tiepoint,
+    wtp_y: Tiepoint,
+    # TODO: should this just be `line` instad of `line_37v37h`? Is this
+    # function really specific to that set of channels? If so, maybe it's
+    # worth changing `wtp_x` and `wpt_y` to more clearly indicate `wpt_37v`
+    # and `wtp_37h`.
     line_37v37h: Line,
     perc=0.92,
 ) -> float:
     """Return the AD line offset.
+
+    This version uses individual tie points, not a TiepointSet
 
     The AD line offset is used to determine between which tb set should be used
     to calculate a pixel's ice concentration. For the Goddard bootstrap
@@ -110,7 +114,6 @@ def get_adj_ad_line_offset(
     HV37. For data points below the offset AD line, the V1937 tbs et is used
     instead.
     """
-    wtp_x, wtp_y = wtp_set[0], wtp_set[1]
     off = line_37v37h['offset']
     slp = line_37v37h['slope']
 
@@ -166,36 +169,26 @@ def _get_wtp(
     return wtp
 
 
-def get_water_tiepoint_set(
+def calculate_water_tiepoint(
     *,
-    wtp_set_default: TiepointSet,
+    wtp_init: Tiepoint,
     weather_mask: npt.NDArray[np.bool_],
-    tbx,
-    tby,
-) -> TiepointSet:
-    """Return the deafult or calculate new water tiepoint set.
+    tb,
+) -> Tiepoint:
+    """Return the default or calculate new water tiepoint.
 
     If the calculated water tiepoints are within +/- 10 of the
     `wtp_set_default`, use the newly calculated values.
     """
-    wtpx = _get_wtp(weather_mask, tbx)
-    wtpy = _get_wtp(weather_mask, tby)
+    calculated_wtp = _get_wtp(weather_mask, tb)
 
-    new_wtp_set = list(copy.copy(wtp_set_default))
+    def _within_plusminus_10(initial_value, value) -> bool:
+        return (initial_value - 10) < value < (initial_value + 10)
 
-    # If the calculated wtps are within the bounds of the default (+/- 10), use
-    # the calculated value.
-    def _within_plusminus_10(target_value, value) -> bool:
-        return (target_value - 10) < value < (target_value + 10)
+    if not _within_plusminus_10(wtp_init, calculated_wtp):
+        calculated_wtp = Tiepoint(wtp_init)
 
-    if _within_plusminus_10(wtp_set_default[0], wtpx):
-        new_wtp_set[0] = wtpx
-    if _within_plusminus_10(wtp_set_default[1], wtpy):
-        new_wtp_set[1] = wtpy
-
-    wtp_set_tuple = (new_wtp_set[0], new_wtp_set[1])
-
-    return wtp_set_tuple
+    return calculated_wtp
 
 
 def get_linfit(
@@ -265,14 +258,15 @@ def _get_ic(
     *,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    wtp_set: TiepointSet,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
     iline: Line,
     missing_flag_value,
     maxic: float,
 ):
     """Get fractional ice concentration without rad adjustment."""
-    wtp_x = wtp_set[0]
-    wtp_y = wtp_set[1]
+    wtp_x = wtp_xaxis
+    wtp_y = wtp_yaxis
     iline_off = iline['offset']
     iline_slp = iline['slope']
 
@@ -289,13 +283,21 @@ def _get_ic(
 
     # block2
     delta_y = tby - wtp_y
-    slope = delta_y / delta_x
+    with warnings.catch_warnings():
+        # This causes a divide-by-zero warning because
+        # locations that are later ignored have zero in denominator
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        slope = delta_y / delta_x
     offset = tby - (slope * tbx)
     slp_diff = iline_slp - slope
 
     is_slp_diff_ne_0 = slp_diff != 0
 
-    x_intercept = (offset - iline_off) / slp_diff
+    with warnings.catch_warnings():
+        # This causes a divide-by-zero warning because
+        # locations that are later ignored have zero in denominator
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        x_intercept = (offset - iline_off) / slp_diff
     y_intercept = offset + (slope * x_intercept)
     length1 = np.sqrt(np.square(tbx - wtp_x) + np.square(tby - wtp_y))
     length2 = np.sqrt(np.square(x_intercept - wtp_x) + np.square(y_intercept - wtp_y))
@@ -331,17 +333,19 @@ def _get_len_between_points(
 
 def calc_rad_coeffs(
     *,
-    itp_set: TiepointSet,
-    wtp_set: TiepointSet,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
 ):
-    rad_slope = (itp_set[1] - wtp_set[1]) / (itp_set[0] - wtp_set[0])
-    rad_offset = wtp_set[1] - (wtp_set[0] * rad_slope)
+    rad_slope = (itp_yaxis - wtp_yaxis) / (itp_xaxis - wtp_xaxis)
+    rad_offset = wtp_yaxis - (wtp_xaxis * rad_slope)
 
     xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
     yint = (line['slope'] * xint) + line['offset']
 
-    rad_len = _get_len_between_points(x1=xint, x2=wtp_set[0], y1=yint, y2=wtp_set[1])
+    rad_len = _get_len_between_points(x1=xint, x2=wtp_xaxis, y1=yint, y2=wtp_yaxis)
 
     return (rad_slope, rad_offset, rad_len)
 
@@ -351,20 +355,24 @@ def _rad_adjust_ic(
     ic: npt.NDArray,
     tbx: npt.NDArray,
     tby: npt.NDArray,
-    itp_set: TiepointSet,
-    wtp_set: TiepointSet,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
 ):
     adjusted_ic = ic.copy()
 
     radslp, rad_line_offset, radlen = calc_rad_coeffs(
-        itp_set=itp_set,
-        wtp_set=wtp_set,
+        wtp_xaxis=wtp_xaxis,
+        wtp_yaxis=wtp_yaxis,
+        itp_xaxis=itp_xaxis,
+        itp_yaxis=itp_yaxis,
         line=line,
     )
 
     is_tby_lt_rc = tby < (radslp * tbx + rad_line_offset)
-    iclen = _get_len_between_points(x1=tbx, x2=wtp_set[0], y1=tby, y2=wtp_set[1])
+    iclen = _get_len_between_points(x1=tbx, x2=wtp_xaxis, y1=tby, y2=wtp_yaxis)
     is_iclen_gt_radlen = iclen > radlen
     adjusted_ic[is_tby_lt_rc & is_iclen_gt_radlen] = 1.0
     is_condition = is_tby_lt_rc & ~is_iclen_gt_radlen
@@ -398,7 +406,6 @@ def _get_wx_params(
     """
     monthly_dfs = []
     for season in weather_filter_seasons:
-
         if season.start_month > season.end_month:
             # E.g., start_month=11 and end_month=4:
             # season_months=[11, 12, 1, 2, 3, 4].
@@ -484,21 +491,15 @@ def get_weather_mask(
     tb_mask: npt.NDArray[np.bool_],
     ln1: Line,
     date: dt.date,
-    weather_filter_seasons: list[WeatherFilterParamsForSeason],
+    wintrc,
+    wslope,
+    wxlimt,
 ) -> npt.NDArray[np.bool_]:
     """Return a water mask that has been weather filtered.
 
     `True` indicates areas that are water and are weather masked. I.e., `True`
     values should be treated as open ocean.
     """
-    season_params = _get_wx_params(
-        date=date,
-        weather_filter_seasons=weather_filter_seasons,
-    )
-    wintrc = season_params.wintrc
-    wslope = season_params.wslope
-    wxlimt = season_params.wxlimt
-
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = (wslope * v22) + wintrc
@@ -526,11 +527,10 @@ def apply_invalid_ice_mask(
     Implementation of GSFC fortran `sst_clean_sb2()` routine.
     """
     is_not_land = conc != land_flag_value
-    is_not_miss = conc != missing_flag_value
-    is_not_land_miss_sst = is_not_land & is_not_miss & invalid_ice_mask
+    is_not_land_sst = is_not_land & invalid_ice_mask
 
     ice_sst = conc.copy()
-    ice_sst[is_not_land_miss_sst] = 0.0
+    ice_sst[is_not_land_sst] = 0.0
 
     return ice_sst
 
@@ -543,7 +543,7 @@ def coastal_fix(
     # The minimum ice concentration as a percentage (10 == 10%)
     minic: float,
 ):
-    # Apply coastal_fix() routine per Bootstrap
+    # Apply coastal_fix() routine per Bootstrap.
 
     # Calculate 'temp' array
     #   -1 is no ice
@@ -774,8 +774,10 @@ def _calc_frac_conc_for_tbset(
     *,
     tbx,
     tby,
-    wtp_set: TiepointSet,
-    itp_set: TiepointSet,
+    wtp_xaxis: Tiepoint,
+    wtp_yaxis: Tiepoint,
+    itp_xaxis: Tiepoint,
+    itp_yaxis: Tiepoint,
     line: Line,
     missing_flag_value: float | int,
     maxic,
@@ -784,7 +786,8 @@ def _calc_frac_conc_for_tbset(
     ic = _get_ic(
         tbx=tbx,
         tby=tby,
-        wtp_set=wtp_set,
+        wtp_xaxis=wtp_xaxis,
+        wtp_yaxis=wtp_yaxis,
         iline=line,
         missing_flag_value=missing_flag_value,
         maxic=maxic,
@@ -794,8 +797,10 @@ def _calc_frac_conc_for_tbset(
         ic=ic,
         tbx=tbx,
         tby=tby,
-        itp_set=itp_set,
-        wtp_set=wtp_set,
+        wtp_xaxis=wtp_xaxis,
+        wtp_yaxis=wtp_yaxis,
+        itp_xaxis=itp_xaxis,
+        itp_yaxis=itp_yaxis,
         line=line,
     )
 
@@ -804,30 +809,32 @@ def _calc_frac_conc_for_tbset(
 
 def calc_bootstrap_conc(
     *,
-    maxic_frac,
-    line_37v37h: Line,
-    ad_line_offset: float,
-    line_37v19v: Line,
-    wtp_set_37v37h: TiepointSet,
-    wtp_set_37v19v: TiepointSet,
-    itp_set_37v37h: TiepointSet,
-    itp_set_37v19v: TiepointSet,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
-    # TODO: can/should we just use `nan`?
+    wtp_37v: Tiepoint,
+    wtp_37h: Tiepoint,
+    wtp_19v: Tiepoint,
+    itp_37v: Tiepoint,
+    itp_37h: Tiepoint,
+    itp_19v: Tiepoint,
+    line_37v37h: Line,
+    line_37v19v: Line,
+    ad_line_offset: float,
+    maxic_frac,
     missing_flag_value: float | int,
 ):
     """Return a sea ice concentration estimate at every grid cell.
 
     Concentrations are given as percentage (0-100%).
     """
-    # ic_frac == 'ice concentration fraction'
     ic_frac_37v37h = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_h37,
-        wtp_set=wtp_set_37v37h,
-        itp_set=itp_set_37v37h,
+        wtp_xaxis=wtp_37v,
+        wtp_yaxis=wtp_37h,
+        itp_xaxis=itp_37v,
+        itp_yaxis=itp_37h,
         line=line_37v37h,
         missing_flag_value=missing_flag_value,
         maxic=maxic_frac,
@@ -836,8 +843,10 @@ def calc_bootstrap_conc(
     ic_frac_37v19v = _calc_frac_conc_for_tbset(
         tbx=tb_v37,
         tby=tb_v19,
-        wtp_set=wtp_set_37v19v,
-        itp_set=itp_set_37v19v,
+        wtp_xaxis=wtp_37v,
+        wtp_yaxis=wtp_19v,
+        itp_xaxis=itp_37v,
+        itp_yaxis=itp_19v,
         line=line_37v19v,
         missing_flag_value=missing_flag_value,
         maxic=maxic_frac,
@@ -863,20 +872,16 @@ def calc_bootstrap_conc(
     return ic_perc
 
 
-# TODO: rename func
 def bootstrap_for_cdr(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
     params: BootstrapParams,
-    # TODO: can we run the algorithm without needing to pass in masks?
-    # Currently used to e.g., calculate water tie points from the
-    # scatterplot of ocean tbs
     tb_mask: npt.NDArray[np.bool_],
     weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> npt.NDArray:
-    """Bootstrap algorithm without weather filtering.
+    """Calculate raw Bootstrap sea ice concentration field.
 
     Returns an NDArray with a concentration estimate at every cell.
 
@@ -892,22 +897,20 @@ def bootstrap_for_cdr(
         weather_mask=weather_mask,
     )
 
-    wtp_set_37v37h = get_water_tiepoint_set(
-        wtp_set_default=params.vh37_params.water_tie_point_set,
+    wtp_tb_v37 = calculate_water_tiepoint(
+        wtp_init=params.vh37_params.water_tie_point_set[0],
         weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_h37,
+        tb=tb_v37,
     )
-
-    wtp_set_37v19v = get_water_tiepoint_set(
-        wtp_set_default=params.v1937_params.water_tie_point_set,
+    wtp_tb_h37 = calculate_water_tiepoint(
+        wtp_init=params.vh37_params.water_tie_point_set[1],
         weather_mask=weather_mask,
-        tbx=tb_v37,
-        tby=tb_v19,
+        tb=tb_h37,
     )
 
     ad_line_offset = get_adj_ad_line_offset(
-        wtp_set=wtp_set_37v37h,
+        wtp_x=wtp_tb_v37,
+        wtp_y=wtp_tb_h37,
         line_37v37h=line_37v37h,
     )
 
@@ -924,20 +927,110 @@ def bootstrap_for_cdr(
         ad_line_offset=ad_line_offset,
     )
 
+    wtp_tb_v19 = calculate_water_tiepoint(
+        wtp_init=params.v1937_params.water_tie_point_set[1],
+        weather_mask=weather_mask,
+        tb=tb_v19,
+    )
+
     conc = calc_bootstrap_conc(
-        maxic_frac=params.maxic,
-        line_37v37h=line_37v37h,
-        ad_line_offset=ad_line_offset,
-        line_37v19v=line_37v19v,
-        wtp_set_37v37h=wtp_set_37v37h,
-        wtp_set_37v19v=wtp_set_37v19v,
-        itp_set_37v37h=params.vh37_params.ice_tie_point_set,
-        itp_set_37v19v=params.v1937_params.ice_tie_point_set,
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,
+        wtp_37v=wtp_tb_v37,
+        wtp_37h=wtp_tb_h37,
+        wtp_19v=wtp_tb_v19,
+        itp_37v=params.vh37_params.ice_tie_point_set[0],
+        itp_37h=params.vh37_params.ice_tie_point_set[1],
+        itp_19v=params.v1937_params.ice_tie_point_set[1],
+        line_37v37h=line_37v37h,
+        line_37v19v=line_37v19v,
+        ad_line_offset=ad_line_offset,
+        maxic_frac=params.maxic,
         missing_flag_value=missing_flag_value,
     )
+
+    return conc
+
+
+# TODO: This pole hole logic should be refactored.
+#       Specifically, the definition of the pixels for which missing data
+#       will be considered "pole hole" rather than simply "missing (because
+#       of lack of sensor observation)" is on the same level of abstraction
+#       as a "land_mask", and therefore should be identified and stored as
+#       ancillary data in a similar location and with similar level of
+#       description, including the derivation of the set of grid cells
+#       identified as "pole hole".
+def fill_pole_hole_bt(conc):
+    """Fill the pole hole with the average of nearby missing values.
+
+    TODO: This routine needs a better way of determining how big the pole
+    hole region should be rather than assumptions based on grid size.
+    """
+    ydim, xdim = conc.shape
+
+    # TODO: This logic can be tightened up.  Multiples of 720 indicate
+    #       that we are using an EASE2 grid, and that the North Pole --
+    #       and therefore the pole hole -- is near the center of the grid.
+    #  For the polar stereo grid (see below) the pole hole pixels are
+    #       specified by manually creating a pole hole mask kernel.
+    pole_radius = 50
+    grid_projection = 'EASE2'
+    if xdim == 3360:
+        pole_radius = 30
+    elif xdim == 1680:
+        pole_radius = 15
+    elif xdim == 840:
+        pole_radius = 8
+    elif xdim == 720:
+        pole_radius = 10
+    elif xdim == 304:
+        grid_projection = 'PS'
+    elif xdim == 304:
+        grid_projection = 'PS'
+    else:
+        raise ValueError(f'Could not determine pole_radius for xdim: {xdim}')
+
+    if grid_projection == 'EASE2':
+        half_ydim = ydim // 2
+        half_xdim = xdim // 2
+
+        # Note: near_pole_conc is a view into the pole-hole region of conc
+        near_pole_conc = conc[
+            half_ydim - pole_radius : half_ydim + pole_radius,
+            half_xdim - pole_radius : half_xdim + pole_radius,
+        ]
+    elif grid_projection == 'PS':
+        ph25ymin = 230
+        ph25ymax = 238
+        ph25xmin = 150
+        ph25xmax = 157
+
+        if xdim == 304:
+            # Use pixel set appropriate for AMSR2 pole hole on 25km PSN grid
+            near_pole_conc = conc[ph25ymin:ph25ymax, ph25xmin:ph25xmax]
+        elif xdim == 608:
+            # Use pixel set appropriate for AMSR2 pole hole on 12.5km PSN grid
+            near_pole_conc = conc[
+                ph25ymin * 2 : ph25ymax * 2, ph25xmin * 2 : ph25xmax * 2
+            ]
+        elif xdim == 1216:
+            # Use pixel set appropriate for AMSR2 pole hole on 6.25km PSN grid
+            near_pole_conc = conc[
+                ph25ymin * 4 : ph25ymax * 4, ph25xmin * 4 : ph25xmax * 4
+            ]
+        else:
+            raise ValueError(
+                f'Expecting NH polar stereo, but unrecognized xdim: {xdim}'
+            )
+
+    is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
+
+    near_pole_mean = np.mean(near_pole_conc[~is_pole_hole])
+
+    near_pole_conc[is_pole_hole] = near_pole_mean
+
+    logger.info(f'Filled missing values at pole hole with: {near_pole_mean}')
 
     return conc
 
@@ -964,6 +1057,11 @@ def goddard_bootstrap(
         max_tb=params.maxtb,
     )
 
+    season_params = _get_wx_params(
+        date=date,
+        weather_filter_seasons=params.weather_filter_seasons,
+    )
+
     weather_mask = get_weather_mask(
         v37=tb_v37,
         h37=tb_h37,
@@ -973,7 +1071,9 @@ def goddard_bootstrap(
         tb_mask=tb_mask,
         ln1=params.vh37_params.lnline,
         date=date,
-        weather_filter_seasons=params.weather_filter_seasons,
+        wintrc=season_params.wintrc,
+        wslope=season_params.wslope,
+        wxlimt=season_params.wxlimt,
     )
 
     conc = bootstrap_for_cdr(
@@ -988,7 +1088,7 @@ def goddard_bootstrap(
 
     # Apply masks and flag values
     conc[weather_mask] = 0.0
-    conc[tb_mask] = 0.0
+    conc[tb_mask] = DEFAULT_FLAG_VALUES.missing
     conc[params.land_mask] = DEFAULT_FLAG_VALUES.land
 
     conc = apply_invalid_ice_mask(
@@ -1005,6 +1105,11 @@ def goddard_bootstrap(
         minic=params.minic,
     )
     conc[conc < params.minic] = 0
+
+    jdim, idim = conc.shape
+    # If middle of land_mask is land, this is SH and needs no pole hole fill
+    if not params.land_mask[jdim // 2, idim // 2]:
+        conc = fill_pole_hole_bt(conc)
 
     ds = xr.Dataset({'conc': (('y', 'x'), conc)})
 

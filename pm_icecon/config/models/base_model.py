@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 
 class ConfigBaseModel(BaseModel):
@@ -8,11 +8,14 @@ class ConfigBaseModel(BaseModel):
 
     Immutability is not 'strict' (e.g., dicts can be mutated) - a
     determined dev can still mutate model instances.
+
+    This version is for Pydantic ~1.9
     """
 
     class Config:
         # Throw an error if any unexpected attrs are provided. default: 'ignore'
-        extra = Extra.forbid
+        # TODO: Once the parameters are determined, uncomment this line
+        # extra = Extra.forbid
 
         # https://pydantic-docs.helpmanual.io/usage/models/#faux-immutability
         allow_mutation = False

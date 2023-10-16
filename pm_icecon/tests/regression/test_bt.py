@@ -5,16 +5,16 @@ import numpy as np
 import xarray as xr
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.bt.compute_bt_ic import xfer_class_tbs
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
-from pm_icecon.bt.params.goddard_class import SSMIS_NORTH_PARAMS
+from pm_icecon.bt.params.class_sats import SSMIS_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_TESTDATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
@@ -35,10 +35,12 @@ def test_bt_amsr2_regression():
             hemisphere='north',
             resolution='25',
         )
+
         filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
         regression_ds = xr.open_dataset(
             CDR_TESTDATA_DIR / 'bt_amsru_regression' / filename
         )
+
         assert_almost_equal(
             regression_ds.conc.data,
             actual_ds.conc.data,
@@ -74,7 +76,7 @@ def _original_f18_example() -> xr.Dataset:
             date=date,
             resolution=resolution,  # type: ignore[arg-type]
         ),
-        **SSMIS_NORTH_PARAMS,
+        **SSMIS_NORTH_PARAMS,  # type: ignore
     )
 
     otbs: dict[str, NDArray[np.float32]] = {}

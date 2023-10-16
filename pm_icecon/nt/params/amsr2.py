@@ -4,10 +4,10 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 from loguru import logger
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import CDR_TESTDATA_DIR
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,
@@ -57,10 +57,7 @@ def get_amsr2_params(
         if hemisphere == 'north'
         else RSS_F17_SOUTH_GRADIENT_THRESHOLDS
     )
-    logger.warning(
-        'The graident threshold values were stolen from f17_final!'
-        ' Do we need new ones for AMSR2? How do we get them?'
-    )
+    logger.info('NT gradient threshold values for AMSR2 are copied from f17_final')
 
     return NasateamParams(
         shoremap=nt_shoremap,

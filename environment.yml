@@ -16,7 +16,7 @@ dependencies:
   - flake8-docstrings ~=1.6
   - invoke ~=1.7
   - isort ~=5.10
-  - mypy ~=1.0
+  - mypy ~=1.5
   - pytest ~=7.1
   - vulture ~=2.4
   # debugging/development tools
@@ -29,15 +29,16 @@ dependencies:
 
   # Runtime dependencies
   # NOTE: these should be kept in sync with those in `recipe/meta.yaml`.
-  - python ~=3.10.4
-  - numpy ~=1.22.3
+  - python ~=3.10.12
+  - numpy ~=1.22.4
   - h5py ~=3.6
-  - xarray ~=2022.3
-  - netCDF4 ~=1.5.8
-  - cartopy ~=0.20
+  - xarray ~=2023.6
+  - netCDF4 ~=1.6.3
+  - cartopy ~=0.21
   - click ~=8.1
-  - loguru ~=0.6
-  - pydantic ~=1.9
-  - pandas ~=1.4.2
-  - seaice ~=5.0.0
-  - pyresample ~=1.25
+  - loguru ~=0.7
+  - pydantic ~=1.9  # Definitely NOT compatible with pydantic 2.0 (!)
+  - pandas ~=1.4.4
+  - seaice ~=6.0
+  - pyresample ~=1.27
+  - pm_tb_data ~=0.1.2

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 import xarray as xr
+from pm_tb_data.fetch import au_si
 from pyresample import AreaDefinition
 from pyresample.image import ImageContainerNearest
 from seaice.data.api import concentration_daily
@@ -17,7 +18,6 @@ from seaice.nasateam import NORTH, SOUTH
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
-from pm_icecon.fetch import au_si
 from pm_icecon.util import date_range, get_ps12_grid_shape, get_ps25_grid_shape
 
 
@@ -117,12 +117,10 @@ def get_au_si_bt_conc(
     hemisphere: Hemisphere,
     resolution: au_si.AU_SI_RESOLUTIONS,
 ) -> xr.DataArray:
-    ds = au_si._get_au_si_data_fields(
-        # TODO: DRY out base dir defualt. No need to pass this around...
-        base_dir=Path(f'/ecs/DP1/AMSA/AU_SI{resolution}.001/'),
+    ds = au_si.get_au_si_tbs(
         date=date,
         hemisphere=hemisphere,
-        resolution=resolution,  # type: ignore[arg-type]
+        resolution=resolution,
     )
 
     # flip the image to be 'right-side' up

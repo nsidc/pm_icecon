@@ -12,6 +12,7 @@ import datetime as dt
 
 import numpy as np
 import numpy.typing as npt
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.constants import (
@@ -19,7 +20,6 @@ from pm_icecon.constants import (
     BT_GODDARD_ANCILLARY_DIR,
     CDR_TESTDATA_DIR,
 )
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_icecon.util import get_ps25_grid_shape
 
 
@@ -108,7 +108,7 @@ def get_ps_land_mask(
     return land_mask
 
 
-def get_e2n625_land_mask() -> npt.NDArray[np.bool_]:
+def get_e2n625_land_mask(anc_dir) -> npt.NDArray[np.bool_]:
     """Get the northern hemisphere e2n625 land mask.
 
     The authoritative mask for the NH EASE2 Arctic subset
@@ -125,7 +125,7 @@ def get_e2n625_land_mask() -> npt.NDArray[np.bool_]:
       all others ->
     """
     _land_coast_array_e2n625 = np.fromfile(
-        BOOTSTRAP_MASKS_DIR / 'locli_e2n6.25_1680x1680.dat',
+        anc_dir / 'locli_e2n6.25_1680x1680.dat',
         dtype=np.uint8,
     ).reshape(1680, 1680)
 

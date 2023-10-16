@@ -7,12 +7,12 @@ import datetime as dt
 from pathlib import Path
 
 import numpy as np
+from pm_tb_data.fetch.a2l1c_625 import get_a2l1c_625_tbs
 
 from pm_icecon._types import Hemisphere
 from pm_icecon.bt.compute_bt_ic import goddard_bootstrap
-from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
+from pm_icecon.bt.params.cetbv2_amsr2 import A2L1C_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
-from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
 
 if __name__ == '__main__':
     hemisphere: Hemisphere = 'north'
@@ -24,6 +24,8 @@ if __name__ == '__main__':
         base_dir=Path('/path/to/a2l1c_data_location/'),
         date=date,
         hemisphere=hemisphere,
+        ncfn_template='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
+        timeframe='M',
     )
 
     # Define required masks
@@ -39,7 +41,7 @@ if __name__ == '__main__':
         land_mask=land_mask,
         pole_mask=pole_mask,
         invalid_ice_mask=invalid_ice_mask,
-        **A2L1C_NORTH_PARAMS,
+        **A2L1C_NORTH_PARAMS,  # type: ignore
     )
 
     # Run the bootstrap algoirthm and get the result back as an xarray dataset.

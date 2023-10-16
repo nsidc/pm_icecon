@@ -3,15 +3,14 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
+from pm_tb_data.fetch.a2l1c_625 import get_a2l1c_625_tbs
+from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon._types import Hemisphere
-from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
-from pm_icecon.bt.params.amsr2 import get_amsr2_params
+from pm_icecon.bt.params.ausi_amsr2 import get_amsr2_params
+from pm_icecon.bt.params.cetbv2_amsr2 import A2L1C_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
-from pm_icecon.constants import BOOTSTRAP_MASKS_DIR
-from pm_icecon.fetch.a2l1c_625 import get_a2l1c_625_tbs
-from pm_icecon.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.masks import get_e2n625_land_mask
 
@@ -48,7 +47,15 @@ def amsr2_goddard_bootstrap(
     return conc_ds
 
 
-def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Dataset:
+def a2l1c_goddard_bootstrap(
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    tb_dir: Path,
+    anc_dir: Path,
+    ncfn_template: str,
+    timeframe: str,
+) -> xr.Dataset:
     """Compute sea ice concentration from L1C 6.25km TBs.
 
     Utilizes the bootstrap algorithm as organized by the original code from
@@ -58,21 +65,22 @@ def a2l1c_goddard_bootstrap(*, date: dt.date, hemisphere: Hemisphere) -> xr.Data
         raise NotImplementedError('Southern hemisphere is not currently supported.')
 
     xr_tbs = get_a2l1c_625_tbs(
-        base_dir=Path('/data/amsr2_subsets/'),
+        base_dir=tb_dir,
         date=date,
         hemisphere='north',
+        ncfn_template=ncfn_template,
+        timeframe=timeframe,
     )
 
-    sst_fn = BOOTSTRAP_MASKS_DIR / f'valid_seaice_e2n6.25_{date:%m}.dat'
+    sst_fn = anc_dir / f'valid_seaice_e2n6.25_{date:%m}.dat'
     sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     is_high_sst = sst_mask == 50
 
     params = BootstrapParams(
-        land_mask=get_e2n625_land_mask(),
-        # TODO: For now, let's NOT impose a pole hole on the A2L1C data
+        land_mask=get_e2n625_land_mask(anc_dir),
         pole_mask=None,
         invalid_ice_mask=is_high_sst,
-        **A2L1C_NORTH_PARAMS,
+        **A2L1C_NORTH_PARAMS,  # type: ignore
     )
 
     conc_ds = bt.goddard_bootstrap(
