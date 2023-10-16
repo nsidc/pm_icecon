@@ -1,9 +1,12 @@
 import datetime as dt
 
 from pm_icecon.bt.compute_bt_ic import _get_wx_params
-from pm_icecon.bt.params.a2l1c import A2L1C_NORTH_PARAMS
-from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS
-from pm_icecon.bt.params.goddard_class import (
+from pm_icecon.bt.params.ausi_amsr2 import CDR_AMSR2_NORTH_PARAMS
+from pm_icecon.bt.params.cetbv2_amsr2 import (
+    A2L1C_NORTH_PARAMS,
+    _ret_parameters_amsru2_f_params,
+)
+from pm_icecon.bt.params.class_sats import (
     OTHER_NORTH_PARAMS,
     SMMR_NORTH_PARAMS,
     SSMIS_NORTH_PARAMS,
@@ -26,7 +29,7 @@ def test__get_wx_params_in_between_seasons():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
         ),
     )
 
@@ -54,7 +57,7 @@ def test__get_wx_params_wrap_around_seasons():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
         ),
     )
 
@@ -78,7 +81,7 @@ def test__get_wx_params_for_provided_season():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
         ),
     )
 
@@ -102,12 +105,28 @@ def test__get_wx_params_for_smmr():
     assert expected == actual
 
 
-def test__get_wx_params_for_a2l1c():
+def test__get_wx_params_for_amsru_from_goddard():
     date = dt.date(2020, 5, 14)
     expected = WeatherFilterParams(
         wintrc=84.73,
         wslope=0.5352,
         wxlimt=18.39,
+    )
+    wx_filter_seasons = _ret_parameters_amsru2_f_params['weather_filter_seasons']
+    actual = _get_wx_params(
+        date=date,
+        weather_filter_seasons=(wx_filter_seasons),  # type: ignore[arg-type]
+    )
+
+    assert expected == actual
+
+
+def test__get_wx_params_for_a2l1c():
+    date = dt.date(2020, 5, 14)
+    expected = WeatherFilterParams(
+        wintrc=84.73,
+        wslope=0.5352,
+        wxlimt=13.7,
     )
     actual = _get_wx_params(
         date=date,
@@ -116,10 +135,7 @@ def test__get_wx_params_for_a2l1c():
         ),
     )
 
-    # Note: wx parameters for a2l1c have changed, so only check two parts
-    # assert expected == actual
-    assert expected.wintrc == actual.wintrc
-    assert expected.wslope == actual.wslope
+    assert expected == actual
 
 
 def test__get_wx_params_for_f17f18():

@@ -7,6 +7,8 @@ The parameters defined in this file are not suitable for use with data from
 Remote Sensing Systems (RSS). Data from RSS is used for the 'final' CDR (g02202).
 
 All parameters pulled from `ret_parameters_sb2.f`.
+
+TODO: separate out params into sat-specific modules.
 """
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (
