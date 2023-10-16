@@ -12,7 +12,7 @@ from pm_icecon._types import Hemisphere
 from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.bt.compute_bt_ic import xfer_class_tbs
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
-from pm_icecon.bt.params.goddard_class import SSMIS_NORTH_PARAMS
+from pm_icecon.bt.params.class_sats import SSMIS_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.constants import CDR_TESTDATA_DIR
 from pm_icecon.interpolation import spatial_interp_tbs

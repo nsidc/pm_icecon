@@ -1,12 +1,12 @@
 import datetime as dt
 
 from pm_icecon.bt.compute_bt_ic import _get_wx_params
-from pm_icecon.bt.params.a2l1c import (
+from pm_icecon.bt.params.ausi_amsr2 import CDR_AMSR2_NORTH_PARAMS
+from pm_icecon.bt.params.cetbv2_amsr2 import (
     A2L1C_NORTH_PARAMS,
     _ret_parameters_amsru2_f_params,
 )
-from pm_icecon.bt.params.amsr2 import AMSR2_NORTH_PARAMS
-from pm_icecon.bt.params.goddard_class import (
+from pm_icecon.bt.params.class_sats import (
     OTHER_NORTH_PARAMS,
     SMMR_NORTH_PARAMS,
     SSMIS_NORTH_PARAMS,
@@ -29,7 +29,7 @@ def test__get_wx_params_in_between_seasons():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
         ),
     )
 
@@ -57,7 +57,7 @@ def test__get_wx_params_wrap_around_seasons():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
         ),
     )
 
@@ -81,7 +81,7 @@ def test__get_wx_params_for_provided_season():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
         ),
     )
 

@@ -18,8 +18,9 @@ import hashlib
 import json
 from pathlib import Path
 
-import pm_icecon.bt.params.amsr2 as amsr2_params
-import pm_icecon.bt.params.amsr2_goddard as amsr2_goddard_params
+import numpy as np
+
+import pm_icecon.bt.params.ausi_amsr2 as amsr2_params
 
 
 # This class stolen from qgreenland's config export code...
@@ -38,6 +39,8 @@ class MagicJSONEncoder(json.JSONEncoder):
             return o.__json__()
         if hasattr(o, '__dict__'):
             return json.dumps(o.__dict__, cls=MagicJSONEncoder)
+        if isinstance(o, np.ndarray):
+            return np.array2string(o)
 
         return super().default(o)
 
@@ -61,22 +64,22 @@ def _get_config_hash(cfg) -> str:
 def test_amsr2_goddard_params():
     """Assert that the original params from Goddard have not changed."""
     assert (
-        _get_config_hash(amsr2_goddard_params.AMSR2_NORTH_PARAMS)
+        _get_config_hash(amsr2_params.GODDARD_AMSR2_NORTH_PARAMS)
         == 'd1612e6dea7635908a610205c0c0b37a'
     )
     assert (
-        _get_config_hash(amsr2_goddard_params.AMSR2_SOUTH_PARAMS)
+        _get_config_hash(amsr2_params.GODDARD_AMSR2_SOUTH_PARAMS)
         == 'a6fea626f1f1c51de2c74831f1d99e59'
     )
 
 
-def test_amsr2_params():
+def test_cdr_amsr2_params():
     """Assert that NSIDC's update to the weather filter params have not changed."""
     assert (
-        _get_config_hash(amsr2_params.AMSR2_NORTH_PARAMS)
+        _get_config_hash(amsr2_params.CDR_AMSR2_NORTH_PARAMS)
         == '8e691fd9f83cae18f186f454897c15c5'
     )
     assert (
-        _get_config_hash(amsr2_params.AMSR2_SOUTH_PARAMS)
+        _get_config_hash(amsr2_params.CDR_AMSR2_SOUTH_PARAMS)
         == 'f9bd22a2d2c48a874d89c51cb2480436'
     )
