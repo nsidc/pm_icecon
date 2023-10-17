@@ -1,6 +1,5 @@
 name: base
 channels:
-  - defaults
   - conda-forge
   - nsidc
   - nodefaults
