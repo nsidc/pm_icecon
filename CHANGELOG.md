@@ -1,5 +1,10 @@
 # NEXT_RELEASE
 
+* Extract CDR-specific logic from this repository. Moved to the `seaice_ecdr`
+  (https://github.com/nsidc/seaice_ecdr/)
+
+# v0.2.0
+
 * Bootstrap: stop wrapping data computations in functions that cast data to
   `np.float32`. This was done originally to exactly match the outputs of the
   Fortran code provided to us by GSFC.

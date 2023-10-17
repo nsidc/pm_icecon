@@ -872,7 +872,7 @@ def calc_bootstrap_conc(
     return ic_perc
 
 
-def bootstrap_for_cdr(
+def bootstrap(
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
@@ -1076,7 +1076,7 @@ def goddard_bootstrap(
         wxlimt=season_params.wxlimt,
     )
 
-    conc = bootstrap_for_cdr(
+    conc = bootstrap(
         tb_v37=tb_v37,
         tb_h37=tb_h37,
         tb_v19=tb_v19,

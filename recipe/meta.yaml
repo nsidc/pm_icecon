@@ -27,9 +27,9 @@ requirements:
     - loguru ~=0.7
     - pydantic ~=1.9  # Definitely NOT compatible with pydantic 2.0 (!)
     - pandas ~=1.4.4
-    - seaice ~=6.0
     - pyresample ~=1.27
     - pm_tb_data ~=0.1.2
+    - scipy ~=1.8.1
 
 about:
   home: https://github.com/nsidc/pm_icecon
