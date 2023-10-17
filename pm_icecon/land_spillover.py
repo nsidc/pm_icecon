@@ -1,13 +1,5 @@
 """Routines which implement land spillover corrections to sea ice concentration fields.
 
-land_spillover.py
-"""
-
-import numpy as np
-import numpy.typing as npt
-from scipy.signal import convolve2d
-
-"""
 In these NT2 algorithms:
     adj123 refers to an array that contains the "adjacency-to-land" values
     where:
@@ -21,6 +13,10 @@ The algorithm has two passes:
     nt2b: Sets a grid cell's sea ice concentration to zero if the `land90`
           mock concentration value is greater than the calculated conc value
 """
+
+import numpy as np
+import numpy.typing as npt
+from scipy.signal import convolve2d
 
 
 def apply_nt2a_land_spillover(
