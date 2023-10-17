@@ -68,7 +68,6 @@ Options:
 
 Commands:
   bootstrap  Run the bootstrap algorithm.
-  cdr        Run the CDR algorithm with AMSR2 data.
   nasateam   Run the nasateam algorithm.
 ```
 
@@ -110,58 +109,11 @@ on NSIDC infrastructure that are not available to the public.
 The main entrypoint to running the nasateam code on input Tbs is the `nasateam`
 function defined in `pm_icecon/nt/compute_nt_ic.py`.
 
-An API has also been defined for common use cases. See `cdr_amsr/nt/api.py` for
+An API has also been defined for common use cases. See `pm_icecon/nt/api.py` for
 more information. NOTE: the API is currently defined with hard-coded defaults
 that expect access to NSIDC's virtual machine infrastructure and should be used
 with caution.
 
-
-#### CDR
-
-The `pm_icecon/cdr.py` module provides code related to creating a CDR-like
-concentration field from the outputs of bootstrap and nasateam algorithms.
-
-The `amsr2_cdr` function is the primary entrypoint that can be used to generate
-concentrations programatically:
-
-```
-import datetime as dt
-
-from pm_icecon.cdr import amsr2_cdr
-
-
-nh_cdr_20210101 = amsr2_cdr(
-    date=dt.date(2021, 1, 1),
-    hemisphere='north',
-    resolution='12',
-)
-```
-
-The `cdr` subcommand of the CLI can be used to generate NetCDF files containing
-CDR-like concentration estimates:
-
-```
-$ ./scripts/cli.sh cdr --help
-Usage: python -m pm_icecon.cli.entrypoint cdr [OPTIONS]
-
-  Run the CDR algorithm with AMSR2 data.
-
-Options:
-  -d, --date [%Y-%m-%d]           [required]
-  -h, --hemisphere [north|south]  [required]
-  -o, --output-dir DIRECTORY      [required]
-  -r, --resolution [25|12]        [required]
-  --help                          Show this message and exit.
-```
-
-If NetCDF files for both hemispheres over a range of dates is desired, modify
-the `start_date` and `end_date` in the `__main__` section of the `cdr` module and invoke it directly. This will produce netCDF files in the `CDR_DATA_DIR` by defualt.
-```
-python pm_icecon/cdr.py
-```
-
-NOTE: the CDR code is currently defined with hard-coded defaults that expect
-access to NSIDC's virtual machine infrastructure.
 
 ### Misc. Development notes
 
