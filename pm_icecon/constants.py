@@ -7,7 +7,6 @@ DEFAULT_FLAG_VALUES = FlagValues()
 # NSIDC infrastructure-specific paths:
 NSIDC_NFS_SHARE_DIR = Path('/share/apps/amsr2-cdr')
 # Produced CDR data files go here.
-CDR_DATA_DIR = NSIDC_NFS_SHARE_DIR / 'cdr_data'
 BOOTSTRAP_MASKS_DIR = NSIDC_NFS_SHARE_DIR / 'bootstrap_masks'
 # Contains regression data, ancillary data files (masks), etc.
 # TODO: move ancillary files out of `cdr_testdata` dir? On the VMs, the
