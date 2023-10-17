@@ -75,6 +75,7 @@ def apply_nt2_land_spillover(
     adj123: npt.NDArray,
     l90c: npt.NDArray,
 ) -> npt.NDArray:
+    """Apply first and second passes of NASA Team 2 land spillover routine."""
     spillover_applied_conc = conc.copy()
     spillover_applied_conc = apply_nt2a_land_spillover(spillover_applied_conc, adj123)
     spillover_applied_conc = apply_nt2b_land_spillover(
