@@ -26,7 +26,7 @@ The algorithm has two passes:
 def apply_nt2a_land_spillover(
     conc: npt.NDArray,
     adj123: npt.NDArray,
-):
+) -> npt.NDArray:
     """Apply the first part of the NASA Team 2 land spillover routine.
 
     If all of the nearby 3-from-shore pixels have zero percent concentration,
@@ -61,7 +61,7 @@ def apply_nt2b_land_spillover(
     conc: npt.NDArray,
     adj123: npt.NDArray,
     l90c: npt.NDArray,
-):
+) -> npt.NDArray:
     """Apply the second part of the NASA Team 2 land spillover routine.
 
     If the calculated concentration is less than the 7x7 box land-is-90%
@@ -71,3 +71,18 @@ def apply_nt2b_land_spillover(
     conc[l90c_ge_conc] = 0
 
     return conc
+
+
+def apply_nt2_land_spillover(
+    *,
+    conc: npt.NDArray,
+    adj123: npt.NDArray,
+    l90c: npt.NDArray,
+) -> npt.NDArray:
+    spillover_applied_conc = conc.copy()
+    spillover_applied_conc = apply_nt2a_land_spillover(spillover_applied_conc, adj123)
+    spillover_applied_conc = apply_nt2b_land_spillover(
+        spillover_applied_conc, adj123, l90c
+    )
+
+    return spillover_applied_conc
