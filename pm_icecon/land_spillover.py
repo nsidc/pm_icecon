@@ -3,6 +3,7 @@
 In these NT2 algorithms:
     adj123 refers to an array that contains the "adjacency-to-land" values
     where:
+        "0" are land grid cells.
         "1" are ocean grid cells adjacent to land
         "2" are ocean grid cells adjacent to "1" cells
         "3" are ocean grid cells adjacent to "2" cells
@@ -31,6 +32,8 @@ def apply_nt2a_land_spillover(
     is_adj12 = (adj123 == 1) | (adj123 == 2)
     is_adj3 = adj123 == 3
     is_zero_conc = conc == 0.0
+    # TODO: this should be extracted as a kwarg. 254 may not always be
+    # consistently used as a flag value for land!
     is_land = conc == 254
 
     kernel = np.ones((7, 7), dtype=np.uint8)
@@ -51,6 +54,31 @@ def apply_nt2a_land_spillover(
     ] = 0
 
     return conc
+
+
+def create_land90(*, adj123: npt.NDArray) -> npt.NDArray:
+    """Create and return l90c from the provided `adj123`.
+
+    The 'land90' array is a mock sea ice concentration array that is calculated
+    from the land mask.  It assumes that the mock concentration value will be
+    the average of a 7x7 array of local surface mask values centered on the
+    center pixel.  Water grid cells are considered to have a sea ice
+    concentration of zero.  Land grid cells are considered to have a sea ice
+    concentration of 90%.  The average of the 49 grid cells in the 7x7 array
+    yields the `land90` concentration value.
+    """
+    is_land = adj123 == 0
+    is_coast = (adj123 == 1) | (adj123 == 2)
+
+    ones_7x7 = np.ones((7, 7), dtype=np.uint8)
+
+    land_count = convolve2d(is_land, ones_7x7, mode='same', boundary='symm')
+    land90 = (land_count * 0.9) / 49 * 100.0
+    land90 = land90.astype(np.float32)
+
+    land90[~is_coast] = 0
+
+    return land90
 
 
 def apply_nt2b_land_spillover(
