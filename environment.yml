@@ -41,3 +41,4 @@ dependencies:
   - pandas ~=1.4.4
   - pyresample ~=1.27
   - pm_tb_data ~=0.1.2
+  - scipy ~=1.8.1
