@@ -1,4 +1,4 @@
-# NEXT_RELEASE
+# v0.2.0
 
 * Bootstrap: stop wrapping data computations in functions that cast data to
   `np.float32`. This was done originally to exactly match the outputs of the
