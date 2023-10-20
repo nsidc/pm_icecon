@@ -43,10 +43,10 @@ def regression(ctx):
     ],
 )
 def ci(ctx):
-    """Run tests in CircleCI.
+    """Run tests not requiring access to external data.
 
-    Excludes regression tests that require access to data on NSIDC-specific
-    infrastructure.
+    Excludes e.g., regression tests that require access to data on
+    NSIDC-specific infrastructure.
     """
     ...
 
