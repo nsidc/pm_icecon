@@ -17,6 +17,10 @@ pm_icecon = ["py.typed"]
 [tool.black]
 target-version = ["py310"]
 
+[tool.vulture]
+paths = ["pm_icecon"]
+min_confidence = 65
+
 [tool.ruff.isort]
 known-first-party = ["pm_icecon"]
 

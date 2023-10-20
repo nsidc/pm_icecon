@@ -23,3 +23,8 @@ repos:
     rev: "23.10.0"
     hooks:
       - id: "black"
+
+  - repo: "https://github.com/jendrikseipp/vulture"
+    rev: "v2.10"
+    hooks:
+      - id: "vulture"
