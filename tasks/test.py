@@ -6,9 +6,8 @@ from .util import PROJECT_DIR, print_and_run
 @task(aliases=["mypy"])
 def typecheck(ctx):
     """Run mypy typechecking."""
-    mypy_cfg_path = PROJECT_DIR / ".mypy.ini"
     print_and_run(
-        (f"mypy --config-file={mypy_cfg_path}" f" {PROJECT_DIR}/"),
+        (f"mypy {PROJECT_DIR}/"),
         pty=True,
     )
 
