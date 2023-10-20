@@ -1,0 +1,41 @@
+name: build_and_release
+
+on:
+  push:
+    tags:
+      - v*
+
+# Default to bash in login mode; key to activating conda environment
+# https://github.com/mamba-org/provision-with-micromamba#IMPORTANT
+defaults:
+  run:
+    shell: "bash -l {0}"
+
+jobs:
+  experimental_build:
+    name: "Run build"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repository"
+        uses: "actions/checkout@v3"
+
+      - name: "Install Conda environment"
+        uses: "mamba-org/setup-micromamba@v1"
+        with:
+          environment-file: "conda-lock.yml"
+          # When using a lock-file, we have to set an environment name.
+          environment-name: "pm_icecon-ci"
+          cache-environment: true
+          # Increase this key to trigger cache invalidation
+          cache-environment-key: 1
+
+      - name: "Run conda build"
+        run: "conda build recipe/"
+
+      - name: "run anaconda upload"
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          for ARTIFACT in $(ls /home/runner/micromamba/envs/pm_icecon-ci/conda-bld/noarch/*.tar.bz2) ; do
+              anaconda -t $ANACONDA_TOKEN upload -u nsidc -l main $ARTIFACT 
+          done
