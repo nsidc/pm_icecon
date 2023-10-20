@@ -7,7 +7,7 @@ source:
 
 build:
   number: {{ environ.get('BUILD_NUMBER', 0) }}
-  script: python setup.py install
+  script: python -m pip install . --no-deps -vv
   preserve_egg_dir: True
   noarch: python
 
