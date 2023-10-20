@@ -19,7 +19,7 @@ from pm_icecon.util import standard_output_filename
 
 
 # Click definitions for "amsr2" which uses AU25
-@click.command()  # type: ignore
+@click.command()
 @click.option(
     "-d",
     "--date",
@@ -85,7 +85,7 @@ def amsr2(
 
 
 # Click definitions for 'a2l1c' which uses 6.25km fields derived from 0763
-@click.command()  # type: ignore
+@click.command()
 @click.option(
     "-d",
     "--date",

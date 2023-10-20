@@ -80,7 +80,7 @@ def a2l1c_goddard_bootstrap(
         land_mask=get_e2n625_land_mask(anc_dir),
         pole_mask=None,
         invalid_ice_mask=is_high_sst,
-        **A2L1C_NORTH_PARAMS,  # type: ignore
+        **A2L1C_NORTH_PARAMS,  # type: ignore[arg-type]
     )
 
     conc_ds = bt.goddard_bootstrap(

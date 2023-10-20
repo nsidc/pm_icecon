@@ -28,9 +28,7 @@ def test__get_wx_params_in_between_seasons():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=(
-            CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
-        ),
+        weather_filter_seasons=(CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]),
     )
 
     try:
@@ -56,9 +54,7 @@ def test__get_wx_params_wrap_around_seasons():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=(
-            CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
-        ),
+        weather_filter_seasons=(CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]),
     )
 
     assert expected == actual
@@ -80,9 +76,7 @@ def test__get_wx_params_for_provided_season():
     )
     actual = _get_wx_params(
         date=date,
-        weather_filter_seasons=(
-            CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
-        ),
+        weather_filter_seasons=(CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]),
     )
 
     assert expected == actual

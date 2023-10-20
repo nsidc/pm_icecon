@@ -13,7 +13,7 @@ from pm_icecon.util import standard_output_filename
 
 
 # Click definitions for "amsr2" which uses AU25
-@click.command()  # type: ignore
+@click.command()
 @click.option(
     "-d",
     "--date",

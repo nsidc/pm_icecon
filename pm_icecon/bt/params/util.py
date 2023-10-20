@@ -61,7 +61,7 @@ def setup_bootstrap_params_dict(
         wfs = bt_params["weather_filter_seasons"]
         bt_weather_params_struct = interpolate_bt_wx_params(
             date=date,
-            weather_filter_seasons=wfs,  # type: ignore
+            weather_filter_seasons=wfs,
         )
         bt_params["wintrc"] = bt_weather_params_struct.wintrc
         bt_params["wslope"] = bt_weather_params_struct.wslope
