@@ -1,5 +1,24 @@
 # Developing `pm_icecon`
 
+## Adding dependencies
+
+To add new dependencies to this project, update the `environment.yml` file with
+the new dependency. Then update your conda environment:
+
+```
+$ mamba env update
+```
+
+Once the conda environment has been updated, lock the environment using `conda-lock`:
+
+```
+$ conda-lock
+```
+
+Commit the changes for the `environment.yml` and the `conda-lock.yml` files.
+
+
+
 ## Linting / formatting
 This project uses [pre-commit](https://pre-commit.com/) to run pre-commit hooks
 that check and format this project's code for stylistic consistency (using
