@@ -15,11 +15,16 @@ include = ["pm_icecon*"]  # package names should match these glob patterns (["*"
 pm_icecon = ["py.typed"]
 
 [tool.black]
-skip-string-normalization = true
+target-version = ["py310"]
 
-[tool.isort]
-profile = "black"
+[tool.ruff.isort]
+known-first-party = ["pm_icecon"]
 
+[tool.ruff.mccabe]
+max-complexity = 8
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "double"
 
 [tool.bumpversion]
 current_version = "0.2.0"
