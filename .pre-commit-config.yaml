@@ -8,6 +8,7 @@ repos:
     rev: "v4.4.0"
     hooks:
       - id: "check-added-large-files"
+        args: ['--maxkb=1000']
       - id: "check-vcs-permalinks"
       - id: "end-of-file-fixer"
 
