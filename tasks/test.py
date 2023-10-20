@@ -7,7 +7,7 @@ from .util import PROJECT_DIR, print_and_run
 def typecheck(ctx):
     """Run mypy typechecking."""
     print_and_run(
-        (f"mypy {PROJECT_DIR}/"),
+        ("mypy"),
         pty=True,
     )
 
