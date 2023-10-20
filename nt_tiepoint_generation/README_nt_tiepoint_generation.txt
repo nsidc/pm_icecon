@@ -73,4 +73,3 @@ to the F17 tie points using the scripts:
 The bash scripts for computing these sets of tie points are
   - determine_nt_tiepoints_psn25.sh  <-- for the Northern Hemisphere
   - determine_nt_tiepoints_pss25.sh  <-- for the Southern Hemisphere
-

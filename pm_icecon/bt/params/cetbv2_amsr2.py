@@ -56,7 +56,7 @@ _ret_parameters_amsru2_f_params = dict(
 #   - new wxlimt values were calculated during Spring 2023 NSIDC
 #     investigation of weather effects for the NOAA CDR version 5 product
 A2L1C_NORTH_PARAMS = _ret_parameters_amsru2_f_params.copy()
-A2L1C_NORTH_PARAMS['weather_filter_seasons'] = [
+A2L1C_NORTH_PARAMS["weather_filter_seasons"] = [
     # June through October 15
     WeatherFilterParamsForSeason(
         start_month=6,

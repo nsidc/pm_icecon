@@ -86,19 +86,19 @@ def get_ausi12_experimental_bootstrap_params(
 ) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
-    if satellite == 'amsr2':
-        if hemisphere == 'north':
+    if satellite == "amsr2":
+        if hemisphere == "north":
             initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH
-        elif hemisphere == 'south':
+        elif hemisphere == "south":
             initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH
         else:
             raise ValueError(
-                'Could not initialize Bootstrap params for:\n'
-                f'satellite: {satellite}\n  hemisphere: {hemisphere}'
+                "Could not initialize Bootstrap params for:\n"
+                f"satellite: {satellite}\n  hemisphere: {hemisphere}"
             )
     else:
         raise ValueError(
-            f'Bootstrap params not yet definted for:\n  satellite: {satellite}'
+            f"Bootstrap params not yet definted for:\n  satellite: {satellite}"
         )
 
     bt_params = setup_bootstrap_params_dict(

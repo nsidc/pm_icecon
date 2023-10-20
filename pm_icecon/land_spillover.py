@@ -40,11 +40,11 @@ def apply_nt2a_land_spillover(
 
     ones_adj3 = np.zeros(conc.shape, dtype=np.uint8)
     ones_adj3[is_adj3] = 1
-    n_near_adj3 = convolve2d(ones_adj3, kernel, mode='same', boundary='symm')
+    n_near_adj3 = convolve2d(ones_adj3, kernel, mode="same", boundary="symm")
 
     ones_adj3_zero = np.zeros(conc.shape, dtype=np.uint8)
     ones_adj3_zero[is_adj3 & is_zero_conc] = 1
-    n_near_adj3_zeros = convolve2d(ones_adj3_zero, kernel, mode='same', boundary='symm')
+    n_near_adj3_zeros = convolve2d(ones_adj3_zero, kernel, mode="same", boundary="symm")
 
     conc[
         (n_near_adj3_zeros > 0)
@@ -72,7 +72,7 @@ def create_land90(*, adj123: npt.NDArray) -> npt.NDArray:
 
     ones_7x7 = np.ones((7, 7), dtype=np.uint8)
 
-    land_count = convolve2d(is_land, ones_7x7, mode='same', boundary='symm')
+    land_count = convolve2d(is_land, ones_7x7, mode="same", boundary="symm")
     land90 = (land_count * 0.9) / 49 * 100.0
     land90 = land90.astype(np.float32)
 

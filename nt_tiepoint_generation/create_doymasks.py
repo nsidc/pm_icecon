@@ -10,11 +10,11 @@ import os
 import numpy as np
 
 # NH
-n_ifn_ = './bt_doymasks_raw/bt_doymask_n_{doy:03d}.dat'
+n_ifn_ = "./bt_doymasks_raw/bt_doymask_n_{doy:03d}.dat"
 
-n_outdir = './bt_doymasks_nh'
+n_outdir = "./bt_doymasks_nh"
 os.makedirs(n_outdir, exist_ok=True)
-n_ofn_ = '{n_outdir}/bt_doymask_n_{doy:03d}.dat'
+n_ofn_ = "{n_outdir}/bt_doymask_n_{doy:03d}.dat"
 
 xdim = 304
 ydim = 448
@@ -40,7 +40,7 @@ is_next = nextd != 0
 mask[is_prior | is_this | is_next] = 100
 ofn = n_ofn_.format(n_outdir=n_outdir, doy=1)
 mask.tofile(ofn)
-print(f'Wrote: {ofn}')
+print(f"Wrote: {ofn}")
 
 for doy in range(2, 365):
     prior = np.fromfile(n_ifn_.format(doy=doy - 1), dtype=np.uint8).reshape(ydim, xdim)
@@ -53,7 +53,7 @@ for doy in range(2, 365):
     mask[is_prior | is_this | is_next] = 100
     ofn = n_ofn_.format(n_outdir=n_outdir, doy=doy)
     mask.tofile(ofn)
-    print(f'Wrote: {ofn}')
+    print(f"Wrote: {ofn}")
 
 doy = 365
 prior = np.fromfile(n_ifn_.format(doy=364), dtype=np.uint8).reshape(ydim, xdim)
@@ -66,14 +66,14 @@ is_next = nextd != 0
 mask[is_prior | is_this | is_next] = 100
 ofn = n_ofn_.format(n_outdir=n_outdir, doy=365)
 mask.tofile(ofn)
-print(f'Wrote: {ofn}')
+print(f"Wrote: {ofn}")
 
 # SH
-s_ifn_ = './bt_doymasks_raw/bt_doymask_s_{doy:03d}.dat'
+s_ifn_ = "./bt_doymasks_raw/bt_doymask_s_{doy:03d}.dat"
 
-s_outdir = './bt_doymasks_sh'
+s_outdir = "./bt_doymasks_sh"
 os.makedirs(s_outdir, exist_ok=True)
-s_ofn_ = '{s_outdir}/bt_doymask_s_{doy:03d}.dat'
+s_ofn_ = "{s_outdir}/bt_doymask_s_{doy:03d}.dat"
 
 # NH
 xdim = 316
@@ -100,7 +100,7 @@ is_next = nextd != 0
 mask[is_prior | is_this | is_next] = 100
 ofn = s_ofn_.format(s_outdir=s_outdir, doy=1)
 mask.tofile(ofn)
-print(f'Wrote: {ofn}')
+print(f"Wrote: {ofn}")
 
 for doy in range(2, 365):
     prior = np.fromfile(s_ifn_.format(doy=doy - 1), dtype=np.uint8).reshape(ydim, xdim)
@@ -113,7 +113,7 @@ for doy in range(2, 365):
     mask[is_prior | is_this | is_next] = 100
     ofn = s_ofn_.format(s_outdir=s_outdir, doy=doy)
     mask.tofile(ofn)
-    print(f'Wrote: {ofn}')
+    print(f"Wrote: {ofn}")
 
 doy = 365
 prior = np.fromfile(s_ifn_.format(doy=364), dtype=np.uint8).reshape(ydim, xdim)
@@ -126,4 +126,4 @@ is_next = nextd != 0
 mask[is_prior | is_this | is_next] = 100
 ofn = s_ofn_.format(s_outdir=s_outdir, doy=365)
 mask.tofile(ofn)
-print(f'Wrote: {ofn}')
+print(f"Wrote: {ofn}")

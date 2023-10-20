@@ -29,16 +29,16 @@ def test__get_wx_params_in_between_seasons():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 
     try:
         assert expected == actual
     except AssertionError as e:
-        print('Failed expected == actual assertion')
-        print(f'expected:\n{expected}')
-        print(f'actual:\n{actual}')
+        print("Failed expected == actual assertion")
+        print(f"expected:\n{expected}")
+        print(f"actual:\n{actual}")
         raise e
 
 
@@ -57,7 +57,7 @@ def test__get_wx_params_wrap_around_seasons():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 
@@ -81,7 +81,7 @@ def test__get_wx_params_for_provided_season():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 
@@ -98,7 +98,7 @@ def test__get_wx_params_for_smmr():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            SMMR_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            SMMR_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 
@@ -112,7 +112,7 @@ def test__get_wx_params_for_amsru_from_goddard():
         wslope=0.5352,
         wxlimt=18.39,
     )
-    wx_filter_seasons = _ret_parameters_amsru2_f_params['weather_filter_seasons']
+    wx_filter_seasons = _ret_parameters_amsru2_f_params["weather_filter_seasons"]
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(wx_filter_seasons),  # type: ignore[arg-type]
@@ -131,7 +131,7 @@ def test__get_wx_params_for_a2l1c():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            A2L1C_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            A2L1C_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 
@@ -148,7 +148,7 @@ def test__get_wx_params_for_f17f18():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            SSMIS_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            SSMIS_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 
@@ -165,7 +165,7 @@ def test__get_wx_params_for_other():
     actual = _get_wx_params(
         date=date,
         weather_filter_seasons=(
-            OTHER_NORTH_PARAMS['weather_filter_seasons']  # type: ignore[arg-type]
+            OTHER_NORTH_PARAMS["weather_filter_seasons"]  # type: ignore[arg-type]
         ),
     )
 

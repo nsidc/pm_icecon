@@ -27,7 +27,7 @@ def get_bootstrap_fields(
 
     # There's no pole hole in the southern hemisphere.
     pole_mask = (
-        get_ps_pole_hole_mask(resolution=resolution) if hemisphere == 'north' else None
+        get_ps_pole_hole_mask(resolution=resolution) if hemisphere == "north" else None
     )
 
     return dict(

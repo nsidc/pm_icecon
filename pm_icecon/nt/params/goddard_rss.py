@@ -10,15 +10,15 @@ from pm_icecon.nt._types import NasateamGradientRatioThresholds
 
 RSS_F17_NORTH_GRADIENT_THRESHOLDS = NasateamGradientRatioThresholds(
     {
-        '3719': 0.050,
-        '2219': 0.045,
+        "3719": 0.050,
+        "2219": 0.045,
     }
 )
 
 
 RSS_F17_SOUTH_GRADIENT_THRESHOLDS = NasateamGradientRatioThresholds(
     {
-        '3719': 0.053,
-        '2219': 0.045,
+        "3719": 0.053,
+        "2219": 0.045,
     }
 )

@@ -11,7 +11,7 @@ from scipy.signal import convolve2d
 xdim = 304
 ydim = 448
 
-ifn = './psn25_landmask.dat'
+ifn = "./psn25_landmask.dat"
 nmask_init = np.fromfile(ifn, dtype=np.uint8).reshape(ydim, xdim)
 nmask_init[nmask_init != 0] = 1
 
@@ -27,15 +27,15 @@ kernel = np.array(
     ]
 )
 
-print(f'Expanding landmask with kernel:\n{kernel}')
+print(f"Expanding landmask with kernel:\n{kernel}")
 
-nmask_convolved = convolve2d(nmask_init, kernel, mode='same', boundary='symm').astype(
+nmask_convolved = convolve2d(nmask_init, kernel, mode="same", boundary="symm").astype(
     np.uint8
 )
 
 nmask_exp = np.zeros((ydim, xdim), dtype=np.uint8)
 nmask_exp[nmask_convolved != 0] = 100
 
-ofn = './psn25_expanded_landmask.dat'
+ofn = "./psn25_expanded_landmask.dat"
 nmask_exp.tofile(ofn)
-print(f'Wrote: {ofn}  {nmask_exp.dtype}  {nmask_exp.shape}')
+print(f"Wrote: {ofn}  {nmask_exp.dtype}  {nmask_exp.shape}")

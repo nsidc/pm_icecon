@@ -14,23 +14,23 @@ from pm_icecon.bt.compute_bt_ic import goddard_bootstrap
 from pm_icecon.bt.params.cetbv2_amsr2 import A2L1C_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 
-if __name__ == '__main__':
-    hemisphere: Hemisphere = 'north'
+if __name__ == "__main__":
+    hemisphere: Hemisphere = "north"
     date = dt.date(2018, 8, 1)
 
     # Get the brightness temperatures for a2l1c
     # NOTE/TODO: change the `base_dir` path here to your local data location!
     xr_tbs = get_a2l1c_625_tbs(
-        base_dir=Path('/path/to/a2l1c_data_location/'),
+        base_dir=Path("/path/to/a2l1c_data_location/"),
         date=date,
         hemisphere=hemisphere,
-        ncfn_template='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
-        timeframe='M',
+        ncfn_template="NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc",  # noqa
+        timeframe="M",
     )
 
     # Define required masks
     # NOTE/TODO: replace these with 'real' masks!
-    _data_shape = xr_tbs['v18'].shape
+    _data_shape = xr_tbs["v18"].shape
     land_mask = np.zeros(_data_shape).astype(bool)
     pole_mask = np.zeros(_data_shape).astype(bool)
     invalid_ice_mask = np.zeros(_data_shape).astype(bool)
@@ -46,10 +46,10 @@ if __name__ == '__main__':
 
     # Run the bootstrap algoirthm and get the result back as an xarray dataset.
     conc_ds = goddard_bootstrap(
-        tb_v37=xr_tbs['v36'].data,
-        tb_h37=xr_tbs['h36'].data,
-        tb_v19=xr_tbs['v18'].data,
-        tb_v22=xr_tbs['v23'].data,
+        tb_v37=xr_tbs["v36"].data,
+        tb_h37=xr_tbs["h36"].data,
+        tb_v19=xr_tbs["v18"].data,
+        tb_v22=xr_tbs["v23"].data,
         params=bootstrap_params,
         date=date,
     )

@@ -32,13 +32,13 @@ def test_bt_amsr2_regression():
     for date in (dt.date(2020, 1, 1), dt.date(2022, 5, 4)):
         actual_ds = amsr2_goddard_bootstrap(
             date=date,
-            hemisphere='north',
-            resolution='25',
+            hemisphere="north",
+            resolution="25",
         )
 
-        filename = f'NH_{date:%Y%m%d}_py_NRT_amsr2.nc'
+        filename = f"NH_{date:%Y%m%d}_py_NRT_amsr2.nc"
         regression_ds = xr.open_dataset(
-            CDR_TESTDATA_DIR / 'bt_amsru_regression' / filename
+            CDR_TESTDATA_DIR / "bt_amsru_regression" / filename
         )
 
         assert_almost_equal(
@@ -65,9 +65,9 @@ def _original_f18_example() -> xr.Dataset:
     the exact grid produced by the fortran code is in
     `CDR_TESTDATA / 'bt_goddard_orig_output/NH_20180217_SB2_NRT_f18.ic'`.
     """
-    resolution: AU_SI_RESOLUTIONS = '25'
+    resolution: AU_SI_RESOLUTIONS = "25"
     date = dt.date(2018, 2, 17)
-    hemisphere: Hemisphere = 'north'
+    hemisphere: Hemisphere = "north"
     params = BootstrapParams(
         land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
         pole_mask=get_ps_pole_hole_mask(resolution=resolution),
@@ -81,12 +81,12 @@ def _original_f18_example() -> xr.Dataset:
 
     otbs: dict[str, NDArray[np.float32]] = {}
 
-    orig_input_tbs_dir = CDR_TESTDATA_DIR / 'bt_goddard_orig_input_tbs/'
+    orig_input_tbs_dir = CDR_TESTDATA_DIR / "bt_goddard_orig_input_tbs/"
     raw_fns = {
-        'v19': 'tb_f18_20180217_nrt_n19v.bin',
-        'h37': 'tb_f18_20180217_nrt_n37h.bin',
-        'v37': 'tb_f18_20180217_nrt_n37v.bin',
-        'v22': 'tb_f18_20180217_nrt_n22v.bin',
+        "v19": "tb_f18_20180217_nrt_n19v.bin",
+        "h37": "tb_f18_20180217_nrt_n37h.bin",
+        "v37": "tb_f18_20180217_nrt_n37v.bin",
+        "v22": "tb_f18_20180217_nrt_n22v.bin",
     }
 
     def _read_tb_field(tbfn: Path) -> NDArray[np.float32]:
@@ -95,7 +95,7 @@ def _original_f18_example() -> xr.Dataset:
 
         return raw.astype(np.float32) / 10
 
-    for tb in ('v19', 'h37', 'v37', 'v22'):
+    for tb in ("v19", "h37", "v37", "v22"):
         otbs[tb] = _read_tb_field(
             (
                 orig_input_tbs_dir / raw_fns[tb]  # type: ignore [literal-required]
@@ -105,11 +105,11 @@ def _original_f18_example() -> xr.Dataset:
     conc_ds = bt.goddard_bootstrap(
         # Apply expected transformation for F18 CLASS data.
         **xfer_class_tbs(  # type: ignore[arg-type]
-            tb_v37=spatial_interp_tbs(otbs['v37']),
-            tb_h37=spatial_interp_tbs(otbs['h37']),
-            tb_v19=spatial_interp_tbs(otbs['v19']),
-            tb_v22=spatial_interp_tbs(otbs['v22']),
-            sat='f18',
+            tb_v37=spatial_interp_tbs(otbs["v37"]),
+            tb_h37=spatial_interp_tbs(otbs["h37"]),
+            tb_v19=spatial_interp_tbs(otbs["v19"]),
+            tb_v22=spatial_interp_tbs(otbs["v22"]),
+            sat="f18",
         ),
         params=params,
         date=date,
@@ -122,7 +122,7 @@ def test_bt_f18_regression():
     """Regressi5on test for BT F18 output."""
     actual_ds = _original_f18_example()
     regression_ds = xr.open_dataset(
-        CDR_TESTDATA_DIR / 'bt_f18_regression/NH_20180217_NRT_f18_regression.nc',
+        CDR_TESTDATA_DIR / "bt_f18_regression/NH_20180217_NRT_f18_regression.nc",
     )
 
     assert_almost_equal(

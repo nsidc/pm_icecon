@@ -12,19 +12,19 @@ class NasateamCoefficients(TypedDict):
     F: float
     G: float
     H: float
-    I: float
+    I: float  # noqa
     J: float
     K: float
     L: float
 
 
-NasateamRatio = NewType('NasateamRatio', npt.NDArray)
+NasateamRatio = NewType("NasateamRatio", npt.NDArray)
 
 
 NasateamGradientRatioThresholds = TypedDict(
-    'NasateamGradientRatioThresholds',
+    "NasateamGradientRatioThresholds",
     {
-        '2219': float,
-        '3719': float,
+        "2219": float,
+        "3719": float,
     },
 )

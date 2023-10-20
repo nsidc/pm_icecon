@@ -14,7 +14,7 @@ cli.add_command(bt_cli)
 cli.add_command(nt_cli)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pm_icecon.cli.entrypoint import cli
 
     cli()
