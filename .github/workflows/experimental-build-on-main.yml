@@ -1,0 +1,38 @@
+# This workflow runs an experimental build for this package using `boa` to
+# enable the use of the `mamba` solver in conda-build. `boa` is under
+# development, so this is just to quickly test that the build works on pushes to
+# `main`. When we publish the package, we will use a separate workflow for
+# building it with `conda-build`.
+name: experimental_build
+
+on:
+  push:
+    branches:
+      - main
+
+# Default to bash in login mode; key to activating conda environment
+# https://github.com/mamba-org/provision-with-micromamba#IMPORTANT
+defaults:
+  run:
+    shell: "bash -l {0}"
+
+jobs:
+  experimental_build:
+    name: "Run experimental build with boa"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repository"
+        uses: "actions/checkout@v3"
+
+      - name: "Install Conda environment"
+        uses: "mamba-org/setup-micromamba@v1"
+        with:
+          environment-file: "conda-lock.yml"
+          # When using a lock-file, we have to set an environment name.
+          environment-name: "pm_icecon-ci"
+          cache-environment: true
+          # Increase this key to trigger cache invalidation
+          cache-environment-key: 1
+
+      - name: "run experimental build"
+        run: "conda mambabuild recipe/"

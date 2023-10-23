@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Default to bash in login mode; key to activating conda environment
+# https://github.com/mamba-org/provision-with-micromamba#IMPORTANT
+defaults:
+  run:
+    shell: "bash -l {0}"
+
+jobs:
+  test:
+    name: "Run tests"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repository"
+        uses: "actions/checkout@v3"
+
+      - name: "Install Conda environment"
+        uses: "mamba-org/setup-micromamba@v1"
+        with:
+          environment-file: "conda-lock.yml"
+          # When using a lock-file, we have to set an environment name.
+          environment-name: "pm_icecon-ci"
+          cache-environment: true
+          # Increase this key to trigger cache invalidation
+          cache-environment-key: 1
+
+      # Linter
+      - name: "Run pre-commit tests"
+        run: "pre-commit run --all-files"
+
+      # Run mypy and unit tests Unit tests
+      - name: "Run unit tests"
+        run: "invoke test.ci"

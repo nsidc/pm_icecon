@@ -14,9 +14,11 @@ dependencies:
   - ipdb
   - bump2version
   - pre-commit
+  - conda-lock
   # build tools
-  - conda-build ~=3.23.3
-  - anaconda-client
+  - conda-build ~=3.25.0
+  - anaconda-client ~=1.12.1
+  - boa ~=0.15.1
 
   # Runtime dependencies
   # NOTE: these should be kept in sync with those in `recipe/meta.yaml`.
