@@ -177,7 +177,7 @@ def get_amsr2_params(
     invalid_ice_mask = get_ps_invalid_ice_mask(
         hemisphere=hemisphere,
         date=date,
-        resolution=resolution,  # type: ignore[arg-type]
+        resolution=resolution,
     )
 
     bt_params = BootstrapParams(

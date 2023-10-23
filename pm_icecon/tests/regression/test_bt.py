@@ -74,9 +74,9 @@ def _original_f18_example() -> xr.Dataset:
         invalid_ice_mask=get_ps_invalid_ice_mask(
             hemisphere=hemisphere,
             date=date,
-            resolution=resolution,  # type: ignore[arg-type]
+            resolution=resolution,
         ),
-        **SSMIS_NORTH_PARAMS,  # type: ignore
+        **SSMIS_NORTH_PARAMS,  # type: ignore[arg-type]
     )
 
     otbs: dict[str, NDArray[np.float32]] = {}
@@ -96,11 +96,7 @@ def _original_f18_example() -> xr.Dataset:
         return raw.astype(np.float32) / 10
 
     for tb in ("v19", "h37", "v37", "v22"):
-        otbs[tb] = _read_tb_field(
-            (
-                orig_input_tbs_dir / raw_fns[tb]  # type: ignore [literal-required]
-            ).resolve()
-        )
+        otbs[tb] = _read_tb_field((orig_input_tbs_dir / raw_fns[tb]).resolve())
 
     conc_ds = bt.goddard_bootstrap(
         # Apply expected transformation for F18 CLASS data.

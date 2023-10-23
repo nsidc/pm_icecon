@@ -6,9 +6,8 @@ from .util import PROJECT_DIR, print_and_run
 @task(aliases=["mypy"])
 def typecheck(ctx):
     """Run mypy typechecking."""
-    mypy_cfg_path = PROJECT_DIR / ".mypy.ini"
     print_and_run(
-        (f"mypy --config-file={mypy_cfg_path}" f" {PROJECT_DIR}/"),
+        ("mypy"),
         pty=True,
     )
 
@@ -19,7 +18,7 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f"PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/pm_icecon/tests/unit",
+        f"pytest -s {PROJECT_DIR}/pm_icecon/tests/unit",
         pty=True,
     )
 
@@ -31,7 +30,7 @@ def regression(ctx):
     Requires access to data on NFS and should be run on a VM.
     """
     print_and_run(
-        f"PYTHONPATH={PROJECT_DIR} pytest -s {PROJECT_DIR}/pm_icecon/tests/regression",
+        f"pytest -s {PROJECT_DIR}/pm_icecon/tests/regression",
         pty=True,
     )
 

@@ -20,7 +20,7 @@ def get_bootstrap_fields(
     invalid_ice_mask = get_ps_invalid_ice_mask(
         hemisphere=hemisphere,
         date=date,
-        resolution=resolution,  # type: ignore[arg-type]
+        resolution=resolution,
     )
 
     land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution)
