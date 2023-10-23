@@ -8,7 +8,7 @@ dependencies:
   - isort ~=5.10
   - mypy ~=1.5
   - pytest ~=7.1
-  - pytest-cov
+  - pytest-cov ~=4.1.0
   - vulture ~=2.4
   # debugging/development tools
   - ipython
