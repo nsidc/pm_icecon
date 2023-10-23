@@ -89,14 +89,14 @@ GODDARD_AMSR2_SOUTH_PARAMS = ParamsDict(
 )
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
-    bt_wtp_v37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].water_tie_point_set[0],
-    bt_wtp_h37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].water_tie_point_set[1],
-    bt_wtp_v19=GODDARD_AMSR2_NORTH_PARAMS['v1937_params'].water_tie_point_set[1],
-    bt_itp_v37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].ice_tie_point_set[0],
-    bt_itp_h37=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].ice_tie_point_set[1],
-    bt_itp_v19=GODDARD_AMSR2_NORTH_PARAMS['v1937_params'].ice_tie_point_set[1],
-    vh37_lnline=GODDARD_AMSR2_NORTH_PARAMS['vh37_params'].lnline,
-    v1937_lnline=GODDARD_AMSR2_NORTH_PARAMS['v1937_params'].lnline,
+    bt_wtp_v37=GODDARD_AMSR2_NORTH_PARAMS["vh37_params"].water_tie_point_set[0],
+    bt_wtp_h37=GODDARD_AMSR2_NORTH_PARAMS["vh37_params"].water_tie_point_set[1],
+    bt_wtp_v19=GODDARD_AMSR2_NORTH_PARAMS["v1937_params"].water_tie_point_set[1],
+    bt_itp_v37=GODDARD_AMSR2_NORTH_PARAMS["vh37_params"].ice_tie_point_set[0],
+    bt_itp_h37=GODDARD_AMSR2_NORTH_PARAMS["vh37_params"].ice_tie_point_set[1],
+    bt_itp_v19=GODDARD_AMSR2_NORTH_PARAMS["v1937_params"].ice_tie_point_set[1],
+    vh37_lnline=GODDARD_AMSR2_NORTH_PARAMS["vh37_params"].lnline,
+    v1937_lnline=GODDARD_AMSR2_NORTH_PARAMS["v1937_params"].lnline,
     weather_filter_seasons=[
         # November through April (`seas=1` in `boot_ice_amsru2_np.f`)
         WeatherFilterParamsForSeason(
@@ -125,14 +125,14 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
 )
 
 BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
-    bt_wtp_v37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].water_tie_point_set[0],
-    bt_wtp_h37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].water_tie_point_set[1],
-    bt_wtp_v19=GODDARD_AMSR2_SOUTH_PARAMS['v1937_params'].water_tie_point_set[1],
-    bt_itp_v37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].ice_tie_point_set[0],
-    bt_itp_h37=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].ice_tie_point_set[1],
-    bt_itp_v19=GODDARD_AMSR2_SOUTH_PARAMS['v1937_params'].ice_tie_point_set[1],
-    vh37_lnline=GODDARD_AMSR2_SOUTH_PARAMS['vh37_params'].lnline,
-    v1937_lnline=GODDARD_AMSR2_SOUTH_PARAMS['v1937_params'].lnline,
+    bt_wtp_v37=GODDARD_AMSR2_SOUTH_PARAMS["vh37_params"].water_tie_point_set[0],
+    bt_wtp_h37=GODDARD_AMSR2_SOUTH_PARAMS["vh37_params"].water_tie_point_set[1],
+    bt_wtp_v19=GODDARD_AMSR2_SOUTH_PARAMS["v1937_params"].water_tie_point_set[1],
+    bt_itp_v37=GODDARD_AMSR2_SOUTH_PARAMS["vh37_params"].ice_tie_point_set[0],
+    bt_itp_h37=GODDARD_AMSR2_SOUTH_PARAMS["vh37_params"].ice_tie_point_set[1],
+    bt_itp_v19=GODDARD_AMSR2_SOUTH_PARAMS["v1937_params"].ice_tie_point_set[1],
+    vh37_lnline=GODDARD_AMSR2_SOUTH_PARAMS["vh37_params"].lnline,
+    v1937_lnline=GODDARD_AMSR2_SOUTH_PARAMS["v1937_params"].lnline,
     weather_filter_seasons=[
         # Just one season for the S. hemisphere.
         WeatherFilterParamsForSeason(
@@ -150,21 +150,21 @@ BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
 
 CDR_AMSR2_NORTH_PARAMS = GODDARD_AMSR2_NORTH_PARAMS.copy()
 _bt_north_weather_filter_seasons = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH[
-    'weather_filter_seasons'
+    "weather_filter_seasons"
 ]
 _bt_north_weather_filter_seasons = cast(
     list[WeatherFilterParamsForSeason], _bt_north_weather_filter_seasons
 )
-CDR_AMSR2_NORTH_PARAMS['weather_filter_seasons'] = _bt_north_weather_filter_seasons
+CDR_AMSR2_NORTH_PARAMS["weather_filter_seasons"] = _bt_north_weather_filter_seasons
 
 CDR_AMSR2_SOUTH_PARAMS = GODDARD_AMSR2_SOUTH_PARAMS.copy()
 _bt_south_weather_filter_seasons = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH[
-    'weather_filter_seasons'
+    "weather_filter_seasons"
 ]
 _bt_south_weather_filter_seasons = cast(
     list[WeatherFilterParamsForSeason], _bt_south_weather_filter_seasons
 )
-CDR_AMSR2_SOUTH_PARAMS['weather_filter_seasons'] = _bt_south_weather_filter_seasons
+CDR_AMSR2_SOUTH_PARAMS["weather_filter_seasons"] = _bt_south_weather_filter_seasons
 
 
 # used to get parameters in `cdr.py`. Not used by the ecdr.
@@ -185,11 +185,11 @@ def get_amsr2_params(
         # There's no pole hole in the southern hemisphere.
         pole_mask=(
             get_ps_pole_hole_mask(resolution=resolution)
-            if hemisphere == 'north'
+            if hemisphere == "north"
             else None
         ),
         invalid_ice_mask=invalid_ice_mask,
-        **(CDR_AMSR2_NORTH_PARAMS if hemisphere == 'north' else CDR_AMSR2_SOUTH_PARAMS),
+        **(CDR_AMSR2_NORTH_PARAMS if hemisphere == "north" else CDR_AMSR2_SOUTH_PARAMS),
     )
 
     return bt_params
@@ -203,19 +203,19 @@ def get_ausi_bootstrap_params(
 ) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
-    if satellite == 'amsr2':
-        if hemisphere == 'north':
+    if satellite == "amsr2":
+        if hemisphere == "north":
             initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH
-        elif hemisphere == 'south':
+        elif hemisphere == "south":
             initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH
         else:
             raise ValueError(
-                'Could not initialize Bootstrap params for:\n'
-                f'satellite: {satellite}\n  hemisphere: {hemisphere}'
+                "Could not initialize Bootstrap params for:\n"
+                f"satellite: {satellite}\n  hemisphere: {hemisphere}"
             )
     else:
         raise ValueError(
-            f'Bootstrap params not yet definted for:\n  satellite: {satellite}'
+            f"Bootstrap params not yet definted for:\n  satellite: {satellite}"
         )
 
     bt_params = setup_bootstrap_params_dict(

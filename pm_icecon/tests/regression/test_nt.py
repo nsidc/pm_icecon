@@ -20,11 +20,11 @@ from pm_icecon.util import get_ps25_grid_shape
 
 def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     """Return the concentration field example for f17_20180101."""
-    _nt_maps_dir = CDR_TESTDATA_DIR / 'nt_datafiles/data36/maps/'
+    _nt_maps_dir = CDR_TESTDATA_DIR / "nt_datafiles/data36/maps/"
 
     def _get_shoremap(*, hemisphere: Hemisphere):
-        shoremap_fn = _nt_maps_dir / f'shoremap_{hemisphere}_25'
-        shoremap = np.fromfile(shoremap_fn, dtype='>i2')[150:].reshape(
+        shoremap_fn = _nt_maps_dir / f"shoremap_{hemisphere}_25"
+        shoremap = np.fromfile(shoremap_fn, dtype=">i2")[150:].reshape(
             get_ps25_grid_shape(hemisphere=hemisphere)
         )
 
@@ -32,13 +32,13 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
 
     def _get_minic(*, hemisphere: Hemisphere):
         # TODO: why is 'SSMI8' on FH fn and not SH?
-        if hemisphere == 'north':
-            minic_fn = 'SSMI8_monavg_min_con'
+        if hemisphere == "north":
+            minic_fn = "SSMI8_monavg_min_con"
         else:
-            minic_fn = 'SSMI_monavg_min_con_s'
+            minic_fn = "SSMI_monavg_min_con_s"
 
         minic_path = _nt_maps_dir / minic_fn
-        minic = np.fromfile(minic_path, dtype='>i2')[150:].reshape(
+        minic = np.fromfile(minic_path, dtype=">i2")[150:].reshape(
             get_ps25_grid_shape(hemisphere=hemisphere)
         )
 
@@ -48,12 +48,12 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         return minic
 
     date = dt.date(2018, 1, 1)
-    orig_input_tbs_dir = CDR_TESTDATA_DIR / 'nt_goddard_input_tbs'
+    orig_input_tbs_dir = CDR_TESTDATA_DIR / "nt_goddard_input_tbs"
     raw_fns = {
-        'v19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19v.bin',
-        'v37': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}37v.bin',
-        'v22': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}22v.bin',
-        'h19': f'tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin',
+        "v19": f"tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19v.bin",
+        "v37": f"tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}37v.bin",
+        "v22": f"tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}22v.bin",
+        "h19": f"tb_f17_{date:%Y%m%d}_v4_{hemisphere[0].lower()}19h.bin",
     }
 
     tbs = {}
@@ -70,19 +70,19 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
     invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
 
     conc_ds = goddard_nasateam(
-        tb_v19=tbs['v19'],
-        tb_v37=tbs['v37'],
-        tb_v22=tbs['v22'],
-        tb_h19=tbs['h19'],
+        tb_v19=tbs["v19"],
+        tb_v37=tbs["v37"],
+        tb_v22=tbs["v22"],
+        tb_h19=tbs["h19"],
         shoremap=_get_shoremap(hemisphere=hemisphere),
         minic=_get_minic(hemisphere=hemisphere),
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=(
             RSS_F17_NORTH_GRADIENT_THRESHOLDS
-            if hemisphere == 'north'
+            if hemisphere == "north"
             else RSS_F17_SOUTH_GRADIENT_THRESHOLDS
         ),
-        tiepoints=get_tiepoints(satellite='17_final', hemisphere=hemisphere),
+        tiepoints=get_tiepoints(satellite="17_final", hemisphere=hemisphere),
     )
 
     return conc_ds
@@ -93,8 +93,8 @@ def test_nt_f17_regressions():
     for hemisphere in get_args(Hemisphere):
         regression_ds = xr.open_dataset(
             CDR_TESTDATA_DIR
-            / 'nt_f17_regression'
-            / f'{hemisphere[0].upper()}H_f17_20180101_regression.nc',
+            / "nt_f17_regression"
+            / f"{hemisphere[0].upper()}H_f17_20180101_regression.nc",
         )
         regression_data = regression_ds.conc.data
 

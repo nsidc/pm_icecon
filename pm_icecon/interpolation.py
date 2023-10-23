@@ -28,13 +28,13 @@ def spatial_interp_tbs(tbs_array: npt.NDArray):  # noqa
         return tbs_array.copy()
 
     for offset in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-        rolled = ndimage.shift(orig, offset, mode='nearest', order=0)
+        rolled = ndimage.shift(orig, offset, mode="nearest", order=0)
         has_vals = (rolled > 0) & (interp_locs)
         total[has_vals] += rolled[has_vals]
         count[has_vals] += 1.0
 
     for offset in ((1, 1), (1, -1), (-1, -1), (-1, 1)):
-        rolled = ndimage.shift(orig, offset, mode='nearest', order=0)
+        rolled = ndimage.shift(orig, offset, mode="nearest", order=0)
         has_vals = (rolled > 0) & (interp_locs)
         total[has_vals] += 0.707 * rolled[has_vals]
         count[has_vals] += 0.707

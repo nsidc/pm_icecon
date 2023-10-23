@@ -21,21 +21,21 @@ from pm_icecon.util import standard_output_filename
 # Click definitions for "amsr2" which uses AU25
 @click.command()  # type: ignore
 @click.option(
-    '-d',
-    '--date',
+    "-d",
+    "--date",
     required=True,
-    type=click.DateTime(formats=('%Y-%m-%d',)),
+    type=click.DateTime(formats=("%Y-%m-%d",)),
     callback=datetime_to_date,
 )
 @click.option(
-    '-h',
-    '--hemisphere',
+    "-h",
+    "--hemisphere",
     required=True,
     type=click.Choice(get_args(Hemisphere)),
 )
 @click.option(
-    '-o',
-    '--output-dir',
+    "-o",
+    "--output-dir",
     required=True,
     type=click.Path(
         exists=True,
@@ -47,8 +47,8 @@ from pm_icecon.util import standard_output_filename
     ),
 )
 @click.option(
-    '-r',
-    '--resolution',
+    "-r",
+    "--resolution",
     required=True,
     type=click.Choice(get_args(AU_SI_RESOLUTIONS)),
 )
@@ -75,33 +75,33 @@ def amsr2(
     output_fn = standard_output_filename(
         hemisphere=hemisphere,
         date=date,
-        sat='u2',
-        resolution=f'{resolution}km',
-        algorithm='bt',
+        sat="u2",
+        resolution=f"{resolution}km",
+        algorithm="bt",
     )
     output_path = output_dir / output_fn
     conc_ds.to_netcdf(output_path)
-    logger.info(f'Wrote AMSR2 concentration field: {output_path}')
+    logger.info(f"Wrote AMSR2 concentration field: {output_path}")
 
 
 # Click definitions for 'a2l1c' which uses 6.25km fields derived from 0763
 @click.command()  # type: ignore
 @click.option(
-    '-d',
-    '--date',
+    "-d",
+    "--date",
     required=True,
-    type=click.DateTime(formats=('%Y-%m-%d',)),
+    type=click.DateTime(formats=("%Y-%m-%d",)),
     callback=datetime_to_date,
 )
 @click.option(
-    '-h',
-    '--hemisphere',
+    "-h",
+    "--hemisphere",
     required=True,
     type=click.Choice(get_args(Hemisphere)),
 )
 @click.option(
-    '-o',
-    '--output-dir',
+    "-o",
+    "--output-dir",
     required=True,
     type=click.Path(
         exists=True,
@@ -113,8 +113,8 @@ def amsr2(
     ),
 )
 @click.option(
-    '-t',
-    '--tb_dir',
+    "-t",
+    "--tb_dir",
     required=True,
     type=click.Path(
         exists=True,
@@ -125,8 +125,8 @@ def amsr2(
     ),
 )
 @click.option(
-    '-a',
-    '--anc_dir',
+    "-a",
+    "--anc_dir",
     required=True,
     type=click.Path(
         exists=True,
@@ -137,16 +137,16 @@ def amsr2(
     ),
 )
 @click.option(
-    '-p',
-    '--nctbfn_template',
+    "-p",
+    "--nctbfn_template",
     required=False,
-    default='NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc',  # noqa
+    default="NSIDC-0763-EASE2_{hemlet}{gridres}km-GCOMW1_AMSR2-{year}{doy}-{capchan}-{tim}-SIR-PPS_XCAL-v1.1.nc",  # noqa
 )
 @click.option(
-    '-f',
-    '--timeframe',
+    "-f",
+    "--timeframe",
     required=False,
-    default='M',
+    default="M",
 )
 def a2l1c(
     *,
@@ -166,7 +166,7 @@ def a2l1c(
     The resulting concentration field is saved to a netcdf file in the given
     `output_dir`.
     """
-    resolution = '6.25km'
+    resolution = "6.25km"
     conc_ds = a2l1c_goddard_bootstrap(
         date=date,
         hemisphere=hemisphere,
@@ -179,28 +179,28 @@ def a2l1c(
     output_fn = standard_output_filename(
         hemisphere=hemisphere,
         date=date,
-        sat='a2l1c',
+        sat="a2l1c",
         resolution=resolution,
-        algorithm='bt',
+        algorithm="bt",
         timeframe=timeframe,
     )
     output_path = output_dir / output_fn
     # conc_ds.to_netcdf(output_path)
-    conc_ds.astype(np.float32).to_netcdf(output_path, encoding={'conc': {'zlib': True}})
+    conc_ds.astype(np.float32).to_netcdf(output_path, encoding={"conc": {"zlib": True}})
 
-    logger.info(f'Wrote a2l1c concentration field: {output_path}')
+    logger.info(f"Wrote a2l1c concentration field: {output_path}")
 
     # Note: the following command replaces the output file
     add_info_to_netcdf_file_a2l1c(output_path)
-    logger.info(f'Re-wrote AMSR2 concentration netCDF file: {output_path}')
+    logger.info(f"Re-wrote AMSR2 concentration netCDF file: {output_path}")
 
     # Write an equivalent geotiff file
     geotiff_output_path = derive_geotiff_name_a2l1c(output_path)
     create_equivalent_geotiff_a2l1c(output_path, geotiff_output_path)
-    logger.info(f'Wrote AMSR2 concentration geotiff: {geotiff_output_path}')
+    logger.info(f"Wrote AMSR2 concentration geotiff: {geotiff_output_path}")
 
 
-@click.group(name='bootstrap')
+@click.group(name="bootstrap")
 def cli():
     """Run the bootstrap algorithm."""
     ...
@@ -210,5 +210,5 @@ cli.add_command(amsr2)
 cli.add_command(a2l1c)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

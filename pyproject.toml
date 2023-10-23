@@ -1,5 +1,45 @@
-[tool.black]
-skip-string-normalization = true
+[project]
+name = "pm_icecon"
+version = "0.2.0"
+description = "Sea ice concentration estimates from passive microwave data"
 
-[tool.isort]
-profile = "black"
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["pm_icecon*"]  # package names should match these glob patterns (["*"] by default)
+
+[tool.setuptools.package-data]
+pm_icecon = ["py.typed"]
+
+[tool.black]
+target-version = ["py310"]
+
+[tool.vulture]
+paths = ["pm_icecon"]
+min_confidence = 65
+
+[tool.ruff.isort]
+known-first-party = ["pm_icecon"]
+
+[tool.ruff.mccabe]
+max-complexity = 8
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "double"
+
+[tool.bumpversion]
+current_version = "0.2.0"
+commit = false
+tag = false
+
+[[tool.bumpversion.files]]
+filename = "./recipe/meta.yaml"
+search = 'version: "{current_version}"'
+replace = 'version: "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'

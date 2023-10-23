@@ -62,7 +62,7 @@ def xfer_class_tbs(
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
     tb_v22: npt.NDArray,
-    sat: Literal['f17', 'f18'],
+    sat: Literal["f17", "f18"],
 ) -> dict[str, npt.NDArray[np.float32]]:
     """Transform selected CLASS (NRT) TBs for consistentcy with timeseries.
 
@@ -72,24 +72,24 @@ def xfer_class_tbs(
     TODO: make sure this description is...descriptive enough.
     """
     # NRT regressions
-    if sat == 'f17':
+    if sat == "f17":
         tb_v37 = (1.0170066 * tb_v37) + -4.9383355
         tb_h37 = (1.0009720 * tb_h37) + -1.3709822
         tb_v19 = (1.0140723 * tb_v19) + -3.4705583
         tb_v22 = (0.99652931 * tb_v22) + -0.82305684
-    elif sat == 'f18':
+    elif sat == "f18":
         tb_v37 = (1.0104497 * tb_v37) + -3.3174017
         tb_h37 = (0.98914390 * tb_h37) + 1.2031835
         tb_v19 = (1.0057373 * tb_v19) + -0.92638520
         tb_v22 = (0.98793409 * tb_v22) + 1.2108198
     else:
-        raise UnexpectedSatelliteError(f'No such tb xform: {sat}')
+        raise UnexpectedSatelliteError(f"No such tb xform: {sat}")
 
     return {
-        'tb_v37': tb_v37,
-        'tb_h37': tb_h37,
-        'tb_v19': tb_v19,
-        'tb_v22': tb_v22,
+        "tb_v37": tb_v37,
+        "tb_h37": tb_h37,
+        "tb_v19": tb_v19,
+        "tb_v22": tb_v22,
     }
 
 
@@ -114,8 +114,8 @@ def get_adj_ad_line_offset(
     HV37. For data points below the offset AD line, the V1937 tbs et is used
     instead.
     """
-    off = line_37v37h['offset']
-    slp = line_37v37h['slope']
+    off = line_37v37h["offset"]
+    slp = line_37v37h["slope"]
 
     x = ((wtp_x / slp) + wtp_y - off) / (slp + 1.0 / slp)
     y = slp * x + off
@@ -217,18 +217,18 @@ def get_linfit(
     # ad_line_offset is calculated from the 37v37h tbset.
     if tba is not None and iceline is not None and ad_line_offset is not None:
         is_tba_le_modad = (
-            tba <= (tbx * iceline['slope']) + iceline['offset'] - ad_line_offset
+            tba <= (tbx * iceline["slope"]) + iceline["offset"] - ad_line_offset
         )
     else:
         is_tba_le_modad = np.full_like(not_land_or_masked, fill_value=True)
 
-    is_tby_gt_lnline = tby > (tbx * lnline['slope']) + lnline['offset']
+    is_tby_gt_lnline = tby > (tbx * lnline["slope"]) + lnline["offset"]
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
     num_valid_pixels = is_valid.sum()
     if num_valid_pixels <= 125:
-        raise BootstrapAlgError(f'Insufficient valid linfit points: {num_valid_pixels}')
+        raise BootstrapAlgError(f"Insufficient valid linfit points: {num_valid_pixels}")
 
     slopeb, intrca = np.polyfit(
         x=tbx[is_valid],
@@ -238,13 +238,13 @@ def get_linfit(
 
     if slopeb > max_slope:
         raise BootstrapAlgError(
-            f'Line slope check failed. {slopeb=} > {max_slope=}. '
-            'This may need some additional investigation! The code from Goddard would'
-            ' fall back on defaults defined by the `iceline` parameter if this'
-            ' condition was met. However, it is probably better to investigate'
-            ' this situation and determine what to do on a case-by-case basis'
+            f"Line slope check failed. {slopeb=} > {max_slope=}. "
+            "This may need some additional investigation! The code from Goddard would"
+            " fall back on defaults defined by the `iceline` parameter if this"
+            " condition was met. However, it is probably better to investigate"
+            " this situation and determine what to do on a case-by-case basis"
             ' rather than "silently" fall back on some default values. We are not'
-            ' sure how the default values of (`iceline`) were originally chosen.'
+            " sure how the default values of (`iceline`) were originally chosen."
         )
 
     fit_off = intrca + add
@@ -267,8 +267,8 @@ def _get_ic(
     """Get fractional ice concentration without rad adjustment."""
     wtp_x = wtp_xaxis
     wtp_y = wtp_yaxis
-    iline_off = iline['offset']
-    iline_slp = iline['slope']
+    iline_off = iline["offset"]
+    iline_slp = iline["slope"]
 
     delta_x = tbx - wtp_x
     is_deltax_eq_0 = delta_x == 0
@@ -286,7 +286,7 @@ def _get_ic(
     with warnings.catch_warnings():
         # This causes a divide-by-zero warning because
         # locations that are later ignored have zero in denominator
-        warnings.simplefilter('ignore', category=RuntimeWarning)
+        warnings.simplefilter("ignore", category=RuntimeWarning)
         slope = delta_y / delta_x
     offset = tby - (slope * tbx)
     slp_diff = iline_slp - slope
@@ -296,7 +296,7 @@ def _get_ic(
     with warnings.catch_warnings():
         # This causes a divide-by-zero warning because
         # locations that are later ignored have zero in denominator
-        warnings.simplefilter('ignore', category=RuntimeWarning)
+        warnings.simplefilter("ignore", category=RuntimeWarning)
         x_intercept = (offset - iline_off) / slp_diff
     y_intercept = offset + (slope * x_intercept)
     length1 = np.sqrt(np.square(tbx - wtp_x) + np.square(tby - wtp_y))
@@ -342,8 +342,8 @@ def calc_rad_coeffs(
     rad_slope = (itp_yaxis - wtp_yaxis) / (itp_xaxis - wtp_xaxis)
     rad_offset = wtp_yaxis - (wtp_xaxis * rad_slope)
 
-    xint = (rad_offset - line['offset']) / (line['slope'] - rad_slope)
-    yint = (line['slope'] * xint) + line['offset']
+    xint = (rad_offset - line["offset"]) / (line["slope"] - rad_slope)
+    yint = (line["slope"] * xint) + line["offset"]
 
     rad_len = _get_len_between_points(x1=xint, x2=wtp_xaxis, y1=yint, y2=wtp_yaxis)
 
@@ -430,13 +430,13 @@ def _get_wx_params(
                 end_day = season.end_day if season.end_day else end_day
 
             periods_this_year = pd.period_range(
-                start=pd.Period(year=date.year, month=month, day=start_day, freq='D'),
-                end=pd.Period(year=date.year, month=month, day=end_day, freq='D'),
+                start=pd.Period(year=date.year, month=month, day=start_day, freq="D"),
+                end=pd.Period(year=date.year, month=month, day=end_day, freq="D"),
             )
 
             # if the date we are interested in is in this month of the season,
             # return the weather filter params.
-            if pd.Period(date, freq='D') in periods_this_year:
+            if pd.Period(date, freq="D") in periods_this_year:
                 return season.weather_filter_params
 
             # Get the same periods for the following year. and include those in
@@ -445,9 +445,9 @@ def _get_wx_params(
             # interpolated.
             periods_next_year = pd.period_range(
                 start=pd.Period(
-                    year=date.year + 1, month=month, day=start_day, freq='D'
+                    year=date.year + 1, month=month, day=start_day, freq="D"
                 ),
-                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq='D'),
+                end=pd.Period(year=date.year + 1, month=month, day=end_day, freq="D"),
             )
             all_periods = list(periods_this_year) + list(periods_next_year)
 
@@ -456,7 +456,7 @@ def _get_wx_params(
                     data={
                         key: [getattr(season.weather_filter_params, key)]
                         * len(all_periods)
-                        for key in ('wintrc', 'wslope', 'wxlimt')
+                        for key in ("wintrc", "wslope", "wxlimt")
                     },
                     index=all_periods,
                 )
@@ -466,8 +466,8 @@ def _get_wx_params(
     # that we can `loc` the date we are interested in.
     df_with_daily_index = pd.DataFrame(
         index=pd.period_range(
-            start=pd.Period(year=date.year, month=1, day=1, freq='D'),
-            end=pd.Period(year=date.year + 1, month=12, day=31, freq='D'),
+            start=pd.Period(year=date.year, month=1, day=1, freq="D"),
+            end=pd.Period(year=date.year + 1, month=12, day=31, freq="D"),
         )
     )
     joined = df_with_daily_index.join(pd.concat(monthly_dfs))
@@ -475,8 +475,8 @@ def _get_wx_params(
 
     return WeatherFilterParams(
         **{
-            key: interpolated.loc[pd.Period(date, freq='D')][key]
-            for key in ('wintrc', 'wslope', 'wxlimt')
+            key: interpolated.loc[pd.Period(date, freq="D")][key]
+            for key in ("wintrc", "wslope", "wxlimt")
         }
     )
 
@@ -504,7 +504,7 @@ def get_weather_mask(
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = (wslope * v22) + wintrc
     watchk2 = v22 - v19
-    watchk4 = (ln1['slope'] * v37) + ln1['offset']
+    watchk4 = (ln1["slope"] * v37) + ln1["offset"]
 
     is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
     # TODO: where does this 230.0 value come from? Should it be configuratble?
@@ -605,7 +605,7 @@ def coastal_fix(
         try:
             temp[change_locs_k2p1] = 0
         except IndexError:
-            logger.debug('Fixing out of bounds error in `coastal_fix`')
+            logger.debug("Fixing out of bounds error in `coastal_fix`")
             locs0 = change_locs_k2p1[0]
             locs1 = change_locs_k2p1[1]
 
@@ -621,7 +621,7 @@ def coastal_fix(
             try:
                 temp[change_locs_k2p1] = 0
             except IndexError:
-                raise RuntimeError('Could not fix Index Error')
+                raise RuntimeError("Could not fix Index Error")
 
     # HERE: temp array has been set
 
@@ -857,7 +857,7 @@ def calc_bootstrap_conc(
     ic_frac = ic_frac_37v37h.copy()
     # Use conc from the 37v19v tbset when tb_h37 is below the 37v37h AD line.
     ad_line_37v37h_y_vals = (
-        line_37v37h['offset'] - ad_line_offset + line_37v37h['slope'] * tb_v37
+        line_37v37h["offset"] - ad_line_offset + line_37v37h["slope"] * tb_v37
     )
     h37_below_37v37h_ad_line = tb_h37 <= ad_line_37v37h_y_vals
     ic_frac[h37_below_37v37h_ad_line] = ic_frac_37v19v[h37_below_37v37h_ad_line]
@@ -975,7 +975,7 @@ def fill_pole_hole_bt(conc):
     #  For the polar stereo grid (see below) the pole hole pixels are
     #       specified by manually creating a pole hole mask kernel.
     pole_radius = 50
-    grid_projection = 'EASE2'
+    grid_projection = "EASE2"
     if xdim == 3360:
         pole_radius = 30
     elif xdim == 1680:
@@ -985,13 +985,13 @@ def fill_pole_hole_bt(conc):
     elif xdim == 720:
         pole_radius = 10
     elif xdim == 304:
-        grid_projection = 'PS'
+        grid_projection = "PS"
     elif xdim == 304:
-        grid_projection = 'PS'
+        grid_projection = "PS"
     else:
-        raise ValueError(f'Could not determine pole_radius for xdim: {xdim}')
+        raise ValueError(f"Could not determine pole_radius for xdim: {xdim}")
 
-    if grid_projection == 'EASE2':
+    if grid_projection == "EASE2":
         half_ydim = ydim // 2
         half_xdim = xdim // 2
 
@@ -1000,7 +1000,7 @@ def fill_pole_hole_bt(conc):
             half_ydim - pole_radius : half_ydim + pole_radius,
             half_xdim - pole_radius : half_xdim + pole_radius,
         ]
-    elif grid_projection == 'PS':
+    elif grid_projection == "PS":
         ph25ymin = 230
         ph25ymax = 238
         ph25xmin = 150
@@ -1021,7 +1021,7 @@ def fill_pole_hole_bt(conc):
             ]
         else:
             raise ValueError(
-                f'Expecting NH polar stereo, but unrecognized xdim: {xdim}'
+                f"Expecting NH polar stereo, but unrecognized xdim: {xdim}"
             )
 
     is_pole_hole = (near_pole_conc < 0.01) | (near_pole_conc > 100)
@@ -1030,7 +1030,7 @@ def fill_pole_hole_bt(conc):
 
     near_pole_conc[is_pole_hole] = near_pole_mean
 
-    logger.info(f'Filled missing values at pole hole with: {near_pole_mean}')
+    logger.info(f"Filled missing values at pole hole with: {near_pole_mean}")
 
     return conc
 
@@ -1111,6 +1111,6 @@ def goddard_bootstrap(
     if not params.land_mask[jdim // 2, idim // 2]:
         conc = fill_pole_hole_bt(conc)
 
-    ds = xr.Dataset({'conc': (('y', 'x'), conc)})
+    ds = xr.Dataset({"conc": (("y", "x"), conc)})
 
     return ds

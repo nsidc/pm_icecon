@@ -36,10 +36,10 @@ def amsr2_goddard_bootstrap(
     )
 
     conc_ds = bt.goddard_bootstrap(
-        tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
-        tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
-        tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
-        tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
+        tb_v37=spatial_interp_tbs(xr_tbs["v36"].data),
+        tb_h37=spatial_interp_tbs(xr_tbs["h36"].data),
+        tb_v19=spatial_interp_tbs(xr_tbs["v18"].data),
+        tb_v22=spatial_interp_tbs(xr_tbs["v23"].data),
         params=params,
         date=date,
     )
@@ -61,18 +61,18 @@ def a2l1c_goddard_bootstrap(
     Utilizes the bootstrap algorithm as organized by the original code from
     GSFC.
     """
-    if hemisphere == 'south':
-        raise NotImplementedError('Southern hemisphere is not currently supported.')
+    if hemisphere == "south":
+        raise NotImplementedError("Southern hemisphere is not currently supported.")
 
     xr_tbs = get_a2l1c_625_tbs(
         base_dir=tb_dir,
         date=date,
-        hemisphere='north',
+        hemisphere="north",
         ncfn_template=ncfn_template,
         timeframe=timeframe,
     )
 
-    sst_fn = anc_dir / f'valid_seaice_e2n6.25_{date:%m}.dat'
+    sst_fn = anc_dir / f"valid_seaice_e2n6.25_{date:%m}.dat"
     sst_mask = np.fromfile(sst_fn, dtype=np.uint8).reshape(1680, 1680)
     is_high_sst = sst_mask == 50
 
@@ -84,10 +84,10 @@ def a2l1c_goddard_bootstrap(
     )
 
     conc_ds = bt.goddard_bootstrap(
-        tb_v37=spatial_interp_tbs(xr_tbs['v36'].data),
-        tb_h37=spatial_interp_tbs(xr_tbs['h36'].data),
-        tb_v19=spatial_interp_tbs(xr_tbs['v18'].data),
-        tb_v22=spatial_interp_tbs(xr_tbs['v23'].data),
+        tb_v37=spatial_interp_tbs(xr_tbs["v36"].data),
+        tb_h37=spatial_interp_tbs(xr_tbs["h36"].data),
+        tb_v19=spatial_interp_tbs(xr_tbs["v18"].data),
+        tb_v22=spatial_interp_tbs(xr_tbs["v23"].data),
         params=params,
         date=date,
     )

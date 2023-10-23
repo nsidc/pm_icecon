@@ -20,18 +20,18 @@ def get_ps25_sst_mask(
     """
     # TODO: why are the northern hemisphere files 'fixed' while the southern
     # hemisphere are not (except in one case)?
-    month_abbr = f'{date:%b}'.lower()
-    if hemisphere == 'north':
-        sst_fn = f'{month_abbr}.temp.zdf.ssmi_fixed_25fill.fixed'
+    month_abbr = f"{date:%b}".lower()
+    if hemisphere == "north":
+        sst_fn = f"{month_abbr}.temp.zdf.ssmi_fixed_25fill.fixed"
     else:
-        sst_fn = f'{month_abbr}.temp.zdf.ssmi_25fill'
+        sst_fn = f"{month_abbr}.temp.zdf.ssmi_25fill"
 
     sst_path = (
         CDR_TESTDATA_DIR
-        / f'nt_datafiles/data36/SST/{hemisphere.capitalize()}/'
+        / f"nt_datafiles/data36/SST/{hemisphere.capitalize()}/"
         / sst_fn
     )
-    sst_field = np.fromfile(sst_path, dtype='>i2')[150:].reshape(
+    sst_field = np.fromfile(sst_path, dtype=">i2")[150:].reshape(
         get_ps25_grid_shape(hemisphere=hemisphere)
     )
 

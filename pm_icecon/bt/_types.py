@@ -5,7 +5,7 @@ from typing import NewType, TypedDict
 # H2O-phase. For bootstrap, the 3 relevant channels -- 19H, 37H, and 37V -- each
 # have both an "ice" tiepoint and a "water" tiepoint. These tiepoints are
 # brightness temperature values, and have units of Kelvins.
-Tiepoint = NewType('Tiepoint', float)
+Tiepoint = NewType("Tiepoint", float)
 # The Bootstrap algorithm uses combinations of these tiepoints, specifically the
 # 37H and 37V tiepoints in the "vh37" tuple and the 19V and 37V tiepoints in the
 # "v1937" tuple to indicate locations on a scatterplot of those channel's TB

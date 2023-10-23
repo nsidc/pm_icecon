@@ -15,21 +15,21 @@ from pm_icecon.util import standard_output_filename
 # Click definitions for "amsr2" which uses AU25
 @click.command()  # type: ignore
 @click.option(
-    '-d',
-    '--date',
+    "-d",
+    "--date",
     required=True,
-    type=click.DateTime(formats=('%Y-%m-%d',)),
+    type=click.DateTime(formats=("%Y-%m-%d",)),
     callback=datetime_to_date,
 )
 @click.option(
-    '-h',
-    '--hemisphere',
+    "-h",
+    "--hemisphere",
     required=True,
     type=click.Choice(get_args(Hemisphere)),
 )
 @click.option(
-    '-o',
-    '--output-dir',
+    "-o",
+    "--output-dir",
     required=True,
     type=click.Path(
         exists=True,
@@ -41,8 +41,8 @@ from pm_icecon.util import standard_output_filename
     ),
 )
 @click.option(
-    '-r',
-    '--resolution',
+    "-r",
+    "--resolution",
     required=True,
     type=click.Choice(get_args(AU_SI_RESOLUTIONS)),
 )
@@ -69,16 +69,16 @@ def amsr2(
     output_fn = standard_output_filename(
         hemisphere=hemisphere,
         date=date,
-        sat='u2',
-        algorithm='nt',
-        resolution=f'{resolution}km',
+        sat="u2",
+        algorithm="nt",
+        resolution=f"{resolution}km",
     )
     output_path = output_dir / output_fn
     conc_ds.to_netcdf(output_path)
-    logger.info(f'Wrote AMSR2 concentration field: {output_path}')
+    logger.info(f"Wrote AMSR2 concentration field: {output_path}")
 
 
-@click.group(name='nasateam')
+@click.group(name="nasateam")
 def cli():
     """Run the nasateam algorithm."""
     ...
@@ -87,5 +87,5 @@ def cli():
 cli.add_command(amsr2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
