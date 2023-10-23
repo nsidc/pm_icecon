@@ -35,4 +35,4 @@ jobs:
           cache-environment-key: 1
 
       - name: "run experimental build"
-        run: "conda mambabuild recipe/"
+        run: "conda mambabuild  --override-channels --channel conda-forge --channel nsidc --channel nodefaults recipe/"
