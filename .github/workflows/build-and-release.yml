@@ -30,7 +30,7 @@ jobs:
           cache-environment-key: 1
 
       - name: "Run conda build"
-        run: "conda build recipe/"
+        run: "conda build --override-channels --channel conda-forge --channel nsidc --channel nodefaults recipe/"
 
       - name: "run anaconda upload"
         env:
