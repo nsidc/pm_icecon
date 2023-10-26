@@ -4,8 +4,6 @@ from typing import Iterator
 import pandas as pd
 from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import ValidSatellites
-
 
 def get_ps25_grid_shape(*, hemisphere: Hemisphere) -> tuple[int, int]:
     """Get the polar stereo 25km resolution grid size."""
@@ -41,13 +39,13 @@ def standard_output_filename(
     *,
     hemisphere: Hemisphere,
     date: dt.date,
-    sat: ValidSatellites,
+    sat: str,
     resolution: str,
     algorithm: str,
     extension: str = ".nc",
     timeframe: str = "day",
 ) -> str:
-    """Return a string representing the standard filename for bootstrap."""
+    """Return a string representing a standard filename."""
     assert (
         extension[0] == "."
     ), f'extension must contain `.`. Did you mean ".{extension}"?'
