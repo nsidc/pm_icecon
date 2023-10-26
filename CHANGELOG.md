@@ -2,6 +2,7 @@
 
 * Extract CDR-specific logic from this repository. Moved to the `seaice_ecdr`
   (https://github.com/nsidc/seaice_ecdr/)
+* Remove `Hemisphere` type. Import from `pm_tb_data` instead.
 
 # v0.2.0
 
