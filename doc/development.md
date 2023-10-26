@@ -12,7 +12,7 @@ $ mamba env update
 Once the conda environment has been updated, lock the environment using `conda-lock`:
 
 ```
-$ conda-lock
+$ conda-lock -p linux-64
 ```
 
 Commit the changes for the `environment.yml` and the `conda-lock.yml` files.
