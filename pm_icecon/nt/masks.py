@@ -2,8 +2,8 @@ import datetime as dt
 
 import numpy as np
 import numpy.typing as npt
+from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.constants import CDR_TESTDATA_DIR
 from pm_icecon.util import get_ps25_grid_shape
 

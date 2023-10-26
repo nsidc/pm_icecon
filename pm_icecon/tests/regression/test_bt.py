@@ -6,9 +6,9 @@ import xarray as xr
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_tb_data._types import Hemisphere
 
 import pm_icecon.bt.compute_bt_ic as bt
-from pm_icecon._types import Hemisphere
 from pm_icecon.bt.api import amsr2_goddard_bootstrap
 from pm_icecon.bt.compute_bt_ic import xfer_class_tbs
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask

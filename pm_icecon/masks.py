@@ -13,8 +13,8 @@ import datetime as dt
 import numpy as np
 import numpy.typing as npt
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.constants import (
     BOOTSTRAP_MASKS_DIR,
     BT_GODDARD_ANCILLARY_DIR,
