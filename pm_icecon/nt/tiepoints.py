@@ -19,8 +19,9 @@ at the end of this file.
 from typing import TypedDict
 
 from loguru import logger
+from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import Hemisphere, ValidSatellites
+from pm_icecon._types import ValidSatellites
 
 
 class TiePoints(TypedDict):

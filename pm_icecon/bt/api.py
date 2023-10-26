@@ -5,9 +5,9 @@ import numpy as np
 import xarray as xr
 from pm_tb_data.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from pm_tb_data._types import Hemisphere
 
 import pm_icecon.bt.compute_bt_ic as bt
-from pm_icecon._types import Hemisphere
 from pm_icecon.bt.params.ausi_amsr2 import get_amsr2_params
 from pm_icecon.bt.params.cetbv2_amsr2 import A2L1C_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams

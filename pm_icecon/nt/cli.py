@@ -5,8 +5,8 @@ from typing import get_args
 import click
 from loguru import logger
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.cli.util import datetime_to_date
 from pm_icecon.nt.api import amsr2_goddard_nasateam
 from pm_icecon.util import standard_output_filename

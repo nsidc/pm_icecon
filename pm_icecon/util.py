@@ -2,8 +2,9 @@ import datetime as dt
 from typing import Iterator
 
 import pandas as pd
+from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import Hemisphere, ValidSatellites
+from pm_icecon._types import ValidSatellites
 
 
 def get_ps25_grid_shape(*, hemisphere: Hemisphere) -> tuple[int, int]:

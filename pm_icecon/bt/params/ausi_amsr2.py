@@ -10,8 +10,8 @@ import datetime as dt
 from typing import cast
 
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_tb_data._types import Hemisphere
 
-from pm_icecon._types import Hemisphere
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params._types import ParamsDict

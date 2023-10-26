@@ -1,7 +1,5 @@
 from typing import Literal
 
-Hemisphere = Literal["north", "south"]
-
 # TODO: can we make the algorithms satellite-independent? Currently code
 #       branches in e.g., `compute_bt_ic` that rely on exact string matches for
 #       some behavior/config.
