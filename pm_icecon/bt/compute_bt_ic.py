@@ -873,10 +873,12 @@ def calc_bootstrap_conc(
 
 
 def bootstrap(
+    *,
     tb_v37: npt.NDArray,
     tb_h37: npt.NDArray,
     tb_v19: npt.NDArray,
     params: BootstrapParams,
+    land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
     weather_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
@@ -888,7 +890,7 @@ def bootstrap(
     Flags values are not set and spillover correction is not applied.
     """
     line_37v37h = get_linfit(
-        land_mask=params.land_mask,
+        land_mask=land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
         tby=tb_h37,
@@ -915,7 +917,7 @@ def bootstrap(
     )
 
     line_37v19v = get_linfit(
-        land_mask=params.land_mask,
+        land_mask=land_mask,
         tb_mask=tb_mask,
         tbx=tb_v37,
         tby=tb_v19,
@@ -1042,6 +1044,8 @@ def goddard_bootstrap(
     tb_v19: npt.NDArray,
     tb_v22: npt.NDArray,
     params: BootstrapParams,
+    land_mask: npt.NDArray[np.bool_],
+    invalid_ice_mask: npt.NDArray[np.bool_],
     date: dt.date,
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> xr.Dataset:
@@ -1067,7 +1071,7 @@ def goddard_bootstrap(
         h37=tb_h37,
         v22=tb_v22,
         v19=tb_v19,
-        land_mask=params.land_mask,
+        land_mask=land_mask,
         tb_mask=tb_mask,
         ln1=params.vh37_params.lnline,
         date=date,
@@ -1081,6 +1085,7 @@ def goddard_bootstrap(
         tb_h37=tb_h37,
         tb_v19=tb_v19,
         params=params,
+        land_mask=land_mask,
         tb_mask=tb_mask,
         weather_mask=weather_mask,
         missing_flag_value=missing_flag_value,
@@ -1089,26 +1094,26 @@ def goddard_bootstrap(
     # Apply masks and flag values
     conc[weather_mask] = 0.0
     conc[tb_mask] = DEFAULT_FLAG_VALUES.missing
-    conc[params.land_mask] = DEFAULT_FLAG_VALUES.land
+    conc[land_mask] = DEFAULT_FLAG_VALUES.land
 
     conc = apply_invalid_ice_mask(
         conc=conc,
         missing_flag_value=missing_flag_value,
         land_flag_value=DEFAULT_FLAG_VALUES.land,
-        invalid_ice_mask=params.invalid_ice_mask,
+        invalid_ice_mask=invalid_ice_mask,
     )
 
     conc = coastal_fix(
         conc=conc,
         missing_flag_value=missing_flag_value,
-        land_mask=params.land_mask,
+        land_mask=land_mask,
         minic=params.minic,
     )
     conc[conc < params.minic] = 0
 
     jdim, idim = conc.shape
     # If middle of land_mask is land, this is SH and needs no pole hole fill
-    if not params.land_mask[jdim // 2, idim // 2]:
+    if not land_mask[jdim // 2, idim // 2]:
         conc = fill_pole_hole_bt(conc)
 
     ds = xr.Dataset({"conc": (("y", "x"), conc)})

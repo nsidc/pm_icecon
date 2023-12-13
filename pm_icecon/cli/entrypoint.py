@@ -1,6 +1,5 @@
 import click
 
-from pm_icecon.bt.cli import cli as bt_cli
 from pm_icecon.nt.cli import cli as nt_cli
 
 
@@ -10,7 +9,6 @@ def cli():
     ...
 
 
-cli.add_command(bt_cli)
 cli.add_command(nt_cli)
 
 

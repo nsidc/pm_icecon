@@ -1,5 +1,6 @@
 import datetime as dt
 from pathlib import Path
+from typing import Final
 
 import numpy as np
 import xarray as xr
@@ -29,11 +30,24 @@ def test_bt_amsr2_regression():
     good. These fields may need to be updated as we make tweaks to the
     algorithm.
     """
+    resolution: Final = "25"
+    hemisphere: Final = "north"
+    pole_mask = get_ps_pole_hole_mask(resolution=resolution)
+
+    land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution)
     for date in (dt.date(2020, 1, 1), dt.date(2022, 5, 4)):
+        invalid_ice_mask = get_ps_invalid_ice_mask(
+            hemisphere=hemisphere,
+            date=date,
+            resolution=resolution,
+        )
         actual_ds = amsr2_goddard_bootstrap(
             date=date,
-            hemisphere="north",
-            resolution="25",
+            hemisphere=hemisphere,
+            resolution=resolution,
+            land_mask=land_mask,
+            invalid_ice_mask=invalid_ice_mask,
+            pole_mask=pole_mask,
         )
 
         filename = f"NH_{date:%Y%m%d}_py_NRT_amsr2.nc"
@@ -68,14 +82,14 @@ def _original_f18_example() -> xr.Dataset:
     resolution: AU_SI_RESOLUTIONS = "25"
     date = dt.date(2018, 2, 17)
     hemisphere: Hemisphere = "north"
+
+    land_mask = get_ps_land_mask(hemisphere=hemisphere, resolution=resolution)
+    invalid_ice_mask = get_ps_invalid_ice_mask(
+        hemisphere=hemisphere,
+        date=date,
+        resolution=resolution,
+    )
     params = BootstrapParams(
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-        pole_mask=get_ps_pole_hole_mask(resolution=resolution),
-        invalid_ice_mask=get_ps_invalid_ice_mask(
-            hemisphere=hemisphere,
-            date=date,
-            resolution=resolution,
-        ),
         **SSMIS_NORTH_PARAMS,  # type: ignore[arg-type]
     )
 
@@ -109,6 +123,8 @@ def _original_f18_example() -> xr.Dataset:
         ),
         params=params,
         date=date,
+        land_mask=land_mask,
+        invalid_ice_mask=invalid_ice_mask,
     )
 
     return conc_ds
