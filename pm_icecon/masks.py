@@ -11,37 +11,6 @@ subpackage (e.g., `bt.params`)
 
 import numpy as np
 import numpy.typing as npt
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
-
-from pm_icecon.constants import (
-    BT_GODDARD_ANCILLARY_DIR,
-    CDR_TESTDATA_DIR,
-)
-
-
-# TODO: accept `Hemisphere` arg and return None if South?
-def get_ps_pole_hole_mask(*, resolution: AU_SI_RESOLUTIONS) -> npt.NDArray[np.bool_]:
-    # values of 1 indicate the pole hole.
-    if resolution == "25":
-        pole_mask_psn = (
-            np.fromfile(
-                (BT_GODDARD_ANCILLARY_DIR / "np_holemask.ssmi_f17").resolve(),
-                dtype=np.int16,
-            ).reshape(448, 304)
-            == 1
-        )
-    elif resolution == "12":
-        pole_mask_psn = (
-            np.fromfile(
-                CDR_TESTDATA_DIR / "btequiv_psn12.5/bt_poleequiv_psn12.5km.dat",
-                dtype=np.int16,
-            ).reshape(896, 608)
-            == 1
-        )
-    else:
-        raise NotImplementedError(f"No pole hole mask for PS {resolution} available.")
-
-    return pole_mask_psn
 
 
 def get_e2n625_land_mask(anc_dir) -> npt.NDArray[np.bool_]:
