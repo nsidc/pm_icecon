@@ -2,8 +2,9 @@ import datetime as dt
 
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
 from pm_tb_data._types import Hemisphere
+import numpy as np
+import numpy.typing as npt
 
-from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
 from pm_icecon.nt.params.amsr2 import get_amsr2_params
@@ -11,7 +12,11 @@ from pm_icecon.nt.tiepoints import get_tiepoints
 
 
 def amsr2_goddard_nasateam(
-    *, date: dt.date, hemisphere: Hemisphere, resolution: AU_SI_RESOLUTIONS
+    *,
+    date: dt.date,
+    hemisphere: Hemisphere,
+    resolution: AU_SI_RESOLUTIONS,
+    invalid_ice_mask: npt.NDArray[np.bool_],
 ):
     """Compute sea ice concentration from AU_SI25 TBs.
 
@@ -26,18 +31,6 @@ def amsr2_goddard_nasateam(
 
     nt_params = get_amsr2_params(
         hemisphere=hemisphere,
-        resolution=resolution,
-    )
-
-    # TODO: this function is currently defined in the bootstrap-specific masks
-    # module. Should it be moved to the top-level masks? Originally split masks
-    # between nt and bt modules because the original goddard nasateam example
-    # used a unique invalid ice mask. Eventually won't matter too much because
-    # we plan to move most masks into common nc files that will be read on a
-    # per-grid basis.
-    invalid_ice_mask = get_ps_invalid_ice_mask(
-        hemisphere=hemisphere,
-        date=date,
         resolution=resolution,
     )
 
