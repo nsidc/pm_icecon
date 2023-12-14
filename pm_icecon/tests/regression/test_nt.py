@@ -2,6 +2,7 @@ import datetime as dt
 from typing import get_args
 
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 from numpy.testing import assert_almost_equal
 from pm_tb_data._types import Hemisphere
@@ -9,13 +10,44 @@ from pm_tb_data._types import Hemisphere
 from pm_icecon.constants import CDR_TESTDATA_DIR
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
-from pm_icecon.nt.masks import get_ps25_sst_mask
 from pm_icecon.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,
     RSS_F17_SOUTH_GRADIENT_THRESHOLDS,
 )
 from pm_icecon.nt.tiepoints import get_tiepoints
 from pm_icecon.util import get_ps25_grid_shape
+
+
+def _get_ps25_sst_mask(
+    *,
+    hemisphere: Hemisphere,
+    date: dt.date,
+    sst_threshold=2780,
+) -> npt.NDArray[np.bool_]:
+    """Read and return the ps25 SST mask.
+
+    `True` elements are those which are masked as invalid ice.
+    """
+    # TODO: why are the northern hemisphere files 'fixed' while the southern
+    # hemisphere are not (except in one case)?
+    month_abbr = f"{date:%b}".lower()
+    if hemisphere == "north":
+        sst_fn = f"{month_abbr}.temp.zdf.ssmi_fixed_25fill.fixed"
+    else:
+        sst_fn = f"{month_abbr}.temp.zdf.ssmi_25fill"
+
+    sst_path = (
+        CDR_TESTDATA_DIR
+        / f"nt_datafiles/data36/SST/{hemisphere.capitalize()}/"
+        / sst_fn
+    )
+    sst_field = np.fromfile(sst_path, dtype=">i2")[150:].reshape(
+        get_ps25_grid_shape(hemisphere=hemisphere)
+    )
+
+    where_sst_high = sst_field >= sst_threshold
+
+    return where_sst_high
 
 
 def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
@@ -67,7 +99,7 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
             ).reshape(grid_shape)
         )
 
-    invalid_ice_mask = get_ps25_sst_mask(hemisphere=hemisphere, date=date)
+    invalid_ice_mask = _get_ps25_sst_mask(hemisphere=hemisphere, date=date)
 
     conc_ds = goddard_nasateam(
         tb_v19=tbs["v19"],
