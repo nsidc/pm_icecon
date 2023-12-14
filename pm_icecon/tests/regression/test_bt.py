@@ -19,10 +19,13 @@ from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.util import get_ps25_grid_shape
 from pm_icecon.constants import (
-    BT_GODDARD_ANCILLARY_DIR,
     CDR_TESTDATA_DIR,
-    BOOTSTRAP_MASKS_DIR,
+    NSIDC_NFS_SHARE_DIR,
 )
+
+
+BOOTSTRAP_MASKS_DIR = NSIDC_NFS_SHARE_DIR / "bootstrap_masks"
+BT_GODDARD_ANCILLARY_DIR = CDR_TESTDATA_DIR / "bt_goddard_ANCILLARY"
 
 
 def _get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.int16]:
