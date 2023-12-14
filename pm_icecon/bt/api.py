@@ -22,7 +22,6 @@ def amsr2_goddard_bootstrap(
     resolution: AU_SI_RESOLUTIONS,
     land_mask: npt.NDArray[np.bool_],
     invalid_ice_mask: npt.NDArray[np.bool_],
-    pole_mask: npt.NDArray[np.bool_] | None,
 ) -> xr.Dataset:
     """Compute sea ice concentration from AU_SI TBs.
 
@@ -36,9 +35,7 @@ def amsr2_goddard_bootstrap(
     )
 
     params = get_amsr2_params(
-        date=date,
         hemisphere=hemisphere,
-        resolution=resolution,
     )
 
     conc_ds = bt.goddard_bootstrap(

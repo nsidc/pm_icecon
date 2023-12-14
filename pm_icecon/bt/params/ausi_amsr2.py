@@ -9,7 +9,6 @@ CDR.
 import datetime as dt
 from typing import cast
 
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
 
 from pm_icecon.bt._types import Line, Tiepoint
@@ -165,12 +164,9 @@ _bt_south_weather_filter_seasons = cast(
 CDR_AMSR2_SOUTH_PARAMS["weather_filter_seasons"] = _bt_south_weather_filter_seasons
 
 
-# used to get parameters in `cdr.py`. Not used by the ecdr.
 def get_amsr2_params(
     *,
-    date: dt.date,
     hemisphere: Hemisphere,
-    resolution: AU_SI_RESOLUTIONS,
 ) -> BootstrapParams:
     bt_params = BootstrapParams(
         **(CDR_AMSR2_NORTH_PARAMS if hemisphere == "north" else CDR_AMSR2_SOUTH_PARAMS),

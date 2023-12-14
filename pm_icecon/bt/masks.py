@@ -7,9 +7,27 @@ from loguru import logger
 from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
 
-from pm_icecon.constants import BT_GODDARD_ANCILLARY_DIR, CDR_TESTDATA_DIR
-from pm_icecon.masks import get_pss_12_validice_land_coast_array
+from pm_icecon.constants import (
+    BT_GODDARD_ANCILLARY_DIR,
+    CDR_TESTDATA_DIR,
+    BOOTSTRAP_MASKS_DIR,
+)
 from pm_icecon.util import get_ps25_grid_shape
+
+
+def get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.int16]:
+    """Get the polar stereo south 12.5km valid ice/land/coast array.
+
+    4 unique values:
+        * 0 == land
+        * 4 == valid ice
+        * 24 == invalid ice
+        * 32 == coast.
+    """
+    fn = BOOTSTRAP_MASKS_DIR / f"bt_valid_pss12.5_int16_{date:%m}.dat"
+    validice_land_coast = np.fromfile(fn, dtype=np.int16).reshape(664, 632)
+
+    return validice_land_coast
 
 
 def get_ps_invalid_ice_mask(
