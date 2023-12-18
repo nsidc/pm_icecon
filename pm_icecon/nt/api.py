@@ -17,6 +17,9 @@ def amsr2_goddard_nasateam(
     hemisphere: Hemisphere,
     resolution: AU_SI_RESOLUTIONS,
     invalid_ice_mask: npt.NDArray[np.bool_],
+    # The shoremap has values 1-5 that indicate land,
+    # coast, and cells away from coast (3-5).
+    shoremap: npt.NDArray,
 ):
     """Compute sea ice concentration from AU_SI25 TBs.
 
@@ -39,7 +42,7 @@ def amsr2_goddard_nasateam(
         tb_v37=spatial_interp_tbs(xr_tbs["v36"].data),
         tb_v22=spatial_interp_tbs(xr_tbs["v23"].data),
         tb_h19=spatial_interp_tbs(xr_tbs["h18"].data),
-        shoremap=nt_params.shoremap,
+        shoremap=shoremap,
         minic=nt_params.minic,
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=nt_params.gradient_thresholds,

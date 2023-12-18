@@ -19,12 +19,12 @@ from pm_icecon.util import get_ps_grid_shape
 
 @dataclass
 class NasateamParams:
-    shoremap: npt.NDArray
     minic: npt.NDArray
     tiepoints: NasateamTiePoints
     gradient_thresholds: NasateamGradientRatioThresholds
 
 
+# TODO: extract `shoremap` and `minic` from NasateamParams.
 def get_amsr2_params(
     *,
     hemisphere: Hemisphere,
@@ -32,12 +32,6 @@ def get_amsr2_params(
 ) -> NasateamParams:
     # Nasateam specific config
     _nasateam_ancillary_dir = CDR_TESTDATA_DIR / "nasateam_ancillary"
-    # TODO: type for shoremap? The shoremap has values 1-5 that indicate land,
-    # coast, and cells away from coast (3-5)
-    nt_shoremap = np.fromfile(
-        (_nasateam_ancillary_dir / f"shoremap_amsru_{hemisphere[0]}h{resolution}.dat"),
-        dtype=np.uint8,
-    ).reshape(get_ps_grid_shape(hemisphere=hemisphere, resolution=resolution))
     # minic == minimum ice concentration grid. Used in the nasateam land
     # spillover code.
     # TODO: better description/type for minic.
@@ -60,7 +54,6 @@ def get_amsr2_params(
     logger.info("NT gradient threshold values for AMSR2 are copied from f17_final")
 
     return NasateamParams(
-        shoremap=nt_shoremap,
         minic=nt_minic,
         tiepoints=nt_tiepoints,
         gradient_thresholds=nt_gradient_thresholds,
