@@ -46,49 +46,7 @@ $ conda activate pm_icecon
 
 ## Usage
 
-### CLI
-
-There is a command line interface defined using common defaults for testing
-purposes at NSIDC.
-
-NOTE: the CLI relies on hard-coded paths to mask files on NSIDC's virtual
-machine infrastructure. This CLI will not currently work for those outside of
-NSIDC. We plan to change this in the future.
-
-The CLI can be interacted with via `scripts/cli.sh`:
-
-```
-$ ./scripts/cli.sh --help
-Usage: python -m pm_icecon.cli.entrypoint [OPTIONS] COMMAND [ARGS]...
-
-  Run the nasateam or bootstrap algorithm.
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  bootstrap  Run the bootstrap algorithm.
-  nasateam   Run the nasateam algorithm.
-```
-
-E.g., to create a NetCDF file with a `conc` variable containing concentration
-values from AU_SI12 from the bootstrap algorithm:
-
-```
-$ ./scripts/cli.sh bootstrap amsr2 --date 2022-08-01 --hemisphere north --output-dir /tmp/ --resolution 12
-2022-09-12 15:21:44.482 | INFO     | pm_icecon.bt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/bt_NH_20220801_u2_12km.nc
-```
-
-E.g., to create a NetCDF file with a `conc` variable containing concentration
-values from AU_SI25 from the nasateam algorithm:
-
-```
-$ ./scripts/cli.sh nasateam amsr2 --date 2022-08-01 --hemisphere south --output-dir /tmp/ --resolution 25
-2022-09-12 15:23:34.993 | INFO     | pm_icecon.nt.cli:amsr2:82 - Wrote AMSR2 concentration field: /tmp/nt_SH_20220801_u2_25km.nc
-```
-
-### Scripting
-#### Bootstrap
+### Bootstrap
 
 
 Users can write a script using the functions provided in this repo to run the
@@ -104,7 +62,7 @@ hard-coded defaults for testing purposes at NSIDC. This includes paths to data
 on NSIDC infrastructure that are not available to the public.
 
 
-#### Nasateam
+### Nasateam
 
 The main entrypoint to running the nasateam code on input Tbs is the `nasateam`
 function defined in `pm_icecon/nt/compute_nt_ic.py`.
