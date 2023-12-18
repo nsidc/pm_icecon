@@ -1,4 +1,4 @@
-# NEXT_RELEASE
+# v0.3.0
 
 * Extract CDR-specific logic from this repository. Moved to the `seaice_ecdr`
   (https://github.com/nsidc/seaice_ecdr/)
