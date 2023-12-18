@@ -18,7 +18,6 @@ class NasateamParams:
     gradient_thresholds: NasateamGradientRatioThresholds
 
 
-# TODO: extract `shoremap` and `minic` from NasateamParams.
 def get_amsr2_params(
     *,
     hemisphere: Hemisphere,
