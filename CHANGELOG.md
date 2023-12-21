@@ -1,8 +1,15 @@
-# NEXT_RELEASE
+# v0.3.0
 
 * Extract CDR-specific logic from this repository. Moved to the `seaice_ecdr`
   (https://github.com/nsidc/seaice_ecdr/)
 * Remove `Hemisphere` type. Import from `pm_tb_data` instead.
+* Remove CLI for this library. It is now the responsiblity of programs utlizing
+  this library to define how inputs/outputs are handled. This library purely
+  focuses on the implementation of the sea ice concentration algorithms.
+* Related to the above, remove code related to reading/handling ancillary files
+  that define e.g., valid ice masks. This code was very specific to NSIDC's
+  internal infrastructure and unpublished data. It is now the responsibility of
+  other programs utlizing this library to provide masks, input TBs, etc.
 
 # v0.2.0
 

@@ -13,7 +13,7 @@ dependencies:
   # debugging/development tools
   - ipython
   - ipdb
-  - bump2version
+  - bump-my-version ~=0.10.0
   - pre-commit
   - conda-lock
   # build tools

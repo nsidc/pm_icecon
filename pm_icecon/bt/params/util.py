@@ -1,40 +1,7 @@
 import datetime as dt
 
-import numpy as np
 
 from pm_icecon.bt.compute_bt_ic import _get_wx_params as interpolate_bt_wx_params
-from pm_icecon.config.models.bt import BootstrapParams, TbSetParams, cast_as_TiepointSet
-
-
-def convert_to_pmicecon_bt_params(hemisphere, params, fields) -> BootstrapParams:
-    """Convert to old-style bt_params."""
-    # oldstyle_bt_params = {**params, **fields}
-    oldstyle_bt_params = BootstrapParams(
-        land_mask=np.array(fields["land_mask"]).squeeze(),
-        # There's no pole hole in the southern hemisphere.
-        pole_mask=np.array(fields["pole_mask"]) if hemisphere == "north" else None,
-        invalid_ice_mask=np.array(fields["invalid_ice_mask"]),
-        vh37_params=TbSetParams(
-            water_tie_point_set=cast_as_TiepointSet(
-                params["bt_wtp_v37"], params["bt_wtp_h37"]
-            ),
-            ice_tie_point_set=cast_as_TiepointSet(
-                params["bt_itp_v37"], params["bt_itp_h37"]
-            ),
-            lnline=params["vh37_lnline"],
-        ),
-        v1937_params=TbSetParams(
-            water_tie_point_set=cast_as_TiepointSet(
-                params["bt_wtp_v37"], params["bt_wtp_v19"]
-            ),
-            ice_tie_point_set=cast_as_TiepointSet(
-                params["bt_itp_v37"], params["bt_itp_v19"]
-            ),
-            lnline=params["v1937_lnline"],
-        ),
-        **params,
-    )
-    return oldstyle_bt_params
 
 
 def setup_bootstrap_params_dict(

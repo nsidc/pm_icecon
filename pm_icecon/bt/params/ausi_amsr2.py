@@ -9,11 +9,9 @@ CDR.
 import datetime as dt
 from typing import cast
 
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
 
 from pm_icecon.bt._types import Line, Tiepoint
-from pm_icecon.bt.masks import get_ps_invalid_ice_mask
 from pm_icecon.bt.params._types import ParamsDict
 from pm_icecon.bt.params.util import setup_bootstrap_params_dict
 from pm_icecon.config.models.bt import (
@@ -23,7 +21,6 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParamsForSeason,
 )
 from pm_icecon.gridid import get_gridid_hemisphere
-from pm_icecon.masks import get_ps_land_mask, get_ps_pole_hole_mask
 
 GODDARD_AMSR2_NORTH_PARAMS = ParamsDict(
     vh37_params=TbSetParams(
@@ -167,28 +164,11 @@ _bt_south_weather_filter_seasons = cast(
 CDR_AMSR2_SOUTH_PARAMS["weather_filter_seasons"] = _bt_south_weather_filter_seasons
 
 
-# used to get parameters in `cdr.py`. Not used by the ecdr.
 def get_amsr2_params(
     *,
-    date: dt.date,
     hemisphere: Hemisphere,
-    resolution: AU_SI_RESOLUTIONS,
 ) -> BootstrapParams:
-    invalid_ice_mask = get_ps_invalid_ice_mask(
-        hemisphere=hemisphere,
-        date=date,
-        resolution=resolution,
-    )
-
     bt_params = BootstrapParams(
-        land_mask=get_ps_land_mask(hemisphere=hemisphere, resolution=resolution),
-        # There's no pole hole in the southern hemisphere.
-        pole_mask=(
-            get_ps_pole_hole_mask(resolution=resolution)
-            if hemisphere == "north"
-            else None
-        ),
-        invalid_ice_mask=invalid_ice_mask,
         **(CDR_AMSR2_NORTH_PARAMS if hemisphere == "north" else CDR_AMSR2_SOUTH_PARAMS),
     )
 
