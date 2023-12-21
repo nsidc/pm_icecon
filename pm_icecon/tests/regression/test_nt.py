@@ -7,7 +7,7 @@ import xarray as xr
 from numpy.testing import assert_almost_equal
 from pm_tb_data._types import Hemisphere
 
-from pm_icecon.constants import CDR_TESTDATA_DIR
+from pm_icecon.tests.regression import CDR_TESTDATA_DIR
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
 from pm_icecon.nt.params.goddard_rss import (

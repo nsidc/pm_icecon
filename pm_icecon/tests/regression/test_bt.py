@@ -18,7 +18,7 @@ from pm_icecon.bt.params.class_sats import SSMIS_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.util import get_ps25_grid_shape
-from pm_icecon.constants import (
+from pm_icecon.tests.regression import (
     CDR_TESTDATA_DIR,
     NSIDC_NFS_SHARE_DIR,
 )
