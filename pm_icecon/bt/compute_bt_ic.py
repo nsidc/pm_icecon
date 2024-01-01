@@ -231,7 +231,7 @@ def get_linfit(
         bt_error_message = f"""
         Insufficient valid linfit points: {num_valid_pixels}
         """
-        print(f"Possible BootstrapAlgError: {bt_error_message}")
+        logger.warning(f"Possible BootstrapAlgError: {bt_error_message}")
 
         slopeb = lnline["slope"]
         intrca = lnline["offset"]
@@ -252,7 +252,7 @@ def get_linfit(
             ' rather than "silently" fall back on some default values. We are not'
             " sure how the default values of (`iceline`) were originally chosen."
         """
-        print(f"Possible BootstrapAlgError:{bt_error_message}")
+        logger.warning(f"Possible BootstrapAlgError:{bt_error_message}")
         slopeb = max_slope
 
     fit_off = intrca + add
