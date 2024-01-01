@@ -24,7 +24,7 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParamsForSeason,
 )
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
-from pm_icecon.errors import BootstrapAlgError, UnexpectedSatelliteError
+from pm_icecon.errors import UnexpectedSatelliteError
 
 
 # TODO: this function very similar to `get_invalid_tbs_mask` in `compute_nt_ic`.
@@ -228,24 +228,32 @@ def get_linfit(
 
     num_valid_pixels = is_valid.sum()
     if num_valid_pixels <= 125:
-        raise BootstrapAlgError(f"Insufficient valid linfit points: {num_valid_pixels}")
+        bt_error_message = f"""
+        Insufficient valid linfit points: {num_valid_pixels}
+        """
+        print(f"Possible BootstrapAlgError: {bt_error_message}")
 
-    slopeb, intrca = np.polyfit(
-        x=tbx[is_valid],
-        y=tby[is_valid],
-        deg=1,
-    )
+        slopeb = lnline["slope"]
+        intrca = lnline["offset"]
+    else:
+        slopeb, intrca = np.polyfit(
+            x=tbx[is_valid],
+            y=tby[is_valid],
+            deg=1,
+        )
 
     if slopeb > max_slope:
-        raise BootstrapAlgError(
-            f"Line slope check failed. {slopeb=} > {max_slope=}. "
+        bt_error_message = f"""
+            Line slope check failed. {slopeb=} > {max_slope=}. "
             "This may need some additional investigation! The code from Goddard would"
             " fall back on defaults defined by the `iceline` parameter if this"
             " condition was met. However, it is probably better to investigate"
             " this situation and determine what to do on a case-by-case basis"
             ' rather than "silently" fall back on some default values. We are not'
             " sure how the default values of (`iceline`) were originally chosen."
-        )
+        """
+        print(f"Possible BootstrapAlgError:{bt_error_message}")
+        slopeb = max_slope
 
     fit_off = intrca + add
     fit_slp = slopeb
