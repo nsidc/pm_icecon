@@ -14,7 +14,7 @@ ASMSR 2 data so as to be consistent across the entire timeseries, including when
 using sensors that lack a 6GHz vertical channel.
 
 The Goddard weather filter code that uses `wintrc2` and `wslope2` is located in
-`/share/apps/amsr2-cdr/cdr_testdata/bt_amsru_regression/orig_goddard_bt_code/ret_water_amsru2.f`. Originally
+`/share/apps/G02202_V5/cdr_testdata/bt_amsru_regression/orig_goddard_bt_code/ret_water_amsru2.f`. Originally
 set in ret_parameters_amsru2.f.
 
 
