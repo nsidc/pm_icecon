@@ -10,6 +10,9 @@
   that define e.g., valid ice masks. This code was very specific to NSIDC's
   internal infrastructure and unpublished data. It is now the responsibility of
   other programs utlizing this library to provide masks, input TBs, etc.
+* Replace `BootstrapAlgError` in `get_linfit` with a logged warning. Use default
+  slope and offset values instead of failing when there are less than 125 valid
+  pixels.
 
 # v0.2.0
 
