@@ -7,7 +7,7 @@ import xarray as xr
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
 import numpy.typing as npt
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
 from loguru import logger
 
@@ -46,7 +46,7 @@ def _get_pss_12_validice_land_coast_array(*, date: dt.date) -> npt.NDArray[np.in
 def _get_ps_land_mask(
     *,
     hemisphere: Hemisphere,
-    resolution: AU_SI_RESOLUTIONS,
+    resolution: AMSR_RESOLUTIONS,
 ) -> npt.NDArray[np.bool_]:
     """Get the polar stereo 25km land mask."""
     # Ocean has a value of 0, land a value of 1, and coast a value of 2.
@@ -92,7 +92,7 @@ def _get_ps_invalid_ice_mask(
     *,
     hemisphere: Hemisphere,
     date: dt.date,
-    resolution: AU_SI_RESOLUTIONS,
+    resolution: AMSR_RESOLUTIONS,
 ) -> npt.NDArray[np.bool_]:
     """Read and return the polar stereo invalid ice mask.
 
@@ -191,7 +191,7 @@ def _original_f18_example() -> xr.Dataset:
     the exact grid produced by the fortran code is in
     `CDR_TESTDATA / 'bt_goddard_orig_output/NH_20180217_SB2_NRT_f18.ic'`.
     """
-    resolution: AU_SI_RESOLUTIONS = "25"
+    resolution: AMSR_RESOLUTIONS = "25"
     date = dt.date(2018, 2, 17)
     hemisphere: Hemisphere = "north"
 

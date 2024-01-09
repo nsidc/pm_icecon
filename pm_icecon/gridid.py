@@ -2,7 +2,7 @@
 
 A grid identifier is shorthand for a particular grid and projection definition.
 """
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS
+from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
 
 
@@ -25,7 +25,7 @@ def get_gridid_hemisphere(gridid: str) -> Hemisphere:
         raise ValueError(f"Could not find hemisphere for gridid: {gridid}")
 
 
-def get_gridid_resolution(gridid: str) -> AU_SI_RESOLUTIONS:
+def get_gridid_resolution(gridid: str) -> AMSR_RESOLUTIONS:
     if "12.5" in gridid:
         return "12"
     elif "25" in gridid:

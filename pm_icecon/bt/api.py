@@ -5,7 +5,8 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 from pm_tb_data.fetch.a2l1c_625 import get_a2l1c_625_tbs
-from pm_tb_data.fetch.au_si import AU_SI_RESOLUTIONS, get_au_si_tbs
+from pm_tb_data.fetch.amsr.au_si import get_au_si_tbs
+from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
 
 import pm_icecon.bt.compute_bt_ic as bt
@@ -19,7 +20,7 @@ def amsr2_goddard_bootstrap(
     *,
     date: dt.date,
     hemisphere: Hemisphere,
-    resolution: AU_SI_RESOLUTIONS,
+    resolution: AMSR_RESOLUTIONS,
     land_mask: npt.NDArray[np.bool_],
     invalid_ice_mask: npt.NDArray[np.bool_],
 ) -> xr.Dataset:
