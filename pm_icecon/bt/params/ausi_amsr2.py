@@ -183,6 +183,7 @@ def get_ausi_bootstrap_params(
 ) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
+    # TODO: Need to add a "ame" conditional here
     if satellite == "amsr2":
         if hemisphere == "north":
             initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH
