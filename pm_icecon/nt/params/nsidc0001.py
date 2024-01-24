@@ -1,30 +1,22 @@
 """Parameters for use with NSIDC-0001 data."""
-from dataclasses import dataclass
 
 from loguru import logger
 from pm_tb_data._types import Hemisphere
+from pm_icecon._types import ValidSatellites
 
-from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.params.goddard_rss import (
     RSS_F17_NORTH_GRADIENT_THRESHOLDS,
     RSS_F17_SOUTH_GRADIENT_THRESHOLDS,
 )
-from pm_icecon.nt.tiepoints import NasateamTiePoints, get_tiepoints
-
-
-@dataclass
-class NasateamParams:
-    tiepoints: NasateamTiePoints
-    gradient_thresholds: NasateamGradientRatioThresholds
+from pm_icecon.nt.tiepoints import get_tiepoints
+from pm_icecon.nt.params.amsr2 import NasateamParams
 
 
 def get_0001_nt_params(
     *,
     hemisphere: Hemisphere,
-    platform: str,
+    platform: ValidSatellites,
 ) -> NasateamParams:
-    # Get tiepoints
-    # nt_tiepoints = get_tiepoints(satellite="u2", hemisphere=hemisphere)
     nt_tiepoints = get_tiepoints(satellite=platform, hemisphere=hemisphere)
 
     # Gradient thresholds
