@@ -20,21 +20,14 @@ from pm_icecon.config.models.bt import (
 )
 from pm_icecon.gridid import get_gridid_hemisphere
 
-# GODDARD_AMSR2_NORTH_PARAMS = ParamsDict(
 NSIDC0001_F17_NORTH_PARAMS = ParamsDict(
     vh37_params=TbSetParams(
-        # water_tie_point_set=(Tiepoint(207.2), Tiepoint(131.9)),
-        # ice_tie_point_set=(Tiepoint(256.3), Tiepoint(241.2)),
-        # lnline=Line(offset=-71.99, slope=1.20),
         water_tie_point_set=(Tiepoint(201.916), Tiepoint(132.815)),
         ice_tie_point_set=(Tiepoint(255.670), Tiepoint(241.713)),
         lnline=Line(offset=-73.5471, slope=1.21104),
         # iceline=Line(offset=-25.9729, slope=1.04382),  # not yet used?
     ),
     v1937_params=TbSetParams(
-        # water_tie_point_set=(Tiepoint(207.2), Tiepoint(182.4)),
-        # ice_tie_point_set=(Tiepoint(256.3), Tiepoint(258.9)),
-        # lnline=Line(offset=48.26, slope=0.8048),
         water_tie_point_set=(Tiepoint(201.916), Tiepoint(178.771)),
         ice_tie_point_set=(Tiepoint(255.670), Tiepoint(258.341)),
         lnline=Line(offset=47.0061, slope=0.809335),
@@ -47,9 +40,6 @@ NSIDC0001_F17_NORTH_PARAMS = ParamsDict(
             start_month=11,
             end_month=4,
             weather_filter_params=WeatherFilterParams(
-                # wintrc=84.73,
-                # wslope=0.5352,
-                # wxlimt=18.39,
                 wintrc=87.6467,
                 wslope=0.517333,
                 wxlimt=14.00,
@@ -61,9 +51,6 @@ NSIDC0001_F17_NORTH_PARAMS = ParamsDict(
             start_month=6,
             end_month=9,
             weather_filter_params=WeatherFilterParams(
-                # wintrc=82.71,
-                # wslope=0.5352,
-                # wxlimt=23.34,
                 wintrc=89.20000,
                 wslope=0.503750,
                 wxlimt=21.00,
@@ -74,21 +61,14 @@ NSIDC0001_F17_NORTH_PARAMS = ParamsDict(
     ],
 )
 
-# GODDARD_AMSR2_SOUTH_PARAMS = ParamsDict(
 NSIDC0001_F17_SOUTH_PARAMS = ParamsDict(
     vh37_params=TbSetParams(
-        # water_tie_point_set=(Tiepoint(207.6), Tiepoint(131.9)),
-        # ice_tie_point_set=(Tiepoint(259.4), Tiepoint(247.3)),
-        # lnline=Line(offset=-90.62, slope=1.2759),
         water_tie_point_set=(Tiepoint(201.990), Tiepoint(133.943)),
         ice_tie_point_set=(Tiepoint(259.122), Tiepoint(248.284)),
         lnline=Line(offset=-90.9384, slope=1.28239),
         # iceline=Line(offset=-40.8250, slope=1.11404),  # not yet used?
     ),
     v1937_params=TbSetParams(
-        # water_tie_point_set=(Tiepoint(207.6), Tiepoint(182.7)),
-        # ice_tie_point_set=(Tiepoint(259.4), Tiepoint(261.6)),
-        # lnline=Line(offset=62.89, slope=0.7618),
         water_tie_point_set=(Tiepoint(201.990), Tiepoint(178.358)),
         ice_tie_point_set=(Tiepoint(259.122), Tiepoint(261.654)),
         lnline=Line(offset=61.7438, slope=0.767205),
@@ -100,9 +80,6 @@ NSIDC0001_F17_SOUTH_PARAMS = ParamsDict(
             start_month=1,
             end_month=12,
             weather_filter_params=WeatherFilterParams(
-                # wintrc=85.13,
-                # wslope=0.5379,
-                # wxlimt=18.596,
                 wintrc=93.2861,
                 wslope=0.497374,
                 wxlimt=16.5,
@@ -112,10 +89,7 @@ NSIDC0001_F17_SOUTH_PARAMS = ParamsDict(
 )
 
 # TODO: Is this where we would overwrite the default values?
-# BOOTSTRAP_PARAMS_INITIAL_AMSR2_NORTH = dict(
 BOOTSTRAP_PARAMS_INITIAL_F17_NORTH = dict(
-    # bt_wtp_v37=GODDARD_AMSR2_NORTH_PARAMS["vh37_params"].water_tie_point_set[0],
-    # etc...
     bt_wtp_v37=NSIDC0001_F17_NORTH_PARAMS["vh37_params"].water_tie_point_set[0],
     bt_wtp_h37=NSIDC0001_F17_NORTH_PARAMS["vh37_params"].water_tie_point_set[1],
     bt_wtp_v19=NSIDC0001_F17_NORTH_PARAMS["v1937_params"].water_tie_point_set[1],
@@ -127,9 +101,7 @@ BOOTSTRAP_PARAMS_INITIAL_F17_NORTH = dict(
     weather_filter_seasons=NSIDC0001_F17_NORTH_PARAMS["weather_filter_seasons"],
 )
 
-# BOOTSTRAP_PARAMS_INITIAL_AMSR2_SOUTH = dict(
 BOOTSTRAP_PARAMS_INITIAL_F17_SOUTH = dict(
-    # bt_wtp_v37=GODDARD_AMSR2_SOUTH_PARAMS["vh37_params"].water_tie_point_set[0],
     bt_wtp_v37=NSIDC0001_F17_SOUTH_PARAMS["vh37_params"].water_tie_point_set[0],
     bt_wtp_h37=NSIDC0001_F17_SOUTH_PARAMS["vh37_params"].water_tie_point_set[1],
     bt_wtp_v19=NSIDC0001_F17_SOUTH_PARAMS["v1937_params"].water_tie_point_set[1],
@@ -166,7 +138,7 @@ def get_F17_bootstrap_params(
 ) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
-    # TODO: Need to add a "ame" conditional here
+    # TODO: Other satellites -- eg F13, F8 --  will need to be added here
     if satellite == "F17":
         if hemisphere == "north":
             initial_bt_params = BOOTSTRAP_PARAMS_INITIAL_F17_NORTH
