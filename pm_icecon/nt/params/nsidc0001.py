@@ -15,7 +15,7 @@ from pm_icecon.nt.params.amsr2 import NasateamParams
 def get_0001_nt_params(
     *,
     hemisphere: Hemisphere,
-    platform: ValidSatellites,
+    platform: ValidSatellites | str,
 ) -> NasateamParams:
     nt_tiepoints = get_tiepoints(satellite=platform, hemisphere=hemisphere)
 

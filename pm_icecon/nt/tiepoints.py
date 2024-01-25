@@ -217,7 +217,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
 
 def get_tiepoints(
     *,
-    satellite: ValidSatellites,
+    satellite: ValidSatellites | str,
     hemisphere: Hemisphere,
 ) -> NasateamTiePoints:
     """Given a satellite and hemisphere, return pre-defined tiepoints."""
