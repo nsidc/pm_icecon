@@ -13,7 +13,7 @@ from loguru import logger
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon.bt.api import amsr2_goddard_bootstrap
-from pm_icecon.bt.compute_bt_ic import xfer_class_tbs
+from pm_icecon.bt.xfer_tbs import xfer_class_tbs
 from pm_icecon.bt.params.class_sats import SSMIS_NORTH_PARAMS
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.interpolation import spatial_interp_tbs
