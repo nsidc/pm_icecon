@@ -172,52 +172,6 @@ WEATHER_FILTER_SEASONS_SSMI_SOUTH = (
     ],
 )
 
-# weather filter for SMMR, eg n07
-#  season 1: not-season-2
-#  season 2: June 1 - Oct 15 and not-that
-# with no transition period between the two seasons
-#  and having a season 2 that runs from nov - may
-WEATHER_FILTER_SEASONS_SMMR_NORTH = [
-    # November through May (`seas=1` in `ret_parameters_cdr.f`)
-    WeatherFilterParamsForSeason(
-        start_month=10,
-        end_month=5,
-        start_day=16,
-        weather_filter_params=WeatherFilterParams(
-            wintrc=53.4153,
-            wslope=0.661017,
-            wxlimt=22.00,
-        ),
-    ),
-    # June through Sept. (`seas=2`)
-    # Note: should run through Oct 15
-    WeatherFilterParamsForSeason(
-        start_month=6,
-        end_month=10,
-        end_day=15,
-        weather_filter_params=WeatherFilterParams(
-            wintrc=60.1667,
-            wslope=0.63333,
-            wxlimt=24.00,
-        ),
-    ),
-]
-
-WEATHER_FILTER_SEASONS_SMMR_SOUTH = (
-    [
-        # Just one season for the S. hemisphere.
-        WeatherFilterParamsForSeason(
-            start_month=1,
-            end_month=12,
-            weather_filter_params=WeatherFilterParams(
-                wintrc=82.500,
-                wslope=0.529236,
-                wxlimt=24.82,
-            ),
-        ),
-    ],
-)
-
 # TODO: icelines do not appear to be implemented in BT code yet
 # NOTE: weather_filter_seasons value should be added by sensor
 NSIDC0001_BASE_PARAMS_NORTH = dict(
@@ -286,25 +240,13 @@ def get_F17_bootstrap_params(
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
     # TODO: Other satellites -- eg F13, F8 --  will need to be added here
-    SMMR_SAT_LIST = ("n07",)
     SSMI_SAT_LIST = (
         "F08",
         "F11",
         "F13",
     )
     SSMIS_SAT_LIST = ("F17",)
-    if satellite in SMMR_SAT_LIST:
-        if hemisphere == "north":
-            initial_bt_params = NSIDC0001_BASE_PARAMS_NORTH.copy()
-            initial_bt_params[
-                "weather_filter_seasons"
-            ] = WEATHER_FILTER_SEASONS_SMMR_NORTH
-        elif hemisphere == "south":
-            initial_bt_params = NSIDC0001_BASE_PARAMS_SOUTH.copy()
-            initial_bt_params[
-                "weather_filter_seasons"
-            ] = WEATHER_FILTER_SEASONS_SMMR_SOUTH
-    elif satellite in SSMI_SAT_LIST:
+    if satellite in SSMI_SAT_LIST:
         if hemisphere == "north":
             initial_bt_params = NSIDC0001_BASE_PARAMS_NORTH.copy()
             initial_bt_params[
