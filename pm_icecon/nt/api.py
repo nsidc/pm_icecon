@@ -1,14 +1,14 @@
 import datetime as dt
 
-from pm_tb_data.fetch.amsr.au_si import get_au_si_tbs
-from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
-from pm_tb_data._types import Hemisphere
 import numpy as np
 import numpy.typing as npt
+from pm_tb_data._types import Hemisphere
+from pm_tb_data.fetch.amsr.au_si import get_au_si_tbs
+from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
 
 from pm_icecon.interpolation import spatial_interp_tbs
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
-from pm_icecon.nt.params.amsr2 import get_amsr2_params
+from pm_icecon.nt.params import get_cdr_nt_params
 from pm_icecon.nt.tiepoints import get_tiepoints
 
 
@@ -35,8 +35,9 @@ def amsr2_goddard_nasateam(
         resolution=resolution,
     )
 
-    nt_params = get_amsr2_params(
+    nt_params = get_cdr_nt_params(
         hemisphere=hemisphere,
+        platform="u2",
     )
 
     conc_ds = goddard_nasateam(
