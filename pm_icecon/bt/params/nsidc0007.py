@@ -2,17 +2,15 @@ import datetime as dt
 
 from pm_tb_data._types import Hemisphere
 
-
+from pm_icecon.bt.params.nsidc0001 import (
+    NSIDC0001_BASE_PARAMS_NORTH,
+    NSIDC0001_BASE_PARAMS_SOUTH,
+)
 from pm_icecon.bt.params.util import setup_bootstrap_params_dict
 from pm_icecon.config.models.bt import (
     WeatherFilterParams,
     WeatherFilterParamsForSeason,
 )
-from pm_icecon.bt.params.nsidc0001 import (
-    NSIDC0001_BASE_PARAMS_NORTH,
-    NSIDC0001_BASE_PARAMS_SOUTH,
-)
-
 
 # weather filter for SMMR, eg n07
 #  season 1: not-season-2

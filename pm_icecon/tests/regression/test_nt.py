@@ -7,13 +7,12 @@ import xarray as xr
 from numpy.testing import assert_almost_equal
 from pm_tb_data._types import Hemisphere
 
-from pm_icecon.tests.regression import CDR_TESTDATA_DIR
 from pm_icecon.interpolation import spatial_interp_tbs
+from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
 from pm_icecon.nt.tiepoints import get_tiepoints
+from pm_icecon.tests.regression import CDR_TESTDATA_DIR
 from pm_icecon.util import get_ps25_grid_shape
-from pm_icecon.nt._types import NasateamGradientRatioThresholds
-
 
 RSS_GODDARD_F17_NORTH_GRADIENT_THRESHOLDS = NasateamGradientRatioThresholds(
     {

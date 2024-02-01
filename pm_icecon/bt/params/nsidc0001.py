@@ -7,7 +7,6 @@ Parameters are based on values from Bootstrap code in cdralgos:
 """
 import datetime as dt
 
-
 from pm_icecon.bt._types import Line
 from pm_icecon.bt.params.util import setup_bootstrap_params_dict
 from pm_icecon.config.models.bt import (

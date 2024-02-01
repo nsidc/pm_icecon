@@ -2,8 +2,8 @@
 
 A grid identifier is shorthand for a particular grid and projection definition.
 """
-from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
 from pm_tb_data._types import Hemisphere
+from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
 
 
 # Note: these routines are also in seaice_ecdr's gridid_to_xr_dataarray.py
