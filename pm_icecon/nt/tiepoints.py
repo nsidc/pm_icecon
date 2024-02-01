@@ -180,6 +180,19 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 211.90, "fy": 249.25, "my": 217.10},
         },
     },
+    # Source: CDR ATBD
+    "n07": {
+        "n": {
+            "19h": {"ow": 85.5, "fy": 225.2, "my": 186.8},
+            "19v": {"ow": 168.7, "fy": 242.2, "my": 210.2},
+            "37v": {"ow": 199.4, "fy": 225.2, "my": 186.8},
+        },
+        "s": {
+            "19h": {"ow": 98.5, "fy": 232.2, "my": 205.2},
+            "19v": {"ow": 168.7, "fy": 247.1, "my": 237.0},
+            "37v": {"ow": 199.4, "fy": 245.5, "my": 210.0},
+        },
+    },
 }  # End of TIEPOINTS{}
 
 """
@@ -235,6 +248,8 @@ def get_tiepoints(
             "F13": "f13",
             "F11": "f11",
             "F08": "f08",
+            # SMMR
+            "n07": "n07",
         }[satellite]
     except KeyError:
         raise NotImplementedError(
