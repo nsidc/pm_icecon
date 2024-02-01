@@ -1,6 +1,5 @@
 """Parameters for use with NSIDC-0001 data."""
 
-from loguru import logger
 from pm_tb_data._types import Hemisphere
 from pm_icecon._types import ValidSatellites
 
@@ -20,8 +19,6 @@ def get_0001_nt_params(
     nt_gradient_thresholds = get_cdr_rss_thresholds(
         hemisphere=hemisphere, platform=platform
     )
-
-    logger.info("NT gradient threshold values for {platform} are copied from f17_final")
 
     return NasateamParams(
         tiepoints=nt_tiepoints,
