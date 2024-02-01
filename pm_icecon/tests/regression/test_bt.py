@@ -3,25 +3,26 @@ from pathlib import Path
 from typing import Final
 
 import numpy as np
-import numpy.typing as npt
 import xarray as xr
-from loguru import logger
 from numpy.testing import assert_almost_equal
 from numpy.typing import NDArray
-from pm_tb_data._types import Hemisphere
+import numpy.typing as npt
 from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
+from pm_tb_data._types import Hemisphere
+from loguru import logger
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon.bt.api import amsr2_goddard_bootstrap
+from pm_icecon.bt.compute_bt_ic import xfer_class_tbs
 from pm_icecon.bt.params.class_sats import SSMIS_NORTH_PARAMS
-from pm_icecon.bt.xfer_tbs import xfer_class_tbs
 from pm_icecon.config.models.bt import BootstrapParams
 from pm_icecon.interpolation import spatial_interp_tbs
+from pm_icecon.util import get_ps25_grid_shape
 from pm_icecon.tests.regression import (
     CDR_TESTDATA_DIR,
     NSIDC_NFS_SHARE_DIR,
 )
-from pm_icecon.util import get_ps25_grid_shape
+
 
 BOOTSTRAP_MASKS_DIR = NSIDC_NFS_SHARE_DIR / "bootstrap_masks"
 BT_GODDARD_ANCILLARY_DIR = CDR_TESTDATA_DIR / "bt_goddard_ANCILLARY"

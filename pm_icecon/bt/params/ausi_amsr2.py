@@ -175,7 +175,7 @@ def get_amsr2_params(
     return bt_params
 
 
-def get_ausi_amsr2_bootstrap_params(
+def get_ausi_bootstrap_params(
     *,
     date: dt.date,
     satellite: str,

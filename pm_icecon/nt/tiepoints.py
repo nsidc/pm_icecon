@@ -217,24 +217,16 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
 
 def get_tiepoints(
     *,
-    satellite: ValidSatellites | str,
+    satellite: ValidSatellites,
     hemisphere: Hemisphere,
 ) -> NasateamTiePoints:
     """Given a satellite and hemisphere, return pre-defined tiepoints."""
     try:
         sat = {
-            # TODO: we should calculate specific tiepoints for AMSRE (`ame`)
-            # instead of using the AMSR2 tiepoints.
-            "ame": "amsru_a2",
-            "am2": "amsru_a2",
             "u2": "amsru_a2",
             "17_final": "f17_final",
             "18_class": "f18_class",
             "18_final": "f18_class",
-            "F17": "f17_final",
-            "F13": "f13",
-            "F11": "f11",
-            "F08": "f08",
         }[satellite]
     except KeyError:
         raise NotImplementedError(
