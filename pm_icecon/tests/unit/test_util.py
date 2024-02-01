@@ -2,7 +2,7 @@ import datetime as dt
 
 from pm_tb_data._types import NORTH
 
-from pm_icecon.util import date_range, standard_output_filename
+from pm_icecon.util import standard_output_filename, date_range
 
 
 def test_standard_output_filename():

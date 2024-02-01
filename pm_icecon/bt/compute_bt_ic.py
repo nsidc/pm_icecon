@@ -9,7 +9,7 @@ import calendar
 import datetime as dt
 import warnings
 from functools import reduce
-from typing import Sequence
+from typing import Literal, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -24,6 +24,7 @@ from pm_icecon.config.models.bt import (
     WeatherFilterParamsForSeason,
 )
 from pm_icecon.constants import DEFAULT_FLAG_VALUES
+from pm_icecon.errors import UnexpectedSatelliteError
 
 
 # TODO: this function very similar to `get_invalid_tbs_mask` in `compute_nt_ic`.
@@ -53,6 +54,43 @@ def tb_data_mask(
     )
 
     return is_bad_tb
+
+
+def xfer_class_tbs(
+    *,
+    tb_v37: npt.NDArray,
+    tb_h37: npt.NDArray,
+    tb_v19: npt.NDArray,
+    tb_v22: npt.NDArray,
+    sat: Literal["f17", "f18"],
+) -> dict[str, npt.NDArray[np.float32]]:
+    """Transform selected CLASS (NRT) TBs for consistentcy with timeseries.
+
+    Some CLASS data should be transformed via linear regression for consistenicy
+    with other data sources (TODO: which ones exactly?)
+
+    TODO: make sure this description is...descriptive enough.
+    """
+    # NRT regressions
+    if sat == "f17":
+        tb_v37 = (1.0170066 * tb_v37) + -4.9383355
+        tb_h37 = (1.0009720 * tb_h37) + -1.3709822
+        tb_v19 = (1.0140723 * tb_v19) + -3.4705583
+        tb_v22 = (0.99652931 * tb_v22) + -0.82305684
+    elif sat == "f18":
+        tb_v37 = (1.0104497 * tb_v37) + -3.3174017
+        tb_h37 = (0.98914390 * tb_h37) + 1.2031835
+        tb_v19 = (1.0057373 * tb_v19) + -0.92638520
+        tb_v22 = (0.98793409 * tb_v22) + 1.2108198
+    else:
+        raise UnexpectedSatelliteError(f"No such tb xform: {sat}")
+
+    return {
+        "tb_v37": tb_v37,
+        "tb_h37": tb_h37,
+        "tb_v19": tb_v19,
+        "tb_v22": tb_v22,
+    }
 
 
 def get_adj_ad_line_offset(

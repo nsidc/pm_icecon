@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 # NSIDC infrastructure-specific paths:
 NSIDC_NFS_SHARE_DIR = Path("/share/apps/G02202_V5")
 

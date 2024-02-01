@@ -4,10 +4,10 @@ from pathlib import Path
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
-from pm_tb_data._types import Hemisphere
 from pm_tb_data.fetch.a2l1c_625 import get_a2l1c_625_tbs
 from pm_tb_data.fetch.amsr.au_si import get_au_si_tbs
 from pm_tb_data.fetch.amsr.util import AMSR_RESOLUTIONS
+from pm_tb_data._types import Hemisphere
 
 import pm_icecon.bt.compute_bt_ic as bt
 from pm_icecon.bt.params.ausi_amsr2 import get_amsr2_params
