@@ -223,6 +223,7 @@ def get_tiepoints(
     """Given a satellite and hemisphere, return pre-defined tiepoints."""
     try:
         sat = {
+            "ame": "amsru_a2",
             "am2": "amsru_a2",
             "u2": "amsru_a2",
             "17_final": "f17_final",
