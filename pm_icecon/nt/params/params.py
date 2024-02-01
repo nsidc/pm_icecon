@@ -23,8 +23,8 @@ def get_cdr_nt_params(
     nt_tiepoints = get_tiepoints(satellite=platform, hemisphere=hemisphere)
 
     # Gradient thresholds
-    if platform == "am2":
-        logger.info("NT gradient threshold values for AMSR2 are copied from f17")
+    if platform in ("am2", "ame"):
+        logger.info("NT gradient threshold values for {platform=} are copied from f17")
         nt_gradient_thresholds = get_cdr_rss_thresholds(
             hemisphere=hemisphere,
             platform="f17",
