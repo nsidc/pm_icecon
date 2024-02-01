@@ -7,15 +7,27 @@ import xarray as xr
 from numpy.testing import assert_almost_equal
 from pm_tb_data._types import Hemisphere
 
-from pm_icecon.tests.regression import CDR_TESTDATA_DIR
 from pm_icecon.interpolation import spatial_interp_tbs
+from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.nt.compute_nt_ic import goddard_nasateam
-from pm_icecon.nt.params.goddard_rss import (
-    RSS_F17_NORTH_GRADIENT_THRESHOLDS,
-    RSS_F17_SOUTH_GRADIENT_THRESHOLDS,
-)
 from pm_icecon.nt.tiepoints import get_tiepoints
+from pm_icecon.tests.regression import CDR_TESTDATA_DIR
 from pm_icecon.util import get_ps25_grid_shape
+
+RSS_GODDARD_F17_NORTH_GRADIENT_THRESHOLDS = NasateamGradientRatioThresholds(
+    {
+        "3719": 0.050,
+        "2219": 0.045,
+    }
+)
+
+
+RSS_GODDARD_F17_SOUTH_GRADIENT_THRESHOLDS = NasateamGradientRatioThresholds(
+    {
+        "3719": 0.053,
+        "2219": 0.045,
+    }
+)
 
 
 def _get_ps25_sst_mask(
@@ -110,9 +122,9 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         minic=_get_minic(hemisphere=hemisphere),
         invalid_ice_mask=invalid_ice_mask,
         gradient_thresholds=(
-            RSS_F17_NORTH_GRADIENT_THRESHOLDS
+            RSS_GODDARD_F17_NORTH_GRADIENT_THRESHOLDS
             if hemisphere == "north"
-            else RSS_F17_SOUTH_GRADIENT_THRESHOLDS
+            else RSS_GODDARD_F17_SOUTH_GRADIENT_THRESHOLDS
         ),
         tiepoints=get_tiepoints(satellite="17_final", hemisphere=hemisphere),
     )
