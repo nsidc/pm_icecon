@@ -223,6 +223,8 @@ def get_tiepoints(
     """Given a satellite and hemisphere, return pre-defined tiepoints."""
     try:
         sat = {
+            # TODO: we should calculate specific tiepoints for AMSRE (`ame`)
+            # instead of using the AMSR2 tiepoints.
             "ame": "amsru_a2",
             "am2": "amsru_a2",
             "u2": "amsru_a2",
