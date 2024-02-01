@@ -9,6 +9,8 @@ from pm_icecon.nt._types import NasateamGradientRatioThresholds
 # defined by Goddard.
 # RSS is Remote Sensing Systems. Data from RSS is used for the Final CDR
 # (g02202)
+# TODO: These are referenced by platform.lower(), but the keys should be
+#       valid RSS satellites
 CDR_RSS_THRESHOLDS_NORTH = dict(
     f17=NasateamGradientRatioThresholds(
         {

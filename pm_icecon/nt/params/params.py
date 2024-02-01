@@ -27,12 +27,12 @@ def get_cdr_nt_params(
         logger.info("NT gradient threshold values for {platform=} are copied from f17")
         nt_gradient_thresholds = get_cdr_rss_thresholds(
             hemisphere=hemisphere,
-            platform="f17",
+            platform="f17".lower(),
         )
     else:
         nt_gradient_thresholds = get_cdr_rss_thresholds(
             hemisphere=hemisphere,
-            platform=platform,
+            platform=platform.lower(),
         )
 
     return NasateamParams(
