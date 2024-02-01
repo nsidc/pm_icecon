@@ -2,8 +2,8 @@
 """
 from pm_tb_data._types import NORTH, SOUTH
 
-from pm_icecon.nt._types import NasateamGradientRatioThresholds
 from pm_icecon.errors import UnexpectedSatelliteError
+from pm_icecon.nt._types import NasateamGradientRatioThresholds
 
 # These thresholds defined specifically for the CDR. These differ from thoes
 # defined by Goddard.

@@ -2,14 +2,13 @@
 
 This code aims to make Tbs from platforms other than F13 match F13.
 """
-from typing import Literal
 import copy
+from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
 
 from pm_icecon.errors import UnexpectedSatelliteError
-
 
 # RSS-specific Tb transformation values
 # Each key is a platform name. This mapps to another dictionary of Tb channel
