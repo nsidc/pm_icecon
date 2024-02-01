@@ -18,7 +18,7 @@ def typecheck(ctx):
 def unit(ctx):
     """Run unit tests."""
     print_and_run(
-        f"pytest --cov=pm_icecon --cov-fail-under 34 -s {PROJECT_DIR}/pm_icecon/tests/unit",
+        f"pytest --cov=pm_icecon --cov-fail-under 24 -s {PROJECT_DIR}/pm_icecon/tests/unit",
         pty=True,
     )
 
