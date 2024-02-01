@@ -14,7 +14,7 @@ from pm_icecon.errors import UnexpectedSatelliteError
 # RSS-specific Tb transformation values
 # Each key is a platform name. This mapps to another dictionary of Tb channel
 # names w/ maps to a tuple representing a slope and offset.
-rss_tb_xfers = dict(
+rss_tb_xfers: dict[str, dict[str, tuple[float, float]]] = dict(
     n07=dict(
         v37=(0.97901150, 6.6694386),
         h37=(1.0065762, 4.6935520),
