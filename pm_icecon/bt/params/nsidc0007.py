@@ -58,6 +58,12 @@ WEATHER_FILTER_SEASONS_SMMR_SOUTH = (
     ],
 )
 
+WEATHER_FILTER_SEASONS_SMMR_SOUTH_DICT = dict(
+    wintrc=82.500,
+    wslope=0.529236,
+    wxlimt=24.82,
+)
+
 
 def get_smmr_params(*, hemisphere: Hemisphere, date: dt.date) -> dict:
     if hemisphere == "north":
@@ -65,7 +71,8 @@ def get_smmr_params(*, hemisphere: Hemisphere, date: dt.date) -> dict:
         initial_bt_params["weather_filter_seasons"] = WEATHER_FILTER_SEASONS_SMMR_NORTH
     else:
         initial_bt_params = NSIDC0001_BASE_PARAMS_SOUTH.copy()
-        initial_bt_params["weather_filter_seasons"] = WEATHER_FILTER_SEASONS_SMMR_SOUTH
+        initial_bt_params = initial_bt_params | WEATHER_FILTER_SEASONS_SMMR_SOUTH_DICT
+        # initial_bt_params["weather_filter_seasons"] = WEATHER_FILTER_SEASONS_SMMR_SOUTH
 
     bt_params = setup_bootstrap_params_dict(
         initial_params_dict=initial_bt_params, date=date
