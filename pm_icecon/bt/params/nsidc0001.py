@@ -127,6 +127,12 @@ WEATHER_FILTER_SEASONS_SSMIS_SOUTH = [
     ),
 ]
 
+WEATHER_FILTER_SEASONS_SSMIS_SOUTH_DICT = dict(
+    wintrc=93.2861,
+    wslope=0.497374,
+    wxlimt=16.5,
+)
+
 # weather filter for SSMI, eg F08, F11, F13
 WEATHER_FILTER_SEASONS_SSMI_NORTH = [
     # November through April (`seas=1` in `ret_parameters_cdr.f`)
@@ -169,6 +175,11 @@ WEATHER_FILTER_SEASONS_SSMI_SOUTH = (
             ),
         ),
     ],
+)
+WEATHER_FILTER_SEASONS_SSMI_SOUTH_DICT = dict(
+    wintrc=93.2861,
+    wslope=0.497374,
+    wxlimt=16.5,
 )
 
 # TODO: icelines do not appear to be implemented in BT code yet
@@ -254,9 +265,12 @@ def get_F17_bootstrap_params(
             ] = WEATHER_FILTER_SEASONS_SSMI_NORTH
         elif hemisphere == "south":
             initial_bt_params = NSIDC0001_BASE_PARAMS_SOUTH.copy()
-            initial_bt_params[
-                "weather_filter_seasons"
-            ] = WEATHER_FILTER_SEASONS_SSMI_SOUTH
+            initial_bt_params = (
+                initial_bt_params | WEATHER_FILTER_SEASONS_SSMI_SOUTH_DICT
+            )
+            # initial_bt_params[
+            #     "weather_filter_seasons"
+            # ] = WEATHER_FILTER_SEASONS_SSMI_SOUTH
     elif satellite in SSMIS_SAT_LIST:
         if hemisphere == "north":
             initial_bt_params = NSIDC0001_BASE_PARAMS_NORTH.copy()
@@ -265,9 +279,12 @@ def get_F17_bootstrap_params(
             ] = WEATHER_FILTER_SEASONS_SSMIS_NORTH
         elif hemisphere == "south":
             initial_bt_params = NSIDC0001_BASE_PARAMS_SOUTH.copy()
-            initial_bt_params[
-                "weather_filter_seasons"
-            ] = WEATHER_FILTER_SEASONS_SSMIS_SOUTH
+            initial_bt_params = (
+                initial_bt_params | WEATHER_FILTER_SEASONS_SSMIS_SOUTH_DICT
+            )
+            # initial_bt_params[
+            #     "weather_filter_seasons"
+            # ] = WEATHER_FILTER_SEASONS_SSMIS_SOUTH
     else:
         raise ValueError(
             f"Bootstrap params not yet defined for:\n  satellite: {satellite}"
