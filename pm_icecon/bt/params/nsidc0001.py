@@ -241,8 +241,7 @@ BOOTSTRAP_PARAMS_INITIAL_F17_SOUTH = dict(
 """
 
 
-# Rename this...without F17!
-def get_F17_bootstrap_params(
+def get_nsidc0001_bootstrap_params(
     *,
     date: dt.date,
     satellite: str,
@@ -250,7 +249,6 @@ def get_F17_bootstrap_params(
 ) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
-    # TODO: Other satellites -- eg F13, F8 --  will need to be added here
     SSMI_SAT_LIST = (
         "F08",
         "F11",
