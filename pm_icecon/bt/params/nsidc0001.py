@@ -238,7 +238,6 @@ def get_nsidc0001_bootstrap_params(
 ) -> dict:
     """Assign the bootstrap parameters for this date, sat, grid."""
     hemisphere = get_gridid_hemisphere(gridid)
-    # TODO: Other satellites -- eg F13, F8 --  will need to be added here
     SSMI_SAT_LIST = (
         "F08",
         "F11",
