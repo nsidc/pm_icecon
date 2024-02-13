@@ -45,7 +45,6 @@ def apply_nt2a_land_spillover(
         is_modifiable = (adj123 == 1) | (adj123 == 2)
     is_adj3 = adj123 == 3
 
-    # is_zero_conc = conc == 0.0
     is_zero_conc = conc <= anchoring_siconc
 
     # TODO: this should be extracted as a kwarg. 254 may not always be
