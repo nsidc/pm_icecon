@@ -5,6 +5,10 @@ Bootstrap parameters for use with AMSR2 derived from AU_SI products
 Parameters are based on values from `ret_parameters_amsru2.f`. Updates have been
 made to the weather filter paramters (`wxlimt`) for use with AU_SI12 for the
 CDR.
+
+
+TODO: bootstrap parameters are being refactored. See the `nsidc0001` bt params
+module for the most up-to-date method/approach.
 """
 import datetime as dt
 from typing import cast

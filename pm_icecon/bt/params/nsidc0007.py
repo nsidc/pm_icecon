@@ -1,3 +1,8 @@
+"""NSIDC0007 Bootstrap parameters.
+
+TODO: bootstrap parameters are being refactored. See the `nsidc0001` bt params
+module for the most up-to-date method/approach.
+"""
 import datetime as dt
 
 from pm_tb_data._types import Hemisphere

@@ -2,6 +2,9 @@
 
 Bootstrap parameters for use with AMSR2 from new CETB product, i.e. either
 NSIDC-0763 or NSIDC-0630 version 2.
+
+TODO: bootstrap parameters are being refactored. See the `nsidc0001` bt params
+module for the most up-to-date method/approach.
 """
 
 from pm_icecon.bt._types import Line, Tiepoint
