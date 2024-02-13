@@ -9,6 +9,9 @@ Remote Sensing Systems (RSS). Data from RSS is used for the 'final' CDR (g02202)
 All parameters pulled from `ret_parameters_sb2.f`.
 
 TODO: separate out params into sat-specific modules.
+
+TODO: bootstrap parameters are being refactored. See the `nsidc0001` bt params
+module for the most up-to-date method/approach.
 """
 from pm_icecon.bt._types import Line, Tiepoint
 from pm_icecon.config.models.bt import (

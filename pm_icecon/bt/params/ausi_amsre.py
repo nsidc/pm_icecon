@@ -4,6 +4,9 @@ Bootstrap parameters for use with AMSRE derived from AU_SI products
 
 For now, these parameters are copied from the AMSR2 Bootstrap parameters
 CDR.
+
+TODO: bootstrap parameters are being refactored. See the `nsidc0001` bt params
+module for the most up-to-date method/approach.
 """
 import datetime as dt
 from typing import cast
