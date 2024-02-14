@@ -23,15 +23,30 @@ from scipy.signal import convolve2d
 def apply_nt2a_land_spillover(
     conc: npt.NDArray,
     adj123: npt.NDArray,
+    anchoring_siconc: float = 0.0,
+    affect_dist3: bool = False,
 ) -> npt.NDArray:
     """Apply the first part of the NASA Team 2 land spillover routine.
 
     If all of the nearby 3-from-shore pixels have zero percent concentration,
     then so does this pixel
+
+    anchoring_siconc refers to the minimum sea ice conc that will count as
+    sufficient for anchoring near-shore values
+
+    affect_dist3 determines whetheror not to affect pixels 3 away from shore.
+    By default, only pixels up to 2 away from shore are affected
+
+    Note: here, conc is in %, so ranges from 0-100% (or more, if not yet clamped)
     """
-    is_adj12 = (adj123 == 1) | (adj123 == 2)
+    if affect_dist3:
+        is_modifiable = (adj123 == 1) | (adj123 == 2) | (adj123 == 3)
+    else:
+        is_modifiable = (adj123 == 1) | (adj123 == 2)
     is_adj3 = adj123 == 3
-    is_zero_conc = conc == 0.0
+
+    is_zero_conc = conc <= anchoring_siconc
+
     # TODO: this should be extracted as a kwarg. 254 may not always be
     # consistently used as a flag value for land!
     is_land = conc == 254
@@ -49,7 +64,7 @@ def apply_nt2a_land_spillover(
     conc[
         (n_near_adj3_zeros > 0)
         & (n_near_adj3_zeros == n_near_adj3)
-        & (is_adj12)
+        & (is_modifiable)
         & (~is_land)
     ] = 0
 
@@ -102,10 +117,19 @@ def apply_nt2_land_spillover(
     conc: npt.NDArray,
     adj123: npt.NDArray,
     l90c: npt.NDArray,
+    anchoring_siconc: float = 0.0,
+    affect_dist3: bool = False,
 ) -> npt.NDArray:
-    """Apply first and second passes of NASA Team 2 land spillover routine."""
+    """Apply first and second passes of NASA Team 2 land spillover routine.
+
+    Note: here, conc is in %, so ranges from 0-100% (or more, if not yet clamped)"""
     spillover_applied_conc = conc.copy()
-    spillover_applied_conc = apply_nt2a_land_spillover(spillover_applied_conc, adj123)
+    spillover_applied_conc = apply_nt2a_land_spillover(
+        spillover_applied_conc,
+        adj123,
+        anchoring_siconc=anchoring_siconc,
+        affect_dist3=affect_dist3,
+    )
     spillover_applied_conc = apply_nt2b_land_spillover(
         spillover_applied_conc, adj123, l90c
     )

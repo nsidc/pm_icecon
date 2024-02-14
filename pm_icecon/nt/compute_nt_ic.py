@@ -231,6 +231,8 @@ def _clamp_conc_and_set_flags(
     """Clap concentrations to a max of 100 and apply flag values.
 
     Currently just sets a land value. TODO: add coast flag value.
+    TODO: Actually, we may want to remove *all* non-conc values so that
+          there are no sentinel values in these fields.
 
     We clamp concentrations to a max of 100 at this step instead of in
     `compute_nt_conc` because the original algorithm implemented clamping only

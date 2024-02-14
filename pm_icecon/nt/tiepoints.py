@@ -180,6 +180,19 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 211.90, "fy": 249.25, "my": 217.10},
         },
     },
+    # Source: CDR ATBD
+    "n07": {
+        "n": {
+            "19h": {"ow": 85.5, "fy": 225.2, "my": 186.8},
+            "19v": {"ow": 168.7, "fy": 242.2, "my": 210.2},
+            "37v": {"ow": 199.4, "fy": 225.2, "my": 186.8},
+        },
+        "s": {
+            "19h": {"ow": 98.5, "fy": 232.2, "my": 205.2},
+            "19v": {"ow": 168.7, "fy": 247.1, "my": 237.0},
+            "37v": {"ow": 199.4, "fy": 245.5, "my": 210.0},
+        },
+    },
 }  # End of TIEPOINTS{}
 
 """
@@ -217,16 +230,26 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
 
 def get_tiepoints(
     *,
-    satellite: ValidSatellites,
+    satellite: ValidSatellites | str,
     hemisphere: Hemisphere,
 ) -> NasateamTiePoints:
     """Given a satellite and hemisphere, return pre-defined tiepoints."""
     try:
         sat = {
+            # TODO: we should calculate specific tiepoints for AMSRE (`ame`)
+            # instead of using the AMSR2 tiepoints.
+            "ame": "amsru_a2",
+            "am2": "amsru_a2",
             "u2": "amsru_a2",
             "17_final": "f17_final",
             "18_class": "f18_class",
             "18_final": "f18_class",
+            "F17": "f17_final",
+            "F13": "f13",
+            "F11": "f11",
+            "F08": "f08",
+            # SMMR
+            "n07": "n07",
         }[satellite]
     except KeyError:
         raise NotImplementedError(

@@ -12,7 +12,8 @@
   other programs utlizing this library to provide masks, input TBs, etc.
 * Replace `BootstrapAlgError` in `get_linfit` with a logged warning. Use default
   slope and offset values instead of failing when there are less than 125 valid
-  pixels.
+  pixels
+* Separate AMSR2 and AMSRE parameter coefficient specifications.
 
 # v0.2.0
 
