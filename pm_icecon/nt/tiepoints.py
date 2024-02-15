@@ -82,7 +82,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
         "s": {
             "19h": {"ow": 117.0, "fy": 241.4, "my": 214.9},
             "19v": {"ow": 186.0, "fy": 256.0, "my": 246.6},
-            "37v": {"ow": 206.9, "fy": 246.6, "my": 211.1},
+            "37v": {"ow": 206.9, "fy": 245.6, "my": 211.1},
         },
     },
     # Source: pmalgos::seaice_goddard.f
