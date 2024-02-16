@@ -15,6 +15,11 @@ The structure of the table -- which are nested dictionaries -- is:
 These values were primarily taken from the 'seaice_goddard.f' code
 of the pmalgos package.  The relevant section of this code is pasted
 at the end of this file.
+
+After further review, most of these tiepoints were copied from the
+`cdralgos` repository used to generate SMMR/SSMI/SSMIS data for CDRv4:
+    https://bitbucket.org/nsidc/cdralgos/src/master/nt_cdr/timeseries_constants.h
+    (retrieved 02/15/2024)
 """
 from typing import TypedDict
 
@@ -46,7 +51,7 @@ NasateamTiePoints = TypedDict(
 
 
 TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f08": {
         "n": {
             "19h": {"ow": 113.2, "fy": 235.5, "my": 198.5},
@@ -59,7 +64,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 207.1, "fy": 248.1, "my": 212.4},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f11": {
         "n": {
             "19h": {"ow": 113.6, "fy": 235.3, "my": 198.3},
@@ -72,7 +77,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 207.1, "fy": 245.6, "my": 211.3},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f13": {
         "n": {
             "19h": {"ow": 114.4, "fy": 235.4, "my": 198.6},
@@ -85,7 +90,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 206.9, "fy": 245.6, "my": 211.1},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f15_bridge": {
         "n": {
             "19h": {"ow": 114.813, "fy": 235.571, "my": 198.845},
@@ -98,7 +103,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 206.577, "fy": 244.426, "my": 210.685},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f15": {
         # Note: All the F15 TB values are zero :-/
         "n": {
@@ -112,7 +117,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 0.0, "fy": 0.0, "my": 0.0},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f16_class": {
         # Note: f16_class, f17_class, and f18_class all use same tiepoints
         "n": {
@@ -126,7 +131,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 208.9, "fy": 246.4, "my": 212.6},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f17_class": {
         # Note: f16_class, f17_class, and f18_class all use same tiepoints
         "n": {
@@ -140,7 +145,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 208.9, "fy": 246.4, "my": 212.6},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f18_class": {
         # Note: f16_class, f17_class, and f18_class all use same tiepoints
         "n": {
@@ -154,7 +159,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 208.9, "fy": 246.4, "my": 212.6},
         },
     },
-    # Source: pmalgos::seaice_goddard.f
+    # Source: cdralgos
     "f17_final": {
         "n": {
             "19h": {"ow": 113.4, "fy": 232.0, "my": 196.0},
@@ -180,7 +185,7 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 211.90, "fy": 249.25, "my": 217.10},
         },
     },
-    # Source: CDR ATBD
+    # Source: cdralgos
     "n07": {
         "n": {
             "19h": {"ow": 98.5, "fy": 225.2, "my": 186.8},
