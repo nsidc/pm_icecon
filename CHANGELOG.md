@@ -1,3 +1,8 @@
+# v0.3.1
+
+* Fix some nasateam tiepoints to reflect values found in `cdralgos`.
+
+
 # v0.3.0
 
 * Extract CDR-specific logic from this repository. Moved to the `seaice_ecdr`
