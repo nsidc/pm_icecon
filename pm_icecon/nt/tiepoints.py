@@ -21,6 +21,7 @@ After further review, most of these tiepoints were copied from the
     https://bitbucket.org/nsidc/cdralgos/src/master/nt_cdr/timeseries_constants.h
     (retrieved 02/15/2024)
 """
+
 from typing import TypedDict
 
 from loguru import logger

@@ -5,6 +5,7 @@ Bootstrap parameters for use with TBs derived from NSIDC-0001
 Parameters are based on values from Bootstrap code in cdralgos:
   https://bitbucket.org/nsidc/cdralgos/src/master/bt_cdr/ret_parameters_cdr.f
 """
+
 import datetime as dt
 
 from pm_icecon.bt._types import Line
@@ -156,9 +157,9 @@ def get_nsidc0001_bootstrap_params(
     if satellite in SSMI_SAT_LIST:
         if hemisphere == "north":
             initial_bt_params = NSIDC0001_BASE_PARAMS_NORTH.copy()
-            initial_bt_params[
-                "weather_filter_seasons"
-            ] = WEATHER_FILTER_SEASONS_SSMI_NORTH
+            initial_bt_params["weather_filter_seasons"] = (
+                WEATHER_FILTER_SEASONS_SSMI_NORTH
+            )
         elif hemisphere == "south":
             initial_bt_params = NSIDC0001_BASE_PARAMS_SOUTH.copy()
             initial_bt_params = (
@@ -170,9 +171,9 @@ def get_nsidc0001_bootstrap_params(
     elif satellite in SSMIS_SAT_LIST:
         if hemisphere == "north":
             initial_bt_params = NSIDC0001_BASE_PARAMS_NORTH.copy()
-            initial_bt_params[
-                "weather_filter_seasons"
-            ] = WEATHER_FILTER_SEASONS_SSMIS_NORTH
+            initial_bt_params["weather_filter_seasons"] = (
+                WEATHER_FILTER_SEASONS_SSMIS_NORTH
+            )
         elif hemisphere == "south":
             initial_bt_params = NSIDC0001_BASE_PARAMS_SOUTH.copy()
             initial_bt_params = (

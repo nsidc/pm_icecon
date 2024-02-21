@@ -14,6 +14,7 @@ print(_get_config_hash(new_params))
 
 Then setup a new test that asserts that hash doesn't change!
 """
+
 import hashlib
 import json
 from pathlib import Path

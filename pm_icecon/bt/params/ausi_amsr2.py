@@ -10,6 +10,7 @@ CDR.
 TODO: bootstrap parameters are being refactored. See the `nsidc0001` bt params
 module for the most up-to-date method/approach.
 """
+
 import datetime as dt
 from typing import cast
 
