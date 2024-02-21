@@ -1,5 +1,6 @@
 """Gradient thresholds for the nasateam weather filter.
 """
+
 from pm_tb_data._types import NORTH, SOUTH
 
 from pm_icecon.errors import UnexpectedSatelliteError

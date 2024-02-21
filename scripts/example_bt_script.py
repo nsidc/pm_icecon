@@ -3,6 +3,7 @@
 NOTE: this is for demonstration purposes only and should not be run without
 modifications.
 """
+
 import datetime as dt
 from pathlib import Path
 
