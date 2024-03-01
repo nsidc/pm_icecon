@@ -508,11 +508,12 @@ def apply_invalid_ice_mask(
 def coastal_fix(
     *,
     conc: npt.NDArray,
-    missing_flag_value,
+    missing_flag_value: float | int,
     land_mask: npt.NDArray[np.bool_],
     # The minimum ice concentration as a percentage (10 == 10%)
     minic: float,
 ):
+    """Land spillover for bootstrap."""
     # Apply coastal_fix() routine per Bootstrap.
 
     # Calculate 'temp' array
@@ -555,12 +556,19 @@ def coastal_fix(
             & (rolled_offp2 < minic)
         )
 
-        is_k1p0 = (is_k1) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
-        is_k2p0 = (is_k2) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
+        if np.isnan(missing_flag_value):
+            conc_not_missing = ~np.isnan(conc)
+            rolled_offp1_not_missing = ~np.isnan(rolled_offp1)
+        else:
+            conc_not_missing = conc != missing_flag_value
+            rolled_offp1_not_missing = rolled_offp1 != missing_flag_value
+
+        is_k1p0 = (is_k1) & (conc > 0) & conc_not_missing & (~land_mask)
+        is_k2p0 = (is_k2) & (conc > 0) & conc_not_missing & (~land_mask)
         is_k2p1 = (
             (is_k2)
             & (rolled_offp1 > 0)
-            & (rolled_offp1 != missing_flag_value)
+            & rolled_offp1_not_missing
             & (~rolled_offp1_land_mask)
         )
 
