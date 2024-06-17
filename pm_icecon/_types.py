@@ -12,3 +12,8 @@ ValidSatellites = Literal[
     "00",  # SMMR
     "a2l1c",
 ]
+
+LandSpilloverMethods = Literal[
+    "BT_NT",  # Use both the BT and NT spillover methods, as per CDRv4
+    "NT2",  # Use only the NT2 land spillover method
+]
