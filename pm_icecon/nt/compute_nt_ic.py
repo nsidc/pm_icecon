@@ -179,14 +179,14 @@ def apply_nt_spillover(
     """Apply the NASA Team land spillover routine."""
     newice = conc.copy()
 
-    is_at_coast = shoremap == 5
+    is_at_coast = shoremap == 3
     is_near_coast = shoremap == 4
-    is_far_coastal = shoremap == 3
+    is_far_coastal = shoremap == 5
 
     mod_minic = minic.copy()
-    mod_minic[is_at_coast & (minic > 20)] = 20
+    mod_minic[is_at_coast & (minic > 60)] = 60
     mod_minic[is_near_coast & (minic > 40)] = 40
-    mod_minic[is_far_coastal & (minic > 60)] = 60
+    mod_minic[is_far_coastal & (minic > 20)] = 20
 
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc, dtype=np.uint8)
@@ -198,13 +198,13 @@ def apply_nt_spillover(
             rolled = np.roll(conc, (joff, ioff), axis=(0, 1))
             is_rolled_low = (rolled < 15) & (rolled >= 0)
 
-            if offmax <= 1:
+            if offmax <= 3:
                 n_low[is_rolled_low & is_at_coast] += 1
 
             if offmax <= 2:
                 n_low[is_rolled_low & is_near_coast] += 1
 
-            if offmax <= 3:
+            if offmax <= 1:
                 n_low[is_rolled_low & is_far_coastal] += 1
 
     # Note: there are meaningless differences "at the edge" in these counts
