@@ -2,12 +2,20 @@ from invoke import task
 
 from .util import PROJECT_DIR, print_and_run
 
+# NOTE: running "mypy" instead of "mypy --no-incremental" gave hundreds of
+#       errors.  SS 7/8/2024
+#  Per:
+#    https://stackoverflow.com/questions/52189217/use-mypy-with-ruamel-yaml
+#  ...it appears this is a known issue.  See:
+#    https://github.com/python/mypy/issues/7276
+#    https://sourceforge.net/p/ruamel-yaml/tickets/328/
+
 
 @task(aliases=["mypy"])
 def typecheck(ctx):
     """Run mypy typechecking."""
     print_and_run(
-        ("mypy"),
+        ("mypy --no-incremental"),
         pty=True,
     )
 
