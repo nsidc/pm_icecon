@@ -177,6 +177,20 @@ def apply_nt_spillover(
     *, conc: npt.NDArray, shoremap: npt.NDArray, minic: npt.NDArray
 ) -> npt.NDArray[np.int16]:
     """Apply the NASA Team land spillover routine."""
+    """
+      conc is 0 to > 100.0
+        (per this code, negative value means missing data)
+
+      shoremap is 0: ocean, 1: land, 2: coast,
+                   3: coast, 4: near_coast, 5: far_coast
+        (in original, shoremap is big-endian, int16)
+
+      minic is 0 to 100.0
+        (in original file, minic is 0-1000 which is conc * 10)
+
+      It appears that there is an assumption that land is always >= 15% conc
+      TODO: Perhaps this should be looking for ocean cells that are >= 15%?
+    """
     newice = conc.copy()
 
     is_at_coast = shoremap == 3
@@ -191,21 +205,37 @@ def apply_nt_spillover(
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc, dtype=np.uint8)
 
+    # TODO: The original NASA code allows low-conc values over land to
+    #       count toward the number of nearby low-conc values needed to
+    #       cause a grid cell to be considered spillover.  This seems like
+    #       an error.  The computations below using n_low_nonland implement
+    #       a potential fix for this and are left here for potential future
+    #       use.
+    # n_low_nonland = np.zeros_like(conc, dtype=np.uint8)
+
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
 
             rolled = np.roll(conc, (joff, ioff), axis=(0, 1))
+            # rolled_shoremap = np.roll(shoremap, (joff, ioff), axis=(0, 1))
+
             is_rolled_low = (rolled < 15) & (rolled >= 0)
+            # is_rolled_nonland = rolled_shoremap >= 2
 
             if offmax <= 3:
                 n_low[is_rolled_low & is_at_coast] += 1
+                # n_low_nonland[is_rolled_low & is_at_coast & is_rolled_nonland] += 1
 
             if offmax <= 2:
                 n_low[is_rolled_low & is_near_coast] += 1
+                # n_low_nonland[is_rolled_low & is_near_coast & is_rolled_nonland] += 1
 
             if offmax <= 1:
                 n_low[is_rolled_low & is_far_coastal] += 1
+                # n_low_nonland[is_rolled_low & is_far_coastal & is_rolled_nonland] += 1
+
+    # n_low = n_low_nonland
 
     # Note: there are meaningless differences "at the edge" in these counts
     # because the spatial interpolation is not identical along the border
