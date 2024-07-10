@@ -516,6 +516,11 @@ def coastal_fix(
     """Land spillover for bootstrap."""
     # Apply coastal_fix() routine per Bootstrap.
 
+    # This algorithm seems to depend on land values in the concentration array
+    # having a "high conc" value, eg 254 in the original Goddard case
+    if np.nanmean(conc[land_mask]) < 5:
+        conc[land_mask] = 254
+
     # Calculate 'temp' array
     #   -1 is no ice
     #    1 is safe from removal

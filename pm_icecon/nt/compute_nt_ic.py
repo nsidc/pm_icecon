@@ -210,34 +210,38 @@ def apply_nt_spillover(
     # TODO: The original NASA code allows low-conc values over land to
     #       count toward the number of nearby low-conc values needed to
     #       cause a grid cell to be considered spillover.  This seems like
-    #       an error.  The computations below using n_low_nonland implement
-    #       a potential fix for this and are left here for potential future
-    #       use.
+    #       an error.
+    # Note: This scheme does not work if the land values have
+    #       no concentration value
     # n_low_nonland = np.zeros_like(conc, dtype=np.uint8)
+
+    conc_equiv = conc.copy()
+    # If the mean concentration value over the land is low, then
+    # then it's probably been set to zero and should not be used
+    # to determine whether spillover should be applied
+    mean_concval_over_land = np.nanmean(conc[(shoremap == 1) | (shoremap == 2)])
+
+    if mean_concval_over_land < 5:
+        print("NT spillover is not counting low-conc land values")
+        conc_equiv[shoremap == 1] = 100
+        conc_equiv[shoremap == 2] = 100
 
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
 
-            rolled = np.roll(conc, (joff, ioff), axis=(0, 1))
-            # rolled_shoremap = np.roll(shoremap, (joff, ioff), axis=(0, 1))
+            rolled = np.roll(conc_equiv, (joff, ioff), axis=(0, 1))
 
             is_rolled_low = (rolled < 15) & (rolled >= 0)
-            # is_rolled_nonland = rolled_shoremap >= 2
 
             if offmax <= 3:
                 n_low[is_rolled_low & is_at_coast] += 1
-                # n_low_nonland[is_rolled_low & is_at_coast & is_rolled_nonland] += 1
 
             if offmax <= 2:
                 n_low[is_rolled_low & is_near_coast] += 1
-                # n_low_nonland[is_rolled_low & is_near_coast & is_rolled_nonland] += 1
 
             if offmax <= 1:
                 n_low[is_rolled_low & is_far_coastal] += 1
-                # n_low_nonland[is_rolled_low & is_far_coastal & is_rolled_nonland] += 1
-
-    # n_low = n_low_nonland
 
     # Note: there are meaningless differences "at the edge" in these counts
     # because the spatial interpolation is not identical along the border

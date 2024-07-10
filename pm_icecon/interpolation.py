@@ -49,7 +49,7 @@ def spatial_interp_tbs(
             total[has_vals] += corner_weight * rolled[has_vals]
             count[has_vals] += corner_weight
 
-    replace_locs = interp_locs & (count > min_weightsum)
+    replace_locs = interp_locs & (count >= min_weightsum)
     count[count == 0] = 1
     average = np.divide(total, count, dtype=np.float32)
 
