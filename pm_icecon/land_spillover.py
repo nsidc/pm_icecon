@@ -123,6 +123,7 @@ def apply_nt2_land_spillover(
     """Apply first and second passes of NASA Team 2 land spillover routine.
 
     Note: here, conc is in %, so ranges from 0-100% (or more, if not yet clamped)"""
+    """ Original
     spillover_applied_conc = conc.copy()
     spillover_applied_conc = apply_nt2a_land_spillover(
         spillover_applied_conc,
@@ -133,5 +134,16 @@ def apply_nt2_land_spillover(
     spillover_applied_conc = apply_nt2b_land_spillover(
         spillover_applied_conc, adj123, l90c
     )
+    """
+    spillover_applied_conc0 = conc.copy()
+    spillover_applied_conca = apply_nt2a_land_spillover(
+        spillover_applied_conc0,
+        adj123,
+        anchoring_siconc=anchoring_siconc,
+        affect_dist3=affect_dist3,
+    )
+    spillover_applied_concb = apply_nt2b_land_spillover(
+        spillover_applied_conca, adj123, l90c
+    )
 
-    return spillover_applied_conc
+    return spillover_applied_concb
