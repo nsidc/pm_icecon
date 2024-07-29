@@ -67,7 +67,9 @@ def xfer_rss_tbs(
 
     for channel, (slope, offset) in xfrs.items():
         if channel in transformed.keys():
+            is_tbs_zero = transformed[channel] == 0
             transformed[channel] = (transformed[channel] * slope) + offset
+            transformed[channel][is_tbs_zero] = 0
 
     return transformed
 
@@ -88,6 +90,11 @@ def xfer_class_tbs(
     Some CLASS data should be transformed via linear regression for consistenicy
     with F13.
     """
+    is_v37_zeros = tb_v37 == 0
+    is_h37_zeros = tb_h37 == 0
+    is_v19_zeros = tb_v19 == 0
+    is_v22_zeros = tb_v22 == 0
+
     # NRT regressions
     if sat == "f17":
         tb_v37 = (1.0170066 * tb_v37) + -4.9383355
@@ -101,6 +108,11 @@ def xfer_class_tbs(
         tb_v22 = (0.98793409 * tb_v22) + 1.2108198
     else:
         raise UnexpectedSatelliteError(f"No such tb xform: {sat}")
+
+    tb_v37[is_v37_zeros] = 0
+    tb_h37[is_h37_zeros] = 0
+    tb_v19[is_v19_zeros] = 0
+    tb_v22[is_v22_zeros] = 0
 
     return {
         "tb_v37": tb_v37,
