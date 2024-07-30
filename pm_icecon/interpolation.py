@@ -4,7 +4,10 @@ from scipy import ndimage
 
 
 def spatial_interp_tbs(
-    tbs_array: npt.NDArray, corner_weight=0.707, min_weightsum=1.2
+    tbs_array: npt.NDArray,
+    corner_weight=0.707,
+    min_weightsum=1.2,
+    image_shift_mode="nearest",
 ):  # noqa
     """Perform spatial interpolation on input tbs field.
 
@@ -37,7 +40,7 @@ def spatial_interp_tbs(
         return tbs_array.copy()
 
     for offset in ((0, 1), (0, -1), (1, 0), (-1, 0)):
-        rolled = ndimage.shift(orig, offset, mode="nearest", order=0)
+        rolled = ndimage.shift(orig, offset, mode=image_shift_mode, order=0)
         has_vals = (rolled > 0) & (interp_locs)
         total[has_vals] += rolled[has_vals]
         count[has_vals] += 1.0
