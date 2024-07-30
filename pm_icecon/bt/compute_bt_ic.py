@@ -136,18 +136,21 @@ def calculate_water_tiepoint(
     wtp_init: Tiepoint,
     weather_mask: npt.NDArray[np.bool_],
     tb,
+    tb_range=10,
 ) -> Tiepoint:
     """Return the default or calculate new water tiepoint.
 
-    If the calculated water tiepoints are within +/- 10 of the
+    If the calculated water tiepoints are within +/- tb_range of the
     `wtp_set_default`, use the newly calculated values.
+
+    The original bootstrap algorithm used a tb_range of +/- 10K
     """
     calculated_wtp = _get_wtp(weather_mask, tb)
 
-    def _within_plusminus_10(initial_value, value) -> bool:
-        return (initial_value - 10) < value < (initial_value + 10)
+    def _within_plusminus(initial_value, value, tb_range) -> bool:
+        return (initial_value - tb_range) < value < (initial_value + tb_range)
 
-    if not _within_plusminus_10(wtp_init, calculated_wtp):
+    if not _within_plusminus(wtp_init, calculated_wtp, tb_range=tb_range):
         calculated_wtp = Tiepoint(wtp_init)
 
     return calculated_wtp
@@ -188,7 +191,7 @@ def get_linfit(
 
     is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
 
-    num_valid_pixels = is_valid.sum()
+    num_valid_pixels = is_valid.astype(np.int32).sum()
     if num_valid_pixels <= 125:
         bt_error_message = f"""
         Insufficient valid linfit points: {num_valid_pixels}
@@ -847,8 +850,8 @@ def calc_bootstrap_conc(
 
     # convert fractional sea ice concentrations to percentages
     ic_perc = ic_frac.copy()
-    # TODO/NOTE: if we treat missing as `np.nan`, this comparison does not
-    # work. `np.nan != np.nan`.
+    # TODO/NOTE: if we treat missing as `np.nan`, this comparison
+    #            does not work because `np.nan != np.nan`.
     is_missing = ic_frac == missing_flag_value
     ic_perc[~is_missing] = ic_frac[~is_missing] * 100.0
 
