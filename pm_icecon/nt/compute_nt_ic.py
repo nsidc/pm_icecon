@@ -226,13 +226,22 @@ def apply_nt_spillover(
         conc_equiv[shoremap == 1] = 100
         conc_equiv[shoremap == 2] = 100
 
+    # The cdralgos version of the NT land spillover algorithm excludes
+    # grid cells near the edge of the grid by looping over range (3 to dim-3)
+    grid_edge = np.zeros(conc_equiv.shape, dtype=np.uint8)
+    grid_edge[:3, :] = 1
+    grid_edge[-3:, :] = 1
+    grid_edge[:, :3] = 1
+    grid_edge[:, -3:] = 1
+    is_not_grid_edge = grid_edge == 0
+
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
 
             rolled = np.roll(conc_equiv, (joff, ioff), axis=(0, 1))
 
-            is_rolled_low = (rolled < 15) & (rolled >= 0)
+            is_rolled_low = (rolled < 15) & (rolled >= 0) & is_not_grid_edge
 
             if offmax <= 3:
                 n_low[is_rolled_low & is_at_coast] += 1
@@ -255,6 +264,10 @@ def apply_nt_spillover(
     # Preserve missing data (conc value of -10)
     where_missing = (conc < 0) & where_reduce_ice & (shoremap > 2)
     newice[where_missing] = conc[where_missing]
+
+    # This rounds the floating point values for easier comparison to v4 vals
+    # which are scaled short ints
+    newice = np.round(newice, 2)
 
     return newice
 
@@ -307,6 +320,7 @@ def calc_nasateam_conc(
 
     # Use tiepoints to compute algorithm coefficients and ...
     coefs = compute_nt_coefficients(tiepoints)
+
     dd = (
         coefs["E"]
         + coefs["F"] * pr_1919
