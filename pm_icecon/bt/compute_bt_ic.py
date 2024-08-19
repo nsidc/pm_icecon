@@ -473,12 +473,6 @@ def get_water_mask(
     `True` indicates areas that are water and are weather masked. I.e., `True`
     values should be treated as open ocean.
     """
-    print("Computing BT water mask:")
-    print(f"  ln1: {ln1}")
-    print(f"  wintrc: {wintrc}")
-    print(f"  wslope: {wslope}")
-    print(f"  wxlimt: {wxlimt}")
-
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     watchk1 = (wslope * v22) + wintrc
@@ -520,12 +514,6 @@ def get_weather_mask(
     Note: I think this is an erroneous subdivision of the water_arr mask
           Instead, the entire water_arr should be used for the BT weather filter
     """
-    print("Computing BT weather mask:")
-    print(f"  ln1: {ln1}")
-    print(f"  wintrc: {wintrc}")
-    print(f"  wslope: {wslope}")
-    print(f"  wxlimt: {wxlimt}")
-
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
     # watchk1 = (wslope * v22) + wintrc  # Not needed for weather_mask
