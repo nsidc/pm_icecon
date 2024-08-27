@@ -467,6 +467,7 @@ def get_water_mask(
     wintrc,
     wslope,
     wxlimt,
+    is_smmr=False,
 ) -> npt.NDArray[np.bool_]:
     """Return a water mask that has been weather filtered.
 
@@ -475,8 +476,13 @@ def get_water_mask(
     """
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = (wslope * v22) + wintrc
-    watchk2 = v22 - v19
+    # SMMR does not have v22 channel, so weather is determined using v37
+    if is_smmr:
+        watchk1 = (wslope * v37) + wintrc
+        watchk2 = v37 - v19
+    else:
+        watchk1 = (wslope * v22) + wintrc
+        watchk2 = v22 - v19
     watchk4 = (ln1["slope"] * v37) + ln1["offset"]
 
     # Note: in goddard code:
