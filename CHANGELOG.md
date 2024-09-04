@@ -1,3 +1,8 @@
+# v0.3.2
+
+* Update `pm_tb_data` dependency to v0.4.0
+
+
 # v0.3.1
 
 * Fix some nasateam tiepoints to reflect values found in `cdralgos`.
