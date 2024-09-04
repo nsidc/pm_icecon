@@ -17,7 +17,7 @@ requirements:
     - numpy ~=1.22.4
 
   run:
-    - python ~=3.10.12
+    - python ~= 3.10.12
     - numpy ~=1.22.4
     - h5py ~=3.8
     - xarray ~=2023.6
@@ -28,7 +28,7 @@ requirements:
     - pydantic ~=1.9  # Definitely NOT compatible with pydantic 2.0 (!)
     - pandas ~=1.4.4
     - pyresample ~=1.27
-    - pm_tb_data ~=0.3.0
+    - pm_tb_data ~=0.4.0
     - scipy ~=1.8.1
 
 about:
