@@ -197,4 +197,9 @@ def get_nsidc0001_bootstrap_params(
         initial_params_dict=initial_bt_params, date=date
     )
 
+    # Per cdralgos routine calc_bt_params.f, add1 and add2 differ for SH
+    if hemisphere == "south":
+        bt_params["add1"] = 4.0
+        bt_params["add2"] = 0.0
+
     return bt_params
