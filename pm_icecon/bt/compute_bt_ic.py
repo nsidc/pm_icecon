@@ -175,7 +175,8 @@ def get_linfit(
     iceline: Line | None = None,
     ad_line_offset: float | None = None,
 ) -> Line:
-    """Reproduce both `ret_linfit1()` and `ret_linfit2()` from GSFC code."""
+    """Reproduce both `ret_linfit1()` and `ret_linfit2()` from GSFC code.
+    NOTE: ret_linfit1() is used for computing SH v1937"""
     not_land_or_masked = ~land_mask & ~tb_mask
     # tba is always tb_h37, which is the x-axis of the 37h37v tbset.
     # The iceline is always the v19v37 lnline (ln == linear?).
