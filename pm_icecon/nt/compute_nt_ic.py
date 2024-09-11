@@ -176,22 +176,22 @@ def get_invalid_tbs_mask(
 def apply_nt_spillover(
     *, conc: npt.NDArray, shoremap: npt.NDArray, minic: npt.NDArray
 ) -> npt.NDArray[np.int16]:
-    """Apply the NASA Team land spillover routine."""
-    """
-      conc is 0 to > 100.0
-        (per this code, negative value means missing data)
+    """Apply the NASA Team land spillover routine.
 
-      shoremap is 0: ocean, 1: land, 2: coast,
-                   3: coast, 4: near_coast, 5: far_coast
-        in original, shoremap is big-endian int16, but nothing in the
-          computation requires it to be anything other than int-like
+    conc is 0 to > 100.0
+      (per this code, negative value means missing data)
 
-      minic is 0 to 100.0
-        (in original binary file, minic is 0-1000 which is conc * 10)
-        but as included here, it is float64 with values 0 to 96.3 (=~100.0)
+    shoremap is 0: ocean, 1: land, 2: coast,
+                 3: coast, 4: near_coast, 5: far_coast
+      in original, shoremap is big-endian int16, but nothing in the
+        computation requires it to be anything other than int-like
 
-      It appears that there is an assumption that land is always >= 15% conc
-      TODO: Perhaps this should be looking for ocean cells that are >= 15%?
+    minic is 0 to 100.0
+      (in original binary file, minic is 0-1000 which is conc * 10)
+      but as included here, it is float64 with values 0 to 96.3 (=~100.0)
+
+    It appears that there is an assumption that land is always >= 15% conc
+    TODO: Perhaps this should be looking for ocean cells that are >= 15%?
     """
     newice = conc.copy()
 
