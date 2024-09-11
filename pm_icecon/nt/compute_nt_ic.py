@@ -258,7 +258,7 @@ def apply_nt_spillover(
     where_missing = (conc < 0) & where_reduce_ice & (shoremap > 2)
     newice[where_missing] = conc[where_missing]
 
-    # This rounds the floating point values for easier comparison to v4 vals
+    # This rounds the floating point values for easier comparison to CDR v4 vals
     # which are scaled short ints
     newice = np.round(newice, 2)
 
