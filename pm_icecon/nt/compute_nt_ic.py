@@ -213,32 +213,11 @@ def apply_nt_spillover(
     #       an error.
     # Note: This scheme does not work if the land values have
     #       no concentration value
-    # n_low_nonland = np.zeros_like(conc, dtype=np.uint8)
 
     conc_equiv = conc.copy()
     # If the mean concentration value over the land is low, then
     # then it's probably been set to zero and should not be used
     # to determine whether spillover should be applied
-    """
-    import warnings
-    warnings.filterwarnings("error")
-    try:
-        mean_concval_over_land = np.nanmean(conc[(shoremap == 1) | (shoremap == 2)])
-    except RuntimeWarning:
-        breakpoint()
-        print('investigate RuntimeWarning')
-    """
-
-    # TODO: I think this is now OBE?
-    # mean_concval_over_land = np.nanmean(conc[(shoremap == 1) | (shoremap == 2)])
-
-    # if mean_concval_over_land < 5:
-    #    breakpoint()
-    #    print("NT spillover is not counting low-conc land values")
-    #    conc_equiv[shoremap == 1] = 100
-    #    conc_equiv[shoremap == 2] = 100
-
-    # breakpoint()
 
     # The cdralgos version of the NT land spillover algorithm excludes
     # grid cells near the edge of the grid by looping over range (3 to dim-3)
