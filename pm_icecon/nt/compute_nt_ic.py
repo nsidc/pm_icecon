@@ -176,22 +176,22 @@ def get_invalid_tbs_mask(
 def apply_nt_spillover(
     *, conc: npt.NDArray, shoremap: npt.NDArray, minic: npt.NDArray
 ) -> npt.NDArray[np.int16]:
-    """Apply the NASA Team land spillover routine."""
-    """
-      conc is 0 to > 100.0
-        (per this code, negative value means missing data)
+    """Apply the NASA Team land spillover routine.
 
-      shoremap is 0: ocean, 1: land, 2: coast,
-                   3: coast, 4: near_coast, 5: far_coast
-        in original, shoremap is big-endian int16, but nothing in the
-          computation requires it to be anything other than int-like
+    conc is 0 to > 100.0
+      (per this code, negative value means missing data)
 
-      minic is 0 to 100.0
-        (in original binary file, minic is 0-1000 which is conc * 10)
-        but as included here, it is float64 with values 0 to 96.3 (=~100.0)
+    shoremap is 0: ocean, 1: land, 2: coast,
+                 3: coast, 4: near_coast, 5: far_coast
+      in original, shoremap is big-endian int16, but nothing in the
+        computation requires it to be anything other than int-like
 
-      It appears that there is an assumption that land is always >= 15% conc
-      TODO: Perhaps this should be looking for ocean cells that are >= 15%?
+    minic is 0 to 100.0
+      (in original binary file, minic is 0-1000 which is conc * 10)
+      but as included here, it is float64 with values 0 to 96.3 (=~100.0)
+
+    It appears that there is an assumption that land is always >= 15% conc
+    TODO: Perhaps this should be looking for ocean cells that are >= 15%?
     """
     newice = conc.copy()
 
@@ -213,32 +213,11 @@ def apply_nt_spillover(
     #       an error.
     # Note: This scheme does not work if the land values have
     #       no concentration value
-    # n_low_nonland = np.zeros_like(conc, dtype=np.uint8)
 
     conc_equiv = conc.copy()
     # If the mean concentration value over the land is low, then
     # then it's probably been set to zero and should not be used
     # to determine whether spillover should be applied
-    """
-    import warnings
-    warnings.filterwarnings("error")
-    try:
-        mean_concval_over_land = np.nanmean(conc[(shoremap == 1) | (shoremap == 2)])
-    except RuntimeWarning:
-        breakpoint()
-        print('investigate RuntimeWarning')
-    """
-
-    # TODO: I think this is now OBE?
-    # mean_concval_over_land = np.nanmean(conc[(shoremap == 1) | (shoremap == 2)])
-
-    # if mean_concval_over_land < 5:
-    #    breakpoint()
-    #    print("NT spillover is not counting low-conc land values")
-    #    conc_equiv[shoremap == 1] = 100
-    #    conc_equiv[shoremap == 2] = 100
-
-    # breakpoint()
 
     # The cdralgos version of the NT land spillover algorithm excludes
     # grid cells near the edge of the grid by looping over range (3 to dim-3)
@@ -279,7 +258,7 @@ def apply_nt_spillover(
     where_missing = (conc < 0) & where_reduce_ice & (shoremap > 2)
     newice[where_missing] = conc[where_missing]
 
-    # This rounds the floating point values for easier comparison to v4 vals
+    # This rounds the floating point values for easier comparison to CDR v4 vals
     # which are scaled short ints
     newice = np.round(newice, 2)
 
