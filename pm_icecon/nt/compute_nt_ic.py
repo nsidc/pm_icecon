@@ -174,7 +174,11 @@ def get_invalid_tbs_mask(
 
 
 def apply_nt_spillover(
-    *, conc: npt.NDArray, shoremap: npt.NDArray, minic: npt.NDArray
+    *,
+    conc: npt.NDArray,
+    shoremap: npt.NDArray,
+    minic: npt.NDArray,
+    match_CDRv4_cdralgos=False,
 ) -> npt.NDArray[np.int16]:
     """Apply the NASA Team land spillover routine.
 
@@ -219,14 +223,16 @@ def apply_nt_spillover(
     # then it's probably been set to zero and should not be used
     # to determine whether spillover should be applied
 
-    # The cdralgos version of the NT land spillover algorithm excludes
-    # grid cells near the edge of the grid by looping over range (3 to dim-3)
-    grid_edge = np.zeros(conc_equiv.shape, dtype=np.uint8)
-    grid_edge[:3, :] = 1
-    grid_edge[-3:, :] = 1
-    grid_edge[:, :3] = 1
-    grid_edge[:, -3:] = 1
-    is_not_grid_edge = grid_edge == 0
+    if match_CDRv4_cdralgos:
+        # The cdralgos version of the NT land spillover algorithm excludes
+        # grid cells near the edge of the grid by looping over range (3 to dim-3)
+        grid_edge = np.zeros(conc_equiv.shape, dtype=np.uint8)
+
+        grid_edge[:3, :] = 1
+        grid_edge[-3:, :] = 1
+        grid_edge[:, :3] = 1
+        grid_edge[:, -3:] = 1
+        is_not_grid_edge = grid_edge == 0
 
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
@@ -234,7 +240,10 @@ def apply_nt_spillover(
 
             rolled = np.roll(conc_equiv, (joff, ioff), axis=(0, 1))
 
-            is_rolled_low = (rolled < 15) & (rolled >= 0) & is_not_grid_edge
+            if match_CDRv4_cdralgos:
+                is_rolled_low = (rolled < 15) & (rolled >= 0) & is_not_grid_edge
+            else:
+                is_rolled_low = (rolled < 15) & (rolled >= 0)
 
             if offmax <= 3:
                 n_low[is_rolled_low & is_at_coast] += 1
