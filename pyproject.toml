@@ -85,5 +85,6 @@ module = [
   "setuptools.*",
   "netCDF4.*",
   "rasterio.*",
+  "ruamel.*",
 ]
 ignore_missing_imports = true
