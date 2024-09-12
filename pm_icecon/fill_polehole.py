@@ -23,7 +23,7 @@ def fill_pole_hole(
     extended_nearpole_mask = binary_dilation(near_pole_hole_mask)
 
     # Fill zeros or NaNs near the pole
-    is_vals_near_pole = extended_nearpole_mask & (conc > 0)
+    is_vals_near_pole = extended_nearpole_mask & (conc >= 0)
     is_missing_near_pole = extended_nearpole_mask & np.isnan(conc)
     mean_near_pole = np.nanmean(conc[is_vals_near_pole])
     conc[is_missing_near_pole] = mean_near_pole

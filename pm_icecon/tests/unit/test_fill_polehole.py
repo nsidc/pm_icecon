@@ -23,7 +23,7 @@ def test_fill_pole_hole():
         ]
     )
 
-    avg_in_mask = np.mean([97.2, 92.3, 99.0, 98.3])
+    avg_in_mask = np.nanmean(conc)
     expected = np.array(
         [
             [0, 97.2, 92.3, 0],
