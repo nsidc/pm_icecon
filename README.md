@@ -16,6 +16,18 @@ For more informaton about Bootstrap and NASA Team algorithms, see [Descriptions
 of and Differences between the NASA Team and Bootstrap
 Algorithms](https://nsidc.org/data/user-resources/help-center/descriptions-and-differences-between-nasa-team-and-bootstrap)
 
+There is a long history to this project! Comments may indicate references to
+"CDR v4" or "Goddard". In short:
+
+* NASA Goddard Space Flight Center (GSFC) originally developed the algorithms
+* NSIDC developed `pmalgos` (currently private repo) in the late ~1990s from the
+  code Goddard developed.
+* More recently, NSIDC developed `cdralgos` (private repo) based on `pmalgos`
+  _and_ newly updated code from Goddard (Goddard contnued to develop and run
+  their own code)
+* Now, this iteration, which seeks to replicate the sea ice concentration
+  algorithms in Python, and in a modular fashion.
+
 
 ## Level of Support
 
