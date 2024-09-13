@@ -98,7 +98,7 @@ def get_adj_ad_line_offset(
 
 
 def _get_wtp(
-    weather_mask: npt.NDArray[np.bool_],
+    water_mask: npt.NDArray[np.bool_],
     tb: npt.NDArray[np.float32],
 ) -> Tiepoint:
     """Return the calculated water tiepoint (wtp) for the given Tbs."""
@@ -109,7 +109,7 @@ def _get_wtp(
 
     # Compute quarter-Kelvin histograms
     histo, _ = np.histogram(
-        tb[weather_mask],
+        tb[water_mask],
         bins=n_bins,
         range=(0, 300),
     )
@@ -134,20 +134,23 @@ def _get_wtp(
 def calculate_water_tiepoint(
     *,
     wtp_init: Tiepoint,
-    weather_mask: npt.NDArray[np.bool_],
+    water_mask: npt.NDArray[np.bool_],
     tb,
+    tb_range=10,
 ) -> Tiepoint:
     """Return the default or calculate new water tiepoint.
 
-    If the calculated water tiepoints are within +/- 10 of the
+    If the calculated water tiepoints are within +/- tb_range of the
     `wtp_set_default`, use the newly calculated values.
+
+    The original bootstrap algorithm used a tb_range of +/- 10K
     """
-    calculated_wtp = _get_wtp(weather_mask, tb)
+    calculated_wtp = _get_wtp(water_mask, tb)
 
-    def _within_plusminus_10(initial_value, value) -> bool:
-        return (initial_value - 10) < value < (initial_value + 10)
+    def _within_plusminus(initial_value, value, tb_range) -> bool:
+        return (initial_value - tb_range) < value < (initial_value + tb_range)
 
-    if not _within_plusminus_10(wtp_init, calculated_wtp):
+    if not _within_plusminus(wtp_init, calculated_wtp, tb_range=tb_range):
         calculated_wtp = Tiepoint(wtp_init)
 
     return calculated_wtp
@@ -161,7 +164,7 @@ def get_linfit(
     tby: npt.NDArray,
     lnline: Line,
     add: float,
-    weather_mask: npt.NDArray[np.bool_],
+    water_mask: npt.NDArray[np.bool_],
     # If the calculated slope is larger than `max_slope`, a `BootstrapAlgError`
     # is raised.
     max_slope: float = 1.5,
@@ -172,7 +175,8 @@ def get_linfit(
     iceline: Line | None = None,
     ad_line_offset: float | None = None,
 ) -> Line:
-    """Reproduce both `ret_linfit1()` and `ret_linfit2()` from GSFC code."""
+    """Reproduce both `ret_linfit1()` and `ret_linfit2()` from GSFC code.
+    NOTE: ret_linfit1() is used for computing SH v1937"""
     not_land_or_masked = ~land_mask & ~tb_mask
     # tba is always tb_h37, which is the x-axis of the 37h37v tbset.
     # The iceline is always the v19v37 lnline (ln == linear?).
@@ -186,9 +190,9 @@ def get_linfit(
 
     is_tby_gt_lnline = tby > (tbx * lnline["slope"]) + lnline["offset"]
 
-    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~weather_mask
+    is_valid = not_land_or_masked & is_tba_le_modad & is_tby_gt_lnline & ~water_mask
 
-    num_valid_pixels = is_valid.sum()
+    num_valid_pixels = is_valid.astype(np.int32).sum()
     if num_valid_pixels <= 125:
         bt_error_message = f"""
         Insufficient valid linfit points: {num_valid_pixels}
@@ -451,6 +455,49 @@ def _get_wx_params(
     )
 
 
+def get_water_mask(
+    *,
+    v37,
+    h37,
+    v22,
+    v19,
+    land_mask: npt.NDArray[np.bool_],
+    tb_mask: npt.NDArray[np.bool_],
+    ln1: Line,
+    date: dt.date,
+    wintrc,
+    wslope,
+    wxlimt,
+    is_smmr=False,
+) -> npt.NDArray[np.bool_]:
+    """Return a water mask that has been weather filtered.
+
+    `True` indicates areas that are water and are weather masked. I.e., `True`
+    values should be treated as open ocean.
+    """
+    # Determine where there is definitely water
+    not_land_or_masked = ~land_mask & ~tb_mask
+    # SMMR does not have v22 channel, so weather is determined using v37
+    if is_smmr:
+        watchk1 = (wslope * v37) + wintrc
+        watchk2 = v37 - v19
+    else:
+        watchk1 = (wslope * v22) + wintrc
+        watchk2 = v22 - v19
+    watchk4 = (ln1["slope"] * v37) + ln1["offset"]
+
+    # Note: in goddard code:
+    #         first part of is_cond1 affects water_arr in goddard code
+    #         second part of is_cond1 affects water_arr and weather_arr
+    is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
+    # TODO: where does this 230.0 value come from? Should it be configuratble?
+    is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
+
+    is_water = not_land_or_masked & is_cond1 & is_cond2
+
+    return is_water
+
+
 def get_weather_mask(
     *,
     v37,
@@ -465,24 +512,32 @@ def get_weather_mask(
     wslope,
     wxlimt,
 ) -> npt.NDArray[np.bool_]:
-    """Return a water mask that has been weather filtered.
+    """Return a weather filter mask
 
     `True` indicates areas that are water and are weather masked. I.e., `True`
     values should be treated as open ocean.
+
+    Note: this is very similar to the water_arr mask
+    Note: I think this is an erroneous subdivision of the water_arr mask
+          Instead, the entire water_arr should be used for the BT weather filter
     """
     # Determine where there is definitely water
     not_land_or_masked = ~land_mask & ~tb_mask
-    watchk1 = (wslope * v22) + wintrc
+    # watchk1 = (wslope * v22) + wintrc  # Not needed for weather_mask
     watchk2 = v22 - v19
     watchk4 = (ln1["slope"] * v37) + ln1["offset"]
 
-    is_cond1 = (watchk1 > v19) | (watchk2 > wxlimt)
+    # Note: in goddard code:
+    #         first part of is_cond1 affects water_arr in goddard code
+    #         second part of is_cond1 affects water_arr and weather_arr
+    # Note: here, in get_weather_mask(), only the second condition is used
+    is_cond1 = watchk2 > wxlimt
     # TODO: where does this 230.0 value come from? Should it be configuratble?
     is_cond2 = (watchk4 > h37) | (v37 >= 230.0)
 
-    is_water = not_land_or_masked & is_cond1 & is_cond2
+    is_weather = not_land_or_masked & is_cond1 & is_cond2
 
-    return is_water
+    return is_weather
 
 
 def apply_invalid_ice_mask(
@@ -508,12 +563,19 @@ def apply_invalid_ice_mask(
 def coastal_fix(
     *,
     conc: npt.NDArray,
-    missing_flag_value,
+    missing_flag_value: float | int,
     land_mask: npt.NDArray[np.bool_],
     # The minimum ice concentration as a percentage (10 == 10%)
     minic: float,
+    fix_goddard_bt_error: bool = False,
 ):
+    """Land spillover for bootstrap."""
     # Apply coastal_fix() routine per Bootstrap.
+
+    # This algorithm seems to depend on land values in the concentration array
+    # having a "high conc" value, eg 254 in the original Goddard case
+    if np.nanmean(conc[land_mask]) < 5:
+        conc[land_mask] = 254
 
     # Calculate 'temp' array
     #   -1 is no ice
@@ -555,12 +617,19 @@ def coastal_fix(
             & (rolled_offp2 < minic)
         )
 
-        is_k1p0 = (is_k1) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
-        is_k2p0 = (is_k2) & (conc > 0) & (conc != missing_flag_value) & (~land_mask)
+        if np.isnan(missing_flag_value):
+            conc_not_missing = ~np.isnan(conc)
+            rolled_offp1_not_missing = ~np.isnan(rolled_offp1)
+        else:
+            conc_not_missing = conc != missing_flag_value
+            rolled_offp1_not_missing = rolled_offp1 != missing_flag_value
+
+        is_k1p0 = (is_k1) & (conc > 0) & conc_not_missing & (~land_mask)
+        is_k2p0 = (is_k2) & (conc > 0) & conc_not_missing & (~land_mask)
         is_k2p1 = (
             (is_k2)
             & (rolled_offp1 > 0)
-            & (rolled_offp1 != missing_flag_value)
+            & rolled_offp1_not_missing
             & (~rolled_offp1_land_mask)
         )
 
@@ -678,49 +747,69 @@ def coastal_fix(
     )
 
     # Third conc2 change section
+    if not fix_goddard_bt_error:
+        # This section reproduces the BT land spillover error in Goddard code
 
-    # Compute shifted conc grid, for land check
-    is_rolled_land = np.roll(land_mask, (1, 0), axis=(1, 0))
+        # Compute shifted conc grid, for land check
+        is_rolled_land = np.roll(land_mask, (1, 0), axis=(1, 0))
 
-    is_temp0 = temp == 0
-    is_considered = is_temp0 & is_rolled_land
+        is_temp0 = temp == 0
+        is_considered = is_temp0 & is_rolled_land
 
-    # args to np.roll are opposite of fortran index offsets
-    # TODO: one less roll operation here than in `_conc_change124`. Should there
-    # be?
-    tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
-    tip1jp0 = np.roll(temp, (-1, 0), axis=(1, 0))
-    tip0jm1 = np.roll(temp, (0, 1), axis=(1, 0))
-    tip0jp1 = np.roll(temp, (0, -1), axis=(1, 0))
+        # args to np.roll are opposite of fortran index offsets
+        # TODO: one less roll operation here than in `_conc_change124`. Should there
+        # be?
+        tip1jp1 = np.roll(temp, (-1, -1), axis=(1, 0))
+        tip1jp0 = np.roll(temp, (-1, 0), axis=(1, 0))
+        tip0jm1 = np.roll(temp, (0, 1), axis=(1, 0))
+        tip0jp1 = np.roll(temp, (0, -1), axis=(1, 0))
 
-    # TODO: one less conditional here than in `_conc_change124`. Should there
-    # be?
-    is_tip1jp1_le0 = tip1jp1 <= 0
-    is_tip1jp0_eq0 = tip1jp0 == 0
-    is_tip0jm1_le0 = tip0jm1 <= 0
-    is_tip0jp1_le0 = tip0jp1 <= 0
+        # TODO: one less conditional here than in `_conc_change124`. Should there
+        # be?
+        is_tip1jp1_le0 = tip1jp1 <= 0
+        is_tip1jp0_eq0 = tip1jp0 == 0
+        is_tip0jm1_le0 = tip0jm1 <= 0
+        is_tip0jp1_le0 = tip0jp1 <= 0
 
-    # Changing conc2(i+1,j) to 0
-    # TODO: `is_tip1jp1_le0` variable is used twice here (&-ed
-    # together). Was this a mistake?
-    locs_ip1jp0 = np.where(
-        is_considered & is_tip1jp1_le0 & is_tip1jp1_le0 & is_tip1jp0_eq0
-    )
-    change_locs_conc2_ip1jp0 = tuple([locs_ip1jp0[0] + 0, locs_ip1jp0[1] + 1])
-    conc2[change_locs_conc2_ip1jp0] = 0
+        # Changing conc2(i+1,j) to 0
+        # TODO: `is_tip1jp1_le0` variable is used twice here (&-ed
+        # together). Was this a mistake?
+        locs_ip1jp0 = np.where(
+            is_considered & is_tip1jp1_le0 & is_tip1jp1_le0 & is_tip1jp0_eq0
+        )
+        change_locs_conc2_ip1jp0 = tuple([locs_ip1jp0[0] + 0, locs_ip1jp0[1] + 1])
+        conc2[change_locs_conc2_ip1jp0] = 0
 
-    # Changing conc2(i,j) to 0
-    # TODO: `is_tip1jp1_le0` variable is used twice here (&-ed
-    # together). Was this a mistake?
-    locs_ip0jp0 = np.where(
-        is_considered
-        & is_tip1jp1_le0
-        & is_tip1jp1_le0
-        & is_tip0jm1_le0
-        & is_tip0jp1_le0
-    )
-    change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
-    conc2[change_locs_conc2_ip0jp0] = 0
+        # Changing conc2(i,j) to 0
+        # TODO: `is_tip1jp1_le0` variable is used twice here (&-ed
+        # together). Was this a mistake?
+        locs_ip0jp0 = np.where(
+            is_considered
+            & is_tip1jp1_le0
+            & is_tip1jp1_le0
+            & is_tip0jm1_le0
+            & is_tip0jp1_le0
+        )
+        change_locs_conc2_ip0jp0 = tuple([locs_ip0jp0[0], locs_ip0jp0[1]])
+        conc2[change_locs_conc2_ip0jp0] = 0
+    else:
+        # This fixes the Goddard code error, using the same abstracted
+        # logic that the other 3 sections do
+        # The order of these shifts was determined by analogy of
+        # comparing 1st-2nd second with <3rd>-4th section
+        conc2 = _conc_change124(
+            shifts=[
+                (1, 0),
+                (-1, 1),
+                (-1, -1),
+                (0, 1),
+                (0, -1),
+                (-1, 0),
+            ],
+            land_mask=land_mask,
+            temp=temp,
+            conc2=conc2,
+        )
 
     # Fourth section
     conc2 = _conc_change124(
@@ -834,8 +923,8 @@ def calc_bootstrap_conc(
 
     # convert fractional sea ice concentrations to percentages
     ic_perc = ic_frac.copy()
-    # TODO/NOTE: if we treat missing as `np.nan`, this comparison does not
-    # work. `np.nan != np.nan`.
+    # TODO/NOTE: if we treat missing as `np.nan`, this comparison
+    #            does not work because `np.nan != np.nan`.
     is_missing = ic_frac == missing_flag_value
     ic_perc[~is_missing] = ic_frac[~is_missing] * 100.0
 
@@ -850,7 +939,7 @@ def bootstrap(
     params: BootstrapParams,
     land_mask: npt.NDArray[np.bool_],
     tb_mask: npt.NDArray[np.bool_],
-    weather_mask: npt.NDArray[np.bool_],
+    water_mask: npt.NDArray[np.bool_],
     missing_flag_value: float | int = DEFAULT_FLAG_VALUES.missing,
 ) -> npt.NDArray:
     """Calculate raw Bootstrap sea ice concentration field.
@@ -866,17 +955,17 @@ def bootstrap(
         tby=tb_h37,
         lnline=params.vh37_params.lnline,
         add=params.add1,
-        weather_mask=weather_mask,
+        water_mask=water_mask,
     )
 
     wtp_tb_v37 = calculate_water_tiepoint(
         wtp_init=params.vh37_params.water_tie_point_set[0],
-        weather_mask=weather_mask,
+        water_mask=water_mask,
         tb=tb_v37,
     )
     wtp_tb_h37 = calculate_water_tiepoint(
         wtp_init=params.vh37_params.water_tie_point_set[1],
-        weather_mask=weather_mask,
+        water_mask=water_mask,
         tb=tb_h37,
     )
 
@@ -893,7 +982,7 @@ def bootstrap(
         tby=tb_v19,
         lnline=params.v1937_params.lnline,
         add=params.add2,
-        weather_mask=weather_mask,
+        water_mask=water_mask,
         tba=tb_h37,
         iceline=line_37v37h,
         ad_line_offset=ad_line_offset,
@@ -901,7 +990,7 @@ def bootstrap(
 
     wtp_tb_v19 = calculate_water_tiepoint(
         wtp_init=params.v1937_params.water_tie_point_set[1],
-        weather_mask=weather_mask,
+        water_mask=water_mask,
         tb=tb_v19,
     )
 
@@ -1036,7 +1125,7 @@ def goddard_bootstrap(
         weather_filter_seasons=params.weather_filter_seasons,
     )
 
-    weather_mask = get_weather_mask(
+    water_mask = get_water_mask(
         v37=tb_v37,
         h37=tb_h37,
         v22=tb_v22,
@@ -1057,12 +1146,30 @@ def goddard_bootstrap(
         params=params,
         land_mask=land_mask,
         tb_mask=tb_mask,
-        weather_mask=weather_mask,
+        water_mask=water_mask,
         missing_flag_value=missing_flag_value,
     )
 
+    # The weather mask is part of the water mask, the part that
+    # is considered water because of v22 and wslope, wintrc, wxlimt
+    # Note: SS: I now think the entire water_mask is really the BT
+    #       weather mask, not just this part of it.
+    # weather_mask = get_weather_mask(
+    #    v37=tb_v37,
+    #    h37=tb_h37,
+    #    v22=tb_v22,
+    #    v19=tb_v19,
+    #    land_mask=land_mask,
+    #    tb_mask=tb_mask,
+    #    ln1=params.vh37_params.lnline,
+    #    date=date,
+    #    wintrc=season_params.wintrc,
+    #    wslope=season_params.wslope,
+    #    wxlimt=season_params.wxlimt,
+    # )
+
     # Apply masks and flag values
-    conc[weather_mask] = 0.0
+    conc[water_mask] = 0.0
     conc[tb_mask] = DEFAULT_FLAG_VALUES.missing
     conc[land_mask] = DEFAULT_FLAG_VALUES.land
 

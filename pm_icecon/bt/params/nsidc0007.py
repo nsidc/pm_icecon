@@ -83,5 +83,12 @@ def get_smmr_params(*, hemisphere: Hemisphere, date: dt.date) -> dict:
     bt_params = setup_bootstrap_params_dict(
         initial_params_dict=initial_bt_params, date=date
     )
+    # Per Fortran code calc_bt_params.f, the add1 and add2 values
+    # are different by SMMR or not, and by NH or SH
+    # For both SMMR and SSMI, add1=0, add2=-2
+    # but both values are different for SH SMMR and SH SSMI
+    if hemisphere == "south":
+        bt_params["add1"] = 3.75
+        bt_params["add2"] = -0.5
 
     return bt_params

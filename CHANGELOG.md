@@ -1,3 +1,9 @@
+# v0.4.0
+
+* Updates to support comparisons with CDR v4 code. The CDR v4 code was also
+  based on code originally authored by Goddard, but had some minior differences.
+
+
 # v0.3.2
 
 * Update `pm_tb_data` dependency to v0.4.0

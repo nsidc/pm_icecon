@@ -174,37 +174,84 @@ def get_invalid_tbs_mask(
 
 
 def apply_nt_spillover(
-    *, conc: npt.NDArray, shoremap: npt.NDArray, minic: npt.NDArray
+    *,
+    conc: npt.NDArray,
+    shoremap: npt.NDArray,
+    minic: npt.NDArray,
+    match_CDRv4_cdralgos=False,
 ) -> npt.NDArray[np.int16]:
-    """Apply the NASA Team land spillover routine."""
+    """Apply the NASA Team land spillover routine.
+
+    conc is 0 to > 100.0
+      (per this code, negative value means missing data)
+
+    shoremap is 0: ocean, 1: land, 2: coast,
+                 3: coast, 4: near_coast, 5: far_coast
+      in original, shoremap is big-endian int16, but nothing in the
+        computation requires it to be anything other than int-like
+
+    minic is 0 to 100.0
+      (in original binary file, minic is 0-1000 which is conc * 10)
+      but as included here, it is float64 with values 0 to 96.3 (=~100.0)
+
+    It appears that there is an assumption that land is always >= 15% conc
+    TODO: Perhaps this should be looking for ocean cells that are >= 15%?
+    """
     newice = conc.copy()
 
-    is_at_coast = shoremap == 5
+    is_at_coast = shoremap == 3
     is_near_coast = shoremap == 4
-    is_far_coastal = shoremap == 3
+    is_far_coastal = shoremap == 5
 
     mod_minic = minic.copy()
-    mod_minic[is_at_coast & (minic > 20)] = 20
+    mod_minic[is_at_coast & (minic > 60)] = 60
     mod_minic[is_near_coast & (minic > 40)] = 40
-    mod_minic[is_far_coastal & (minic > 60)] = 60
+    mod_minic[is_far_coastal & (minic > 20)] = 20
 
     # Count number of nearby low ice conc
     n_low = np.zeros_like(conc, dtype=np.uint8)
+
+    # TODO: The original NASA code allows low-conc values over land to
+    #       count toward the number of nearby low-conc values needed to
+    #       cause a grid cell to be considered spillover.  This seems like
+    #       an error. (https://github.com/nsidc/pm_icecon/issues/63)
+    # Note: This scheme does not work if the land values have
+    #       no concentration value
+
+    conc_equiv = conc.copy()
+    # If the mean concentration value over the land is low, then
+    # then it's probably been set to zero and should not be used
+    # to determine whether spillover should be applied
+
+    if match_CDRv4_cdralgos:
+        # The cdralgos version of the NT land spillover algorithm excludes
+        # grid cells near the edge of the grid by looping over range (3 to dim-3)
+        grid_edge = np.zeros(conc_equiv.shape, dtype=np.uint8)
+
+        grid_edge[:3, :] = 1
+        grid_edge[-3:, :] = 1
+        grid_edge[:, :3] = 1
+        grid_edge[:, -3:] = 1
+        is_not_grid_edge = grid_edge == 0
 
     for joff in range(-3, 3 + 1):
         for ioff in range(-3, 3 + 1):
             offmax = max(abs(ioff), abs(joff))
 
-            rolled = np.roll(conc, (joff, ioff), axis=(0, 1))
-            is_rolled_low = (rolled < 15) & (rolled >= 0)
+            rolled = np.roll(conc_equiv, (joff, ioff), axis=(0, 1))
 
-            if offmax <= 1:
+            if match_CDRv4_cdralgos:
+                is_rolled_low = (rolled < 15) & (rolled >= 0) & is_not_grid_edge
+            else:
+                is_rolled_low = (rolled < 15) & (rolled >= 0)
+
+            if offmax <= 3:
                 n_low[is_rolled_low & is_at_coast] += 1
 
             if offmax <= 2:
                 n_low[is_rolled_low & is_near_coast] += 1
 
-            if offmax <= 3:
+            if offmax <= 1:
                 n_low[is_rolled_low & is_far_coastal] += 1
 
     # Note: there are meaningless differences "at the edge" in these counts
@@ -219,6 +266,10 @@ def apply_nt_spillover(
     # Preserve missing data (conc value of -10)
     where_missing = (conc < 0) & where_reduce_ice & (shoremap > 2)
     newice[where_missing] = conc[where_missing]
+
+    # This rounds the floating point values for easier comparison to CDR v4 vals
+    # which are scaled short ints
+    newice = np.round(newice, 2)
 
     return newice
 
@@ -271,6 +322,7 @@ def calc_nasateam_conc(
 
     # Use tiepoints to compute algorithm coefficients and ...
     coefs = compute_nt_coefficients(tiepoints)
+
     dd = (
         coefs["E"]
         + coefs["F"] * pr_1919

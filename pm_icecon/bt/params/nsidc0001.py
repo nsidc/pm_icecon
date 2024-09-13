@@ -113,7 +113,9 @@ WEATHER_FILTER_SEASONS_SSMI_SOUTH_DICT = dict(
     wxlimt=16.5,
 )
 
-# TODO: icelines do not appear to be implemented in BT code yet
+# TODO: icelines appear to be used in BT code after being calculated,
+#       so these initial values are ignored?  They are included here
+#       to match cdralgos code
 # NOTE: weather_filter_seasons value should be added by sensor
 NSIDC0001_BASE_PARAMS_NORTH = dict(
     bt_wtp_v37=201.916,
@@ -124,6 +126,8 @@ NSIDC0001_BASE_PARAMS_NORTH = dict(
     bt_itp_v19=258.341,
     vh37_lnline=Line(offset=-73.5471, slope=1.21104),
     v1937_lnline=Line(offset=47.0061, slope=0.809335),
+    vh37_iceline=Line(offset=-25.9729, slope=1.04382),
+    v1937_iceline=Line(offset=112.803, slope=0.550296),
     # weather_filter_seasons should be added by sensor,
 )
 
@@ -136,6 +140,8 @@ NSIDC0001_BASE_PARAMS_SOUTH = dict(
     bt_itp_v19=261.654,
     vh37_lnline=Line(offset=-90.9384, slope=1.28239),
     v1937_lnline=Line(offset=61.7438, slope=0.767205),
+    vh37_iceline=Line(offset=-40.8250, slope=1.11404),
+    v1937_iceline=Line(offset=114.825, slope=0.570622),
     # weather_filter_seasons should be added by sensor
 )
 
@@ -190,5 +196,10 @@ def get_nsidc0001_bootstrap_params(
     bt_params = setup_bootstrap_params_dict(
         initial_params_dict=initial_bt_params, date=date
     )
+
+    # Per cdralgos routine calc_bt_params.f, add1 and add2 differ for SH
+    if hemisphere == "south":
+        bt_params["add1"] = 4.0
+        bt_params["add2"] = 0.0
 
     return bt_params
