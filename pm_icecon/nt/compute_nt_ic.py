@@ -214,7 +214,7 @@ def apply_nt_spillover(
     # TODO: The original NASA code allows low-conc values over land to
     #       count toward the number of nearby low-conc values needed to
     #       cause a grid cell to be considered spillover.  This seems like
-    #       an error.
+    #       an error. (https://github.com/nsidc/pm_icecon/issues/63)
     # Note: This scheme does not work if the land values have
     #       no concentration value
 
