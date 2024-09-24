@@ -12,8 +12,13 @@ from pm_icecon.nt._types import NasateamGradientRatioThresholds
 # (g02202)
 # TODO: These are referenced by platform.lower(), but the keys should be
 #       valid RSS satellites
-# TODO: add F18 for NRT processing
 CDR_RSS_THRESHOLDS_NORTH = dict(
+    f18=NasateamGradientRatioThresholds(
+        {
+            "3719": 0.050,
+            "2219": 0.045,
+        }
+    ),
     f17=NasateamGradientRatioThresholds(
         {
             "3719": 0.050,
@@ -48,8 +53,13 @@ CDR_RSS_THRESHOLDS_NORTH = dict(
     ),
 )
 
-# TODO: add F18 for NRT processing
 CDR_RSS_THRESHOLDS_SOUTH = dict(
+    f18=NasateamGradientRatioThresholds(
+        {
+            "3719": 0.057,
+            "2219": 0.045,
+        }
+    ),
     f17=NasateamGradientRatioThresholds(
         {
             "3719": 0.057,
