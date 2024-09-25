@@ -1,3 +1,7 @@
+# v0.5.0
+
+* Updates to support G10016 processing.
+
 # v0.4.0
 
 * Updates to support comparisons with CDR v4 code. The CDR v4 code was also

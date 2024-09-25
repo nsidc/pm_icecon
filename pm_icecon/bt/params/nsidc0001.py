@@ -159,7 +159,7 @@ def get_nsidc0001_bootstrap_params(
         "F11",
         "F13",
     )
-    SSMIS_SAT_LIST = ("F17",)
+    SSMIS_SAT_LIST = ("F17", "F18")
     if satellite in SSMI_SAT_LIST:
         if hemisphere == "north":
             initial_bt_params = NSIDC0001_BASE_PARAMS_NORTH.copy()
