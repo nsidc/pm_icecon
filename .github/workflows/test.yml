@@ -23,8 +23,8 @@ jobs:
       - name: "Install Conda environment"
         uses: "mamba-org/setup-micromamba@v1"
         with:
-          # environment-file: "conda-lock.yml"
-          environment-file: "environment.yml"
+          environment-file: "conda-lock.yml"
+          # environment-file: "environment.yml"
           # When using a lock-file, we have to set an environment name.
           environment-name: "pm_icecon-ci"
           cache-environment: false
