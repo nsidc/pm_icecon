@@ -27,9 +27,9 @@ jobs:
           environment-file: "environment.yml"
           # When using a lock-file, we have to set an environment name.
           environment-name: "pm_icecon-ci"
-          cache-environment: true
+          cache-environment: false
           # Increase this key to trigger cache invalidation
-          cache-environment-key: 1
+          # cache-environment-key: 2
 
       # Linter
       - name: "Run pre-commit tests"
