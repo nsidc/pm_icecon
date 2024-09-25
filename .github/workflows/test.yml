@@ -23,13 +23,13 @@ jobs:
       - name: "Install Conda environment"
         uses: "mamba-org/setup-micromamba@v1"
         with:
+          micromamba-version: '1.5.10-0' # any version from https://github.com/mamba-org/micromamba-releases
           environment-file: "conda-lock.yml"
-          # environment-file: "environment.yml"
           # When using a lock-file, we have to set an environment name.
           environment-name: "pm_icecon-ci"
-          cache-environment: false
+          cache-environment: true
           # Increase this key to trigger cache invalidation
-          # cache-environment-key: 2
+          cache-environment-key: 2
 
       # Linter
       - name: "Run pre-commit tests"
