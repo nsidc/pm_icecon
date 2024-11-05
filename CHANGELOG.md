@@ -1,3 +1,7 @@
+# v0.6.0
+
+* Update requirement for `pm_tb_data`
+
 # v0.5.0
 
 * Updates to support G10016 processing.
