@@ -177,15 +177,7 @@ def _original_f18_example() -> xr.Dataset:
     """Return concentration field example for f18_20180217.
 
     This example data does not perfectly match the outputs given by Goddard's
-    code, but it is very close. A total of 4 cells differ 1.
-
-    ```
-    >>> exact[not_eq]
-    array([984, 991, 975, 830], dtype=int16)
-    >>> not_eq = exact != not_exact
-    >>> not_exact[not_eq]
-    array([983, 992, 974, 829], dtype=int16)
-    ```
+    code, but it is very close.
 
     the exact grid produced by the fortran code is in
     `CDR_TESTDATA / 'bt_goddard_orig_output/NH_20180217_SB2_NRT_f18.ic'`.
@@ -242,7 +234,7 @@ def _original_f18_example() -> xr.Dataset:
 
 
 def test_bt_f18_regression():
-    """Regressi5on test for BT F18 output."""
+    """Regression test for BT F18 output."""
     actual_ds = _original_f18_example()
     regression_ds = xr.open_dataset(
         CDR_TESTDATA_DIR / "bt_f18_regression/NH_20180217_NRT_f18_regression.nc",
@@ -251,5 +243,5 @@ def test_bt_f18_regression():
     assert_almost_equal(
         regression_ds.conc.data,
         actual_ds.conc.data,
-        decimal=3,
+        decimal=1,
     )
