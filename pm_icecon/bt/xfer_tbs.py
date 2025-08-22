@@ -84,7 +84,7 @@ def xfer_class_tbs(
     tb_v19: npt.NDArray,
     tb_v22: npt.NDArray,
     sat: Literal["f17", "f18"],
-) -> dict[str, npt.NDArray[np.float32]]:
+) -> dict[str, npt.NDArray[np.floating]]:
     """Transform selected CLASS (NRT) TBs for consistentcy with timeseries.
 
     Some CLASS data should be transformed via linear regression for consistenicy

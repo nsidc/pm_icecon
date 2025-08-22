@@ -4,35 +4,35 @@ channels:
   - nsidc
   - nodefaults
 dependencies:
-  - invoke ~=1.7
-  - isort ~=5.10
-  - mypy ==1.7.0
-  - pytest ~=7.1
-  - pytest-cov ~=4.1.0
-  - vulture ~=2.4
+  - invoke
+  - isort
+  - mypy
+  - pytest
+  - pytest-cov
+  - vulture
   # debugging/development tools
   - ipython
   - ipdb
-  - bump-my-version ~=0.10.0
+  - bump-my-version
   - pre-commit
   - conda-lock
   # build tools
-  - conda-build ~=3.25.0
-  - anaconda-client ~=1.12.1
-  - boa ~=0.15.1
+  - conda-build
+  - anaconda-client
+  - boa
 
   # Runtime dependencies
   # NOTE: these should be kept in sync with those in `recipe/meta.yaml`.
   - python ~=3.10.12
-  - numpy ~=1.22.4
-  - h5py ~=3.6
-  - xarray ~=2023.6
-  - netCDF4 ~=1.6.3
-  - cartopy ~=0.21
-  - click ~=8.1
-  - loguru ~=0.7
+  - numpy >=2.2.6
+  - h5py >=3.14
+  - xarray  >=2025.6.1
+  - netCDF4 >=1.7.2
+  - cartopy >=0.25.0
+  - click ~=8.2
+  - loguru >=0.7.3
   - pydantic ~=1.9  # Definitely NOT compatible with pydantic 2.0 (!)
-  - pandas ~=1.4.4
-  - pyresample ~=1.27
+  - pandas ~=2.3
+  - pyresample ~=1.31
   - pm_tb_data >=0.4.0
-  - scipy ~=1.8.1
+  - scipy ~=1.15

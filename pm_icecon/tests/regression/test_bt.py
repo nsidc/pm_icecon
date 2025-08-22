@@ -72,7 +72,7 @@ def _get_ps_land_mask(
         if hemisphere == "south":
             # Any date is OK. The land mask is the same for all of the pss 12
             # validice/land masks
-            _land_coast_array = _get_pss_12_validice_land_coast_array(
+            _land_coast_array = _get_pss_12_validice_land_coast_array(  # type: ignore[assignment]
                 date=dt.date.today()
             )
             land_mask = np.logical_or(_land_coast_array == 0, _land_coast_array == 32)
@@ -118,7 +118,7 @@ def _get_ps_invalid_ice_mask(
     else:
         if resolution == "12":
             # values of 24 indicate invalid ice.
-            sst_mask = _get_pss_12_validice_land_coast_array(date=date)
+            sst_mask = _get_pss_12_validice_land_coast_array(date=date)  # type: ignore[assignment]
         elif resolution == "25":
             sst_fn = Path(
                 BT_GODDARD_ANCILLARY_DIR
@@ -218,7 +218,7 @@ def _original_f18_example() -> xr.Dataset:
         # Read int16 scaled by 10 and return float32 unscaled
         raw = np.fromfile(tbfn, dtype=np.int16).reshape(448, 304)
 
-        return raw.astype(np.float32) / 10
+        return raw.astype(np.float32) / 10  # type: ignore[return-value]
 
     for tb in ("v19", "h37", "v37", "v22"):
         otbs[tb] = _read_tb_field((orig_input_tbs_dir / raw_fns[tb]).resolve())
