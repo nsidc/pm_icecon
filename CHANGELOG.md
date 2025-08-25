@@ -1,6 +1,6 @@
 # v0.7.0
 
-* Update dependencies for `pm_tb_dta`
+* Update dependencies for `pm_tb_data`
 
 # v0.6.0
 
