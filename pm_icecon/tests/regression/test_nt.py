@@ -87,7 +87,7 @@ def _original_example(*, hemisphere: Hemisphere) -> xr.Dataset:
         )
 
         # Scale down by 10. The original alg. dealt w/ concentrations scaled by 10.
-        minic = minic / 10
+        minic = minic / 10  # type: ignore[assignment]
 
         return minic
 
