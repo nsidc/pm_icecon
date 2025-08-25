@@ -6,7 +6,7 @@ channels:
 dependencies:
   - invoke
   - isort
-  - mypy
+  - mypy ~=1.17.1
   - pytest
   - pytest-cov
   - vulture
@@ -34,5 +34,5 @@ dependencies:
   - pydantic ~=1.9  # Definitely NOT compatible with pydantic 2.0 (!)
   - pandas ~=2.3
   - pyresample ~=1.31
-  - pm_tb_data >=0.4.0
+  - pm_tb_data >=0.6.0
   - scipy ~=1.15
