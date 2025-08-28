@@ -186,6 +186,19 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 211.90, "fy": 249.25, "my": 217.10},
         },
     },
+    # Source: params derived from NSIDC0802 and used in NSIDC0803
+    "nsidc0802": {
+        "n": {
+            "19h": {"ow": 120.50, "fy": 235.50, "my": 200.70},
+            "19v": {"ow": 185.9, "fy": 250.90, "my": 222.20},
+            "37v": {"ow": 210.50, "fy": 241.30, "my": 188.60},
+        },
+        "s": {
+            "19h": {"ow": 118.20, "fy": 240.90, "my": 214.60},
+            "19v": {"ow": 192.40, "fy": 256.40, "my": 246.70},
+            "37v": {"ow": 208.70, "fy": 246.20, "my": 212.40},
+        },
+    },
     # Source: cdralgos
     "n07": {
         "n": {
@@ -239,13 +252,25 @@ def get_tiepoints(
     satellite: ValidSatellites | str,
     hemisphere: Hemisphere,
 ) -> NasateamTiePoints:
-    """Given a satellite and hemisphere, return pre-defined tiepoints."""
+    """Given a satellite and hemisphere, return pre-defined tiepoints.
+
+    NOTE/TODO: this function is specifically designed to return tiepoints for
+    data sources utilized by the latest version of the `seaice_ecdr`. E.g.,
+    passing `am2` as the `satellite` will return tiepoints based on NSIDC-0802
+    for use in NSIDC-0803, which is what we want for the `seaice_ecdr`. The
+    `amsru_am2` "satellite" will return tiepoints derived from AMSRU
+    data. Ideally, this function is updated to replace the `satellite` kwarg
+    with e.g., `platform` and `product` kwargs. The combination of `platform`
+    and `product` tells us which variant of a set of tiepoints should be
+    returned, instead of curating the dict below.
+    """
     try:
         sat = {
             # TODO: we should calculate specific tiepoints for AMSRE (`ame`)
             # instead of using the AMSR2 tiepoints.
             "ame": "amsru_a2",
-            "am2": "amsru_a2",
+            "am2": "nsidc0802",
+            "amsru_am2": "amsru_a2",
             "u2": "amsru_a2",
             "17_final": "f17_final",
             "18_class": "f18_class",
