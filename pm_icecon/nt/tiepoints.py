@@ -252,14 +252,25 @@ def get_tiepoints(
     satellite: ValidSatellites | str,
     hemisphere: Hemisphere,
 ) -> NasateamTiePoints:
-    """Given a satellite and hemisphere, return pre-defined tiepoints."""
+    """Given a satellite and hemisphere, return pre-defined tiepoints.
+
+    NOTE/TODO: this function is specifically designed to return tiepoints for
+    data sources utilized by the latest version of the `seaice_ecdr`. E.g.,
+    passing `am2` as the `satellite` will return tiepoints based on NSIDC-0802
+    for use in NSIDC-0803, which is what we want for the `seaice_ecdr`. The
+    `amsru_am2` "satellite" will return tiepoints derived from AMSRU
+    data. Ideally, this function is updated to replace the `satellite` kwarg
+    with e.g., `platform` and `product` kwargs. The combination of `platform`
+    and `product` tells us which variant of a set of tiepoints should be
+    returned, instead of curating the dict below.
+    """
     try:
         sat = {
             # TODO: we should calculate specific tiepoints for AMSRE (`ame`)
             # instead of using the AMSR2 tiepoints.
             "ame": "amsru_a2",
             "am2": "nsidc0803",
-            # "am2": "amsru_a2",
+            "amsru_am2": "amsru_a2",
             "u2": "amsru_a2",
             "17_final": "f17_final",
             "18_class": "f18_class",

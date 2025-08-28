@@ -1,3 +1,11 @@
+# v0.8.0
+
+* Update `nt.tiepoints.get_tiepoints` function to return NT tiepoints based on
+  NSIDC-0802/0803 when `am2` is passed as the `satellite`. This changes the
+  previous behavior, which would return tiepoints based on AMSRU. This change
+  was made to support `seaice_ecdr` v2, which uses NSIDC-0802 TBs instead of
+  AU_SI25 for AMSR2 data.
+
 # v0.7.0
 
 * Update dependencies for `pm_tb_data`
