@@ -186,8 +186,8 @@ TIEPOINTS: dict[str, dict[str, NasateamTiePoints]] = {
             "37v": {"ow": 211.90, "fy": 249.25, "my": 217.10},
         },
     },
-    # Source: params used in NSIDC0803
-    "nsidc0803": {
+    # Source: params derived from NSIDC0802 and used in NSIDC0803
+    "nsidc0802": {
         "n": {
             "19h": {"ow": 120.50, "fy": 235.50, "my": 200.70},
             "19v": {"ow": 185.9, "fy": 250.90, "my": 222.20},
@@ -269,7 +269,7 @@ def get_tiepoints(
             # TODO: we should calculate specific tiepoints for AMSRE (`ame`)
             # instead of using the AMSR2 tiepoints.
             "ame": "amsru_a2",
-            "am2": "nsidc0803",
+            "am2": "nsidc0802",
             "amsru_am2": "amsru_a2",
             "u2": "amsru_a2",
             "17_final": "f17_final",
