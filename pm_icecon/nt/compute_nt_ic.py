@@ -196,6 +196,10 @@ def apply_nt_spillover(
 
     It appears that there is an assumption that land is always >= 15% conc
     TODO: Perhaps this should be looking for ocean cells that are >= 15%?
+
+    NOTE/TODO: the last time this code was run, the output did not look
+    correct. There may be a problem with the algorithm, or with the input minic
+    field. Review this code and output carefully to ensure it works as expected.
     """
     newice = conc.copy()
 
